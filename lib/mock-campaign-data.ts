@@ -14,10 +14,15 @@ export type RecentDonor = {
   isFresh?: boolean;
 };
 
+export type CurrencyCode = "TL" | "USD" | "EUR";
+
 export type BankAccount = {
+  currency: CurrencyCode;
+  currencyLabel: string;
   bank: string;
   iban: string;
   accountName: string;
+  swift: string;
 };
 
 export type IncomeRow = {
@@ -150,19 +155,28 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
 
   bankAccounts: [
     {
+      currency: "TL",
+      currencyLabel: "Türk Lirası (TL)",
       bank: "Ziraat Bankası",
-      iban: "TR** **** **** **** **** ****",
+      iban: "TR98 0006 2000 0000 0062 9562 28",
       accountName: "Defne Yardım Hesabı",
+      swift: "TCZBTR2A",
     },
     {
-      bank: "Vakıfbank",
-      iban: "TR** **** **** **** **** ****",
+      currency: "USD",
+      currencyLabel: "Amerikan Doları (USD)",
+      bank: "Ziraat Bankası",
+      iban: "TR45 0006 2000 0000 0062 9562 35",
       accountName: "Defne Yardım Hesabı",
+      swift: "TCZBTR2A",
     },
     {
-      bank: "İş Bankası",
-      iban: "TR** **** **** **** **** ****",
+      currency: "EUR",
+      currencyLabel: "Euro (EUR)",
+      bank: "Ziraat Bankası",
+      iban: "TR22 0006 2000 0000 0062 9562 42",
       accountName: "Defne Yardım Hesabı",
+      swift: "TCZBTR2A",
     },
   ],
 

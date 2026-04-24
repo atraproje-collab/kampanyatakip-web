@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowRight,
-  Building2,
   Check,
   ChevronDown,
   Copy,
@@ -45,6 +44,45 @@ const SUPPORTED_BANKS = [
   "Türkiye Finans",
   "Vakıf Katılım",
 ];
+
+const CURRENCY_SYMBOL: Record<"TL" | "USD" | "EUR", string> = {
+  TL: "₺",
+  USD: "$",
+  EUR: "€",
+};
+
+const CURRENCY_TONE: Record<
+  "TL" | "USD" | "EUR",
+  {
+    badge: string;
+    label: string;
+    border: string;
+    footerBg: string;
+    footerBorder: string;
+  }
+> = {
+  TL: {
+    badge: "bg-secondary/10 text-secondary",
+    label: "text-secondary",
+    border: "border-secondary/25",
+    footerBg: "bg-secondary/[0.04]",
+    footerBorder: "border-secondary/20",
+  },
+  USD: {
+    badge: "bg-emerald-500/10 text-emerald-600",
+    label: "text-emerald-700",
+    border: "border-emerald-500/25",
+    footerBg: "bg-emerald-500/[0.05]",
+    footerBorder: "border-emerald-500/20",
+  },
+  EUR: {
+    badge: "bg-blue-500/10 text-blue-600",
+    label: "text-blue-700",
+    border: "border-blue-500/25",
+    footerBg: "bg-blue-500/[0.05]",
+    footerBorder: "border-blue-500/20",
+  },
+};
 
 // TR FAST Karekod-style EMV payload. Amount field (5406) is injected dynamically
 // so that every amount produces a visually distinct QR. Static fields carry the
@@ -284,7 +322,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                         Alternatif: Banka Havalesi (IBAN)
                       </span>
                       <span className="block text-[11.5px] text-on-surface-variant">
-                        3 banka · IBAN kopyala, havale yap
+                        3 döviz seçeneği · IBAN kopyala, havale yap
                       </span>
                     </span>
                   </span>
@@ -306,51 +344,101 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
+                      <p className="text-[12px] text-on-surface-variant mb-3">
+                        Tüm hesaplar{" "}
+                        <strong className="text-primary-container">
+                          Ziraat Bankası
+                        </strong>
+                        &apos;ndadır. İhtiyacınıza uygun döviz cinsini seçin.
+                      </p>
+
                       <ul className="space-y-2">
                         {campaign.bankAccounts.map((acc, i) => {
                           const isCopied = copiedIban === i;
+                          const tone = CURRENCY_TONE[acc.currency];
+                          const symbol = CURRENCY_SYMBOL[acc.currency];
                           return (
                             <li
                               key={i}
-                              className="flex items-center gap-3 rounded-lg border border-outline-variant bg-white px-4 py-3"
+                              className={cn(
+                                "rounded-lg border bg-white overflow-hidden",
+                                tone.border,
+                              )}
                             >
-                              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10 text-secondary shrink-0">
-                                <Building2 size={18} />
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4">
+                                <div
+                                  className={cn(
+                                    "inline-flex h-12 w-12 items-center justify-center rounded-lg shrink-0 font-bold text-[22px]",
+                                    tone.badge,
+                                  )}
+                                  aria-hidden
+                                >
+                                  {symbol}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className={cn(
+                                      "text-[13.5px] font-semibold",
+                                      tone.label,
+                                    )}
+                                  >
+                                    {acc.currencyLabel}
+                                  </p>
+                                  <p className="text-[11.5px] text-on-surface-variant">
+                                    {acc.bank}
+                                  </p>
+                                  <p className="mt-1 text-[12px] text-on-surface font-mono break-all">
+                                    {acc.iban}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyIban(i, acc.iban)}
+                                  className={cn(
+                                    "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-semibold transition-colors w-full sm:w-auto",
+                                    isCopied
+                                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                                      : "bg-surface-container-low text-primary-container border border-outline-variant hover:border-secondary hover:text-secondary",
+                                  )}
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check size={13} strokeWidth={2.5} />
+                                      Kopyalandı
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={13} />
+                                      IBAN Kopyala
+                                    </>
+                                  )}
+                                </button>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-[13px] font-semibold text-primary-container">
-                                  {acc.bank}
-                                </p>
-                                <p className="text-[11.5px] text-on-surface-variant font-mono truncate">
-                                  {acc.iban}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyIban(i, acc.iban)}
-                                className={cn(
-                                  "shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-colors",
-                                  isCopied
-                                    ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
-                                    : "bg-surface-container-low text-primary-container border border-outline-variant hover:border-secondary hover:text-secondary",
-                                )}
-                              >
-                                {isCopied ? (
-                                  <>
-                                    <Check size={13} strokeWidth={2.5} />
-                                    Kopyalandı
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy size={13} />
-                                    IBAN
-                                  </>
-                                )}
-                              </button>
+
+                              {acc.currency !== "TL" && (
+                                <div
+                                  className={cn(
+                                    "px-4 py-2 border-t text-[11.5px] font-mono text-on-surface-variant flex items-center gap-2 flex-wrap",
+                                    tone.footerBorder,
+                                    tone.footerBg,
+                                  )}
+                                >
+                                  <span className="font-sans font-semibold text-on-surface-variant">
+                                    SWIFT/BIC:
+                                  </span>
+                                  <span className="text-primary-container font-semibold">
+                                    {acc.swift}
+                                  </span>
+                                  <span className="font-sans text-on-surface-variant/80">
+                                    · Yurtdışından transfer için gerekli
+                                  </span>
+                                </div>
+                              )}
                             </li>
                           );
                         })}
                       </ul>
+
                       <p className="mt-3 text-[12px] text-on-surface-variant">
                         Hesap sahibi:{" "}
                         <strong className="text-primary-container">
