@@ -61,9 +61,9 @@ export function Navbar() {
         </nav>
 
         <div className="hidden lg:block">
-          <Link href={siteConfig.urls.demo}>
-            <Button variant="secondary" size="md">
-              Demo Al
+          <Link href={siteConfig.urls.campaignDemo}>
+            <Button variant="outline-navy" size="md">
+              Demo İncele
             </Button>
           </Link>
         </div>
@@ -96,9 +96,9 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link href={siteConfig.urls.demo} className="mt-2">
-              <Button variant="secondary" size="lg" className="w-full">
-                Demo Al
+            <Link href={siteConfig.urls.campaignDemo} className="mt-2">
+              <Button variant="outline-navy" size="lg" className="w-full">
+                Demo İncele
               </Button>
             </Link>
           </Container>

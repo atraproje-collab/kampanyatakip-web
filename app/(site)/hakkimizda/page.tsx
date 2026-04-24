@@ -803,9 +803,9 @@ export default function HakkimizdaPage() {
                 kurulum, 2-4 iş günü içinde faaliyete geçer.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href={siteConfig.urls.demo}>
+                <Link href={siteConfig.urls.apply}>
                   <Button variant="primary" size="xl" className="w-full sm:w-auto">
-                    Ücretsiz Demo Al
+                    Kampanyanızı Başlatın
                   </Button>
                 </Link>
                 <Link href={siteConfig.urls.contact}>

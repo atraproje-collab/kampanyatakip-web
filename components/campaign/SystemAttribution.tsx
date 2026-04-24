@@ -24,7 +24,7 @@ export function SystemAttribution() {
             Denetim Açık
           </div>
           <Link
-            href="/demo"
+            href="/basvuru"
             className="group/btn inline-flex items-center gap-2 rounded-lg bg-primary-container text-on-primary px-5 py-2.5 text-[13.5px] font-semibold hover:bg-primary transition-colors"
           >
             Kampanyanızı Kurun

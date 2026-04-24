@@ -167,11 +167,10 @@ export function DemoRequestForm() {
           <CheckCircle2 size={32} strokeWidth={2} />
         </div>
         <h2 className="text-[26px] md:text-[30px] font-bold text-primary-container tracking-[-0.02em]">
-          Demo Talebiniz Alındı!
+          Başvurunuz Alındı!
         </h2>
         <p className="mt-3 text-[15px] leading-[24px] text-on-surface-variant max-w-md mx-auto">
-          Size 1 iş günü içinde dönüş yapacağız ve size uygun bir zamanda demo
-          ayarlayacağız.
+          Başvurunuz alındı. 1 iş günü içinde size dönüş yapacağız.
         </p>
 
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
@@ -495,7 +494,7 @@ export function DemoRequestForm() {
                   </>
                 ) : (
                   <>
-                    Demo Talep Et
+                    Başvuruyu Gönder
                     <ArrowRight
                       size={16}
                       className="transition-transform duration-250 group-hover/btn:translate-x-1"

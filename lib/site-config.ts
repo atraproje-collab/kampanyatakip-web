@@ -47,7 +47,10 @@ export const siteConfig = {
     about: "/hakkimizda",
     faq: "/sss",
     contact: "/iletisim",
-    demo: "/demo",
+    campaignDemo: "/kampanya/demo",
+    apply: "/basvuru",
+    /** @deprecated use `apply` instead. Retained temporarily for call sites not yet migrated. */
+    demo: "/basvuru",
     terms: "#",
     privacy: "#",
     kvkk: "#",

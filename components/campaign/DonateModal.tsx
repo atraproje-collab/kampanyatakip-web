@@ -383,11 +383,11 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                   </strong>{" "}
                   Gerçek bağış alınmaz. Kendi kampanyanızı kurmak için{" "}
                   <Link
-                    href="/demo"
+                    href="/basvuru"
                     onClick={onClose}
                     className="font-bold text-emerald-700 hover:text-emerald-900 underline underline-offset-2 inline-flex items-center gap-0.5"
                   >
-                    Demo Al <ArrowRight size={12} />
+                    Başvuru Yapın <ArrowRight size={12} />
                   </Link>
                 </div>
               </div>

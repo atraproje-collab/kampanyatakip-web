@@ -34,7 +34,7 @@ const PACKAGES: PricingPackage[] = [
     ],
     ctaText: "Paketi Seç",
     ctaStyle: "outline",
-    href: "/demo",
+    href: "/basvuru",
   },
   {
     name: "Standart",
@@ -62,7 +62,7 @@ const PACKAGES: PricingPackage[] = [
     ],
     ctaText: "Hemen Başla",
     ctaStyle: "primary",
-    href: "/demo",
+    href: "/basvuru",
   },
   {
     name: "Premium",
@@ -90,7 +90,7 @@ const PACKAGES: PricingPackage[] = [
     ],
     ctaText: "Paketi Seç",
     ctaStyle: "outline",
-    href: "/demo",
+    href: "/basvuru",
   },
   {
     name: "Özel",

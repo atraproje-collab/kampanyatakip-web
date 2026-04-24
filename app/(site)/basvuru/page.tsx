@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BadgeCheck,
-  Check,
-  Clock,
+  CalendarClock,
+  FileCheck,
+  FileEdit,
+  Presentation,
   Quote,
+  Rocket,
   ShieldCheck,
   Star,
-  Video,
-  XCircle,
   type LucideIcon,
 } from "lucide-react";
 import { Container } from "@/components/Container";
@@ -19,27 +20,47 @@ import { faqItems } from "@/lib/faq-data";
 import { siteConfig } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Ücretsiz Demo Talep Edin",
+  title: "Kampanya Başvuru",
   description:
-    "KAMPANYATAKİP'in tüm modüllerini görmek için ücretsiz demo talep edin. 30-45 dakikalık online sunum.",
+    "Kampanyanızı KAMPANYATAKİP altyapısında başlatmak için başvurunuzu gönderin. 1 iş günü içinde dönüş yapılır; 2-4 iş günü içinde kampanyanız yayında.",
 };
 
-const CHECKLIST = [
-  "Canlı kampanya sayfası örneği (şeffaflık merkezi dahil)",
-  "Anlık bağış takibi ve mesajlaşma entegrasyonu",
-  "Kumbara ve stant yönetim sistemi",
-  "Yönetim paneli arayüzü",
-  "Raporlama ve istatistik örnekleri",
-  "Size özel fiyat teklifi ve paket önerisi",
-  "Sorularınızın tamamına yanıt",
-];
+type Step = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  duration?: string;
+};
 
-type Info = { icon: LucideIcon; label: string; accent?: boolean };
-const INFO_ITEMS: Info[] = [
-  { icon: Clock, label: "Süre: 30-45 dakika" },
-  { icon: Video, label: "Format: Online sunum" },
-  { icon: Check, label: "Ücret: Ücretsiz", accent: true },
-  { icon: XCircle, label: "Bağlayıcı değil" },
+const NEXT_STEPS: Step[] = [
+  {
+    icon: FileEdit,
+    title: "Başvurunuzu alırız",
+    description:
+      "Ekibimiz, paylaştığınız bilgileri 1 iş günü içinde inceler ve size dönüş yapar.",
+    duration: "1 iş günü",
+  },
+  {
+    icon: Presentation,
+    title: "Özel sunum planlarız",
+    description:
+      "30-45 dakikalık çevrimiçi bir demo ile KAMPANYATAKİP altyapısını canlı gösteririz.",
+    duration: "30-45 dk",
+  },
+  {
+    icon: FileCheck,
+    title: "Sözleşme ve paket seçimi",
+    description:
+      "İhtiyacınıza uygun paketi birlikte belirler, kampanyanızın sözleşmesini hazırlarız.",
+    duration: "Aynı hafta",
+  },
+  {
+    icon: Rocket,
+    title: "Kampanyanız yayında",
+    description:
+      "İzole sunucunuz hazırlanır, alan adınız yapılandırılır, ekibinize eğitim verilir.",
+    duration: "2-4 iş günü",
+  },
 ];
 
 const TRUST_BADGES = [
@@ -66,67 +87,68 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function DemoPage() {
+export default function BasvuruPage() {
   const teaserFaqs = faqItems.slice(0, 3);
 
   return (
     <>
       <PageHeader
-        title="Ücretsiz Demo Talep Edin"
-        description="Size özel bir demo hazırlayalım, tüm modülleri görün"
+        title="Kampanya Başvurusu"
+        description="Demo'muzu incelediniz. Şimdi kendi kampanyanızı başlatalım."
         badge="ERKEN ERİŞİM"
       />
 
       <section className="py-14 md:py-20">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-12 items-start">
-            {/* Left: What you'll see */}
+            {/* Left: Next steps */}
             <div className="lg:col-span-2 flex flex-col gap-8 lg:sticky lg:top-24">
               <div>
                 <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
-                  Demo İçeriği
+                  Süreç
                 </span>
                 <h2 className="mt-3 text-[24px] md:text-[28px] font-semibold text-primary-container tracking-[-0.02em] leading-tight">
-                  Demo&apos;da Neler Var?
+                  Başvurunuzu aldıktan sonra
                 </h2>
-                <p className="mt-2 text-[14px] text-on-surface-variant">
-                  30-45 dakikalık özel sunumda:
+                <p className="mt-2 text-[14px] leading-[22px] text-on-surface-variant">
+                  Basit ve net bir süreç — her adımda ne olacağını önceden
+                  biliyorsunuz.
                 </p>
               </div>
 
-              <ul className="flex flex-col gap-3">
-                {CHECKLIST.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-3 text-[14px] leading-[22px] text-on-surface"
-                  >
-                    <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-secondary/10 text-secondary shrink-0">
-                      <Check size={12} strokeWidth={3} />
+              <ol className="relative border-l-2 border-outline-variant pl-6 space-y-6">
+                {NEXT_STEPS.map(({ icon: Icon, title, description, duration }, i) => (
+                  <li key={title} className="relative">
+                    <span className="absolute -left-[34px] top-0 w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-[0_0_0_4px_var(--color-surface)] text-[11px] font-bold">
+                      {i + 1}
                     </span>
-                    {item}
+                    <div className="flex items-start gap-2.5">
+                      <Icon
+                        size={16}
+                        className="mt-0.5 text-secondary shrink-0"
+                        strokeWidth={2}
+                      />
+                      <div className="min-w-0">
+                        <h3 className="text-[14.5px] font-semibold text-primary-container tracking-[-0.01em]">
+                          {title}
+                        </h3>
+                        {duration && (
+                          <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-bold text-secondary uppercase tracking-wider">
+                            <CalendarClock size={11} />
+                            {duration}
+                          </p>
+                        )}
+                        <p className="mt-1 text-[13px] leading-[20px] text-on-surface-variant">
+                          {description}
+                        </p>
+                      </div>
+                    </div>
                   </li>
                 ))}
-              </ul>
-
-              {/* Info box */}
-              <div className="rounded-2xl border-2 border-secondary/30 bg-surface-container p-5">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                  {INFO_ITEMS.map((i) => (
-                    <div
-                      key={i.label}
-                      className={`flex items-center gap-2 text-[13px] font-medium ${
-                        i.accent ? "text-secondary" : "text-primary-container"
-                      }`}
-                    >
-                      <i.icon size={16} strokeWidth={2} />
-                      {i.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              </ol>
 
               {/* Trust badges */}
-              <div className="pt-4 border-t border-outline-variant">
+              <div className="pt-5 border-t border-outline-variant">
                 <div className="flex flex-wrap gap-x-5 gap-y-3">
                   {TRUST_BADGES.map(({ icon: Icon, label }) => (
                     <div
@@ -139,6 +161,20 @@ export default function DemoPage() {
                   ))}
                 </div>
               </div>
+
+              <p className="text-[12.5px] leading-[19px] text-on-surface-variant bg-surface-container-low border border-outline-variant rounded-xl p-4">
+                <strong className="text-primary-container">
+                  Henüz karar vermediniz mi?
+                </strong>{" "}
+                Önce{" "}
+                <Link
+                  href={siteConfig.urls.campaignDemo}
+                  className="text-secondary font-semibold hover:underline"
+                >
+                  canlı demo kampanyayı
+                </Link>{" "}
+                inceleyebilir, sistemin nasıl çalıştığını görebilirsiniz.
+              </p>
             </div>
 
             {/* Right: Form */}
@@ -160,8 +196,8 @@ export default function DemoPage() {
               Erken Erişimin Sesleri
             </h2>
             <p className="mt-3 text-[15px] leading-[24px] text-on-surface-variant">
-              KAMPANYATAKİP&apos;i erken erişim programında deneyen öncülerimizin
-              yorumları.
+              KAMPANYATAKİP&apos;i erken erişim programında deneyen
+              öncülerimizin yorumları.
             </p>
           </div>
 
@@ -202,7 +238,7 @@ export default function DemoPage() {
         <Container>
           <div className="text-center mb-10">
             <h2 className="text-[24px] md:text-[28px] font-semibold text-primary-container tracking-[-0.02em]">
-              Demo&apos;dan önce merak ettikleriniz?
+              Başvuru öncesi merak ettikleriniz?
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto">

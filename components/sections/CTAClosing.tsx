@@ -43,9 +43,9 @@ export function CTAClosing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/demo">
+              <Link href="/basvuru">
                 <Button variant="primary" size="xl" className="w-full sm:w-auto">
-                  Ücretsiz Demo Al
+                  Başvurunuzu Gönderin
                 </Button>
               </Link>
               <Link href="/iletisim">

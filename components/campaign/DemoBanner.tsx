@@ -15,7 +15,7 @@ export function DemoBanner() {
           </span>
         </div>
         <Link
-          href="/demo"
+          href="/basvuru"
           className="inline-flex items-center gap-1 font-bold text-amber-950 hover:text-black transition-colors whitespace-nowrap"
         >
           Kendi Kampanyanızı Kurun

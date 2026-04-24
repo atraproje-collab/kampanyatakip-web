@@ -131,18 +131,18 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/demo">
+              <Link href="/kampanya/demo">
                 <Button variant="primary" size="xl" className="group/btn w-full sm:w-auto">
-                  {slide.primaryCta}
+                  Canlı Demo&apos;yu İncele
                   <ArrowRight
                     size={20}
                     className="transition-transform duration-250 group-hover/btn:translate-x-1"
                   />
                 </Button>
               </Link>
-              <Link href="/demo">
+              <Link href="/basvuru">
                 <Button variant="outline-white" size="xl" className="w-full sm:w-auto">
-                  Demo İzle
+                  Başvurunuzu Gönderin
                 </Button>
               </Link>
             </div>
