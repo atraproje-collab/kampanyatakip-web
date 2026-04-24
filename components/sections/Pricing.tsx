@@ -88,13 +88,10 @@ export function Pricing() {
                 key={addon.id}
                 className="rounded-2xl border border-outline-variant bg-white p-6 hover:border-secondary hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all"
               >
-                <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="mb-3">
                   <h4 className="text-[16px] font-semibold text-primary-container tracking-[-0.01em]">
                     {addon.name}
                   </h4>
-                  <span className="shrink-0 inline-flex items-center rounded-full bg-secondary/10 text-secondary px-3 py-1 text-[12px] font-bold tabular-nums whitespace-nowrap">
-                    {addon.priceLabel}
-                  </span>
                 </div>
                 <p className="text-[13px] leading-[21px] text-on-surface-variant">
                   {addon.description}

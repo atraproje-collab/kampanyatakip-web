@@ -16,16 +16,9 @@ import {
   calculateTotal,
   CUSTOM_BASE,
   CUSTOM_MODULES,
-  isCustomMinimumMet,
-  MINIMUM_CUSTOM_TOTAL,
-  missingToMinimum,
   type Selection,
 } from "@/lib/packages-data";
 import { cn } from "@/lib/utils";
-
-function formatAmount(n: number): string {
-  return new Intl.NumberFormat("tr-TR").format(n);
-}
 
 interface CustomPackageModalProps {
   isOpen: boolean;
@@ -82,11 +75,7 @@ export function CustomPackageModal({
     });
   }, []);
 
-  const meetsMinimum = isCustomMinimumMet(total);
-  const missing = missingToMinimum(total);
-
   const handleConfirm = () => {
-    if (!meetsMinimum) return;
     const params = new URLSearchParams({
       selections: JSON.stringify(selections),
       total: String(total),
@@ -163,14 +152,6 @@ export function CustomPackageModal({
                     </h3>
                     <p className="mt-1 text-[13px] leading-[20px] text-on-surface-variant">
                       {CUSTOM_BASE.description}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[22px] md:text-[24px] font-bold text-primary-container tracking-tight leading-none">
-                      {CUSTOM_BASE.price.toLocaleString("tr-TR")} ₺
-                    </p>
-                    <p className="mt-1 text-[11.5px] text-on-surface-variant">
-                      /ay
                     </p>
                   </div>
                 </div>
@@ -277,14 +258,6 @@ export function CustomPackageModal({
                               </p>
                             </div>
                           </div>
-                          <div className="text-right shrink-0 whitespace-nowrap">
-                            <p className="text-[14.5px] font-semibold text-primary-container">
-                              +{module.price.toLocaleString("tr-TR")} ₺
-                            </p>
-                            <p className="text-[11px] text-on-surface-variant">
-                              /ay
-                            </p>
-                          </div>
                         </label>
                       );
                     }
@@ -331,19 +304,13 @@ export function CustomPackageModal({
                               <Plus size={14} />
                             </button>
                           </div>
-                          <div className="min-w-[90px] text-right whitespace-nowrap">
-                            {value > 0 ? (
-                              <p className="text-[14.5px] font-semibold text-secondary">
-                                +{(value * module.price).toLocaleString("tr-TR")}{" "}
-                                ₺
-                              </p>
-                            ) : (
-                              <p className="text-[12px] text-on-surface-variant">
-                                +{module.price.toLocaleString("tr-TR")} ₺/
+                          {module.unit && (
+                            <div className="min-w-[60px] text-right whitespace-nowrap">
+                              <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
                                 {module.unit}
                               </p>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -354,20 +321,7 @@ export function CustomPackageModal({
 
             {/* Footer */}
             <div className="px-5 md:px-8 py-5 md:py-6 border-t border-outline-variant bg-surface-container-low">
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-on-surface-variant">
-                    Aylık Toplam
-                  </p>
-                  <p className="mt-1 text-[26px] md:text-[30px] font-bold text-primary-container tracking-tight leading-none">
-                    {total.toLocaleString("tr-TR")}{" "}
-                    <span className="text-[18px] text-on-surface-variant">₺</span>
-                    <span className="text-[14px] font-normal text-on-surface-variant">
-                      {" "}
-                      / ay
-                    </span>
-                  </p>
-                </div>
+              <div className="mb-4 flex items-center justify-end">
                 <div className="text-right">
                   <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-on-surface-variant">
                     Seçili Ek
@@ -378,32 +332,10 @@ export function CustomPackageModal({
                 </div>
               </div>
 
-              {!meetsMinimum && (
-                <div className="mb-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 flex items-start gap-2.5">
-                  <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-[13px] font-bold">
-                    !
-                  </span>
-                  <div className="text-[12.5px] leading-[18px] text-amber-900">
-                    <strong className="font-bold">
-                      Minimum tutar ₺{formatAmount(MINIMUM_CUSTOM_TOTAL)}
-                    </strong>{" "}
-                    — ₺{formatAmount(missing)} daha ekleyin. Ek modül
-                    seçiminizi genişleterek bu tutara ulaşabilirsiniz.
-                  </div>
-                </div>
-              )}
-
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={!meetsMinimum}
-                aria-disabled={!meetsMinimum}
-                className={cn(
-                  "group/btn inline-flex items-center justify-center gap-2 w-full rounded-lg px-6 py-3.5 text-[15px] font-semibold transition-all duration-250",
-                  meetsMinimum
-                    ? "bg-secondary text-on-secondary shadow-[0_4px_6px_rgba(0,24,53,0.08)] hover:bg-on-secondary-container hover:shadow-[0_10px_20px_rgba(0,103,127,0.3)] hover:-translate-y-0.5 active:scale-[0.98]"
-                    : "bg-surface-container-high text-on-surface-variant/70 cursor-not-allowed",
-                )}
+                className="group/btn inline-flex items-center justify-center gap-2 w-full rounded-lg px-6 py-3.5 text-[15px] font-semibold bg-secondary text-on-secondary shadow-[0_4px_6px_rgba(0,24,53,0.08)] hover:bg-on-secondary-container hover:shadow-[0_10px_20px_rgba(0,103,127,0.3)] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-250"
               >
                 Paketimi Onayla ve Talep Gönder
                 <ArrowRight

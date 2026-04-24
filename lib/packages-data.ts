@@ -4,29 +4,105 @@
 // and components/pricing/CustomPackageModal.tsx.
 // ────────────────────────────────────────────────────────────
 
-// Standart modüller — tüm paketlerde ek ücret olmaksızın bulunan özellikler.
-// Pazarlama kart yüzünde bunları tek tek listelemiyoruz (kartı şişirir); kart
-// her pakette o tier'a özel farklılıkları gösteriyor.
-export const STANDARD_MODULES: string[] = [
-  "Para takibi ve anlık bildirim (banka entegrasyonu)",
-  "Kumbara takip sistemi (QR + fotoğraflı tutanak)",
-  "Stant takip sistemi (günlük kapanış)",
-  "Gönüllü yönetim sistemi",
-  "Canlı yayın gelir takibi (OCR + banka eşleştirme)",
-  "Gelir-gider şeffaflık modülü",
-  "7/24 AI mesajlaşma asistanı (temel)",
-  "5 dilde sesli bilgi hattı (0850)",
-  "Kampanya sayfası + canlı sayaç + valilik belgesi",
-  "Bağışçı gizlilik maskesi (KVKK uyumlu)",
-  "Şeffaflık merkezi (değiştirilemez kayıt)",
-  "Günlük otomatik yedek + kurumsal güvenlik",
-  "İzole kampanya sunucusu",
-  "Canva Pro hesabı (₺240/ay dahil)",
-  "Kurumsal bağış vergi bilgilendirme",
-  "Günlük/haftalık/aylık WhatsApp raporu",
-  "Kritik olay bildirimleri",
-  "2-4 iş günü kurulum",
+// Standart modüller — tüm paketlerde ek ücret olmaksızın bulunan 17 özellik.
+// Temel paket kartı bu listenin tamamını madde madde yayınlar.
+export interface StandardModuleItem {
+  title: string;
+  description: string;
+}
+
+export const STANDARD_MODULES: StandardModuleItem[] = [
+  {
+    title: "Para Takibi ve Anlık Bildirim",
+    description:
+      "Banka hesabına gelen her bağış saniyeler içinde otomatik kayıt, kampanya yöneticisine anlık mesaj bildirimi.",
+  },
+  {
+    title: "Kumbara Takip Sistemi",
+    description:
+      "Benzersiz QR kod, teslim tutanağı, açılış fotoğrafı ve yapay zeka ile tutar okuma.",
+  },
+  {
+    title: "Stant Takip Sistemi",
+    description:
+      "Konum, sorumlu, açılış-kapanış saatleri ve günlük gelir raporu.",
+  },
+  {
+    title: "Gönüllü Yönetim Sistemi",
+    description:
+      "Her gönüllü; görev, sorumlu olduğu kumbara ve stantlarıyla tek ekranda yönetilir.",
+  },
+  {
+    title: "Canlı Yayın Gelir Takibi",
+    description:
+      "Yayın özet fotoğrafını AI okur, banka hareketi ile otomatik eşleştirir, uyumsuzlukta uyarır.",
+  },
+  {
+    title: "Gelir-Gider Şeffaflık Modülü",
+    description:
+      "Gelirler kaynaklara ayrılır; belgesiz hiçbir harcama sisteme işlenemez.",
+  },
+  {
+    title: "7/24 AI Mesajlaşma Asistanı",
+    description:
+      "Bağışçı sorularını yanıtlar, dekont OCR ile kaydeder, teşekkür mesajı gönderir.",
+  },
+  {
+    title: "5 Dilde 0850 Sesli Bilgi Hattı",
+    description:
+      "Kampanyaya özel telefon numarası; TR, EN, AR, DE, FR — 24 saat açık.",
+  },
+  {
+    title: "Kampanya Web Sayfası + Canlı Sayaç",
+    description:
+      "Hikaye, toplanan tutar, ilerleme çubuğu, son bağışlar ve valilik belgesi anlık güncellenir.",
+  },
+  {
+    title: "Bağışçı Gizlilik Maskesi",
+    description:
+      "İsimler K***** Y***** formatında maskelenir; isteğe bağlı tam anonimlik mevcut.",
+  },
+  {
+    title: "Şeffaflık Merkezi",
+    description:
+      "Değiştirilemez append-only kayıt; kamuya açık, valilik denetimine her an hazır.",
+  },
+  {
+    title: "Güvenlik ve Otomatik Yedek",
+    description:
+      "Günlük otomatik yedek, kurumsal güvenlik katmanı, hata durumunda anlık uyarı.",
+  },
+  {
+    title: "İzole Kampanya Sunucusu",
+    description:
+      "Her kampanya için ayrı bulut sunucusu; başka müşterilerle paylaşım yok.",
+  },
+  {
+    title: "Profesyonel Tasarım Aracı Hesabı",
+    description:
+      "Kampanyaya özel tasarım hesabı, marka kiti ve şablonlar — araç maliyeti pakete dahil.",
+  },
+  {
+    title: "Kurumsal Bağış Vergi Bilgilendirme",
+    description:
+      "KVK Madde 10 kapsamında vergi avantajı şirketlere otomatik iletilir.",
+  },
+  {
+    title: "Günlük / Haftalık / Aylık Otomatik Raporlama",
+    description:
+      "Bağış özetleri ve kampanya istatistikleri mesaj yoluyla otomatik iletilir.",
+  },
+  {
+    title: "Kritik Olay Bildirimleri",
+    description:
+      "Büyük bağış, kumbara açılışı, canlı yayın uyumsuzluğu ve limit dolmasında anlık uyarı.",
+  },
 ];
+
+/** PricingCard.features içine gömülebilir tek-satır formatlar. */
+export const STANDARD_MODULES_AS_FEATURES: string[] = STANDARD_MODULES.map(
+  (m) => `${m.title} — ${m.description}`,
+);
 
 export type PackageId = "temel" | "standart" | "premium" | "ozel";
 
@@ -59,14 +135,14 @@ export const PACKAGES: PricingPackageData[] = [
     currency: "₺",
     period: "/ay",
     features: [
-      "Tüm standart modüller dahil",
+      ...STANDARD_MODULES_AS_FEATURES,
       "2.000 mesaj/ay (1.000 gelen + 1.000 giden)",
-      "Aşım: mesaj başına ₺0,16",
-      "300 dakika sesli hat/ay · aşım dakikası ₺0,13",
+      "300 dakika sesli hat/ay",
       "1 sosyal medya platformu (Facebook, Instagram veya YouTube)",
       "Seçilen platformda post paylaşımı + mesaj/yorum otomatik yanıt",
       "Aylık 5 Türkçe video otomatik yayın",
-      "Limit %80 uyarısı WhatsApp'a otomatik düşer",
+      "Limit %80 uyarısı otomatik bildirilir",
+      "2-4 iş günü kurulum",
     ],
     exclusions: [
       "Çok dilli video çeviri",
@@ -140,14 +216,13 @@ export const PACKAGES: PricingPackageData[] = [
     isCustom: true,
     badge: "KENDİN OLUŞTUR",
     features: [
-      "Zorunlu modüller sabit · taban fiyata dahil",
-      "Para takibi, kumbara, stant, gönüllü, TikTok gelir takibi",
+      "Zorunlu modüller sabit · tüm standart modüller dahil",
+      "Para takibi, kumbara, stant, gönüllü, canlı yayın gelir takibi",
       "Gelir-gider şeffaflık + değişmez kayıt",
       "Kampanya sayfası + canlı sayaç",
       "Bağışçı gizlilik maskesi + KVKK uyumu",
-      "İzole sunucu + Canva Pro + otomatik yedek",
-      "Eklenebilir: WhatsApp, sesli hat, sosyal medya, çeviri, influencer, kurumsal bağış, X/Twitter, hukuk",
-      "Minimum aylık toplam: ₺9.900",
+      "İzole sunucu + profesyonel tasarım aracı + otomatik yedek",
+      "Eklenebilir: mesajlaşma, sesli hat, sosyal medya, çeviri, influencer, kurumsal bağış, X/Twitter, hukuk",
     ],
     ctaText: "Paketini Oluştur",
     ctaStyle: "custom",

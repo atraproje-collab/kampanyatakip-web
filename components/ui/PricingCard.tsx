@@ -17,11 +17,6 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
   const {
     name,
     tagline,
-    price,
-    priceText,
-    priceSubtext,
-    currency,
-    period,
     featured,
     isCustom,
     badge,
@@ -32,6 +27,8 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
     ctaStyle,
     href,
   } = pkg;
+  // price / currency / period / priceText / priceSubtext intentionally
+  // omitted — kept in data, hidden from UI.
 
   return (
     <div
@@ -78,74 +75,9 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
         </p>
       </div>
 
-      <div
-        className={cn(
-          "mb-6 pb-6 border-b",
-          isCustom ? "border-white/15" : "border-outline-variant",
-        )}
-      >
-        {price ? (
-          <div className="flex items-baseline flex-wrap gap-x-1.5">
-            <span
-              className={cn(
-                "text-[34px] md:text-[38px] font-bold tracking-tight leading-none",
-                isCustom ? "text-white" : "text-primary-container",
-              )}
-            >
-              {price}
-            </span>
-            <span
-              className={cn(
-                "text-[16px] font-semibold",
-                isCustom ? "text-white/85" : "text-on-surface-variant",
-              )}
-            >
-              {currency}
-            </span>
-            {period && (
-              <span
-                className={cn(
-                  "text-[14px]",
-                  isCustom ? "text-white/75" : "text-on-surface-variant",
-                )}
-              >
-                {period}
-              </span>
-            )}
-          </div>
-        ) : (
-          <div>
-            <div
-              className={cn(
-                "text-[26px] md:text-[30px] font-bold tracking-tight leading-tight",
-                isCustom ? "text-white" : "text-primary-container",
-              )}
-            >
-              {priceText}
-            </div>
-            {priceSubtext && (
-              <div
-                className={cn(
-                  "mt-1 text-[12px] uppercase tracking-wider font-medium",
-                  isCustom ? "text-white/70" : "text-on-surface-variant",
-                )}
-              >
-                {priceSubtext}
-              </div>
-            )}
-            {period && (
-              <div
-                className={cn(
-                  "mt-2 text-[13px]",
-                  isCustom ? "text-white/75" : "text-on-surface-variant",
-                )}
-              >
-                {period}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Price block intentionally hidden — prices live in lib/packages-data.ts
+          but are not rendered in the UI at the moment. Re-enable by restoring
+          the previous <div className="mb-6 pb-6 border-b">…</div> block. */}
 
       {includesBadge && (
         <div className="mb-5 px-3 py-2 bg-secondary/10 border border-secondary/20 rounded-lg">

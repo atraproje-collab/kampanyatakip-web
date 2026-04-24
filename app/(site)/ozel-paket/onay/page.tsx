@@ -183,17 +183,12 @@ function OzelPaketOnayContent() {
                 </h3>
 
                 <div className="mt-5 pb-5 border-b border-outline-variant">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[14.5px] font-semibold text-primary-container">
-                        {customPackageConfig.base.name}
-                      </p>
-                      <p className="mt-0.5 text-[12.5px] text-on-surface-variant">
-                        Zorunlu taban paket
-                      </p>
-                    </div>
-                    <p className="text-[15px] font-semibold text-primary-container whitespace-nowrap">
-                      {customPackageConfig.base.price.toLocaleString("tr-TR")} ₺
+                  <div>
+                    <p className="text-[14.5px] font-semibold text-primary-container">
+                      {customPackageConfig.base.name}
+                    </p>
+                    <p className="mt-0.5 text-[12.5px] text-on-surface-variant">
+                      Zorunlu taban paket
                     </p>
                   </div>
                 </div>
@@ -207,7 +202,7 @@ function OzelPaketOnayContent() {
                       {selectedModules.map((m) => (
                         <li
                           key={m.id}
-                          className="flex items-start justify-between gap-4 text-[13.5px]"
+                          className="flex items-start gap-2 text-[13.5px]"
                         >
                           <span className="text-on-surface">
                             {m.name}
@@ -216,9 +211,6 @@ function OzelPaketOnayContent() {
                                 {" "}(×{m.quantity})
                               </span>
                             )}
-                          </span>
-                          <span className="font-semibold text-primary-container whitespace-nowrap">
-                            +{(m.price * m.quantity).toLocaleString("tr-TR")} ₺
                           </span>
                         </li>
                       ))}
@@ -232,15 +224,6 @@ function OzelPaketOnayContent() {
                     </p>
                   </div>
                 )}
-
-                <div className="mt-5 flex items-center justify-between gap-4">
-                  <p className="text-[14px] font-semibold text-primary-container">
-                    Aylık Toplam
-                  </p>
-                  <p className="text-[26px] md:text-[28px] font-bold text-secondary tracking-tight">
-                    {total.toLocaleString("tr-TR")} ₺
-                  </p>
-                </div>
 
                 <Link
                   href="/#pricing"
