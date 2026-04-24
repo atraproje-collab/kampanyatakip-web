@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
@@ -27,8 +27,6 @@ interface DonateModalProps {
 }
 
 const QUICK_AMOUNTS = [50, 100, 250, 500, 750, 1000, 2000, 5000, 10000];
-const MIN_CUSTOM = 10;
-const MAX_CUSTOM = 1_000_000;
 
 const SUPPORTED_BANKS = [
   "Ziraat",
@@ -48,20 +46,27 @@ const SUPPORTED_BANKS = [
   "Vakıf Katılım",
 ];
 
-// Static TR FAST-style payload — never changes with amount. Amount is entered
-// manually by the donor in their banking app. KAMPANYATAKİP is not a payment
-// intermediary: the QR just carries the recipient IBAN + name + fixed reference.
-const FAST_QR_PAYLOAD = [
-  "TR-FAST",
-  "IBAN:TR000000000000000000000000",
-  "ALICI:Defne Yardim Fonu",
-  "ACIKLAMA:Defne SMA Kampanyasi",
-].join("|");
+// TR FAST Karekod-style EMV payload. Amount field (5406) is injected dynamically
+// so that every amount produces a visually distinct QR. Static fields carry the
+// recipient IBAN and fixed 'Defne SMA' reference.
+function buildFastQr(amount: number): string {
+  return [
+    "000201010211",
+    "26330016TR.GOV.BKM.TPSFAST0112TR0000000000",
+    "52044829",
+    `5406${amount}.00`,
+    "5303949",
+    "5802TR",
+    "5914Defne Yardim Fonu",
+    "6005Istanbul",
+    "6216050401DefneSMA",
+    "6304A1B2",
+  ].join("");
+}
 
 export function DonateModal({ isOpen, onClose }: DonateModalProps) {
   const { campaign } = useCampaign();
-  const [selected, setSelected] = useState<number | "custom">(500);
-  const [customInput, setCustomInput] = useState<string>("");
+  const [amount, setAmount] = useState<number>(500);
   const [ibanOpen, setIbanOpen] = useState(false);
   const [copiedIban, setCopiedIban] = useState<number | null>(null);
 
@@ -79,47 +84,11 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
     };
   }, [isOpen, onClose]);
 
-  const amount = useMemo(() => {
-    if (selected === "custom") {
-      const n = Number(customInput.replace(/[^\d]/g, ""));
-      if (isNaN(n) || n < MIN_CUSTOM) return 0;
-      return Math.min(n, MAX_CUSTOM);
-    }
-    return selected;
-  }, [selected, customInput]);
-
-  const amountValid = amount >= MIN_CUSTOM;
-
   const handleCopyIban = async (index: number, iban: string) => {
     await navigator.clipboard.writeText(iban.replace(/\s/g, ""));
     setCopiedIban(index);
     setTimeout(() => setCopiedIban(null), 2000);
   };
-
-  const steps = [
-    {
-      label: "Bankanızın mobil uygulamasını açın",
-      sub: "Aşağıda listelenen bankaların tamamı desteklenir.",
-    },
-    {
-      label: "'FAST · Karekod ile Öde' menüsünü bulun",
-      sub: "Her bankada farklı isimde olabilir (QR ile Öde, Karekod, FAST).",
-    },
-    {
-      label: "Yukarıdaki QR kodu okutun",
-      sub: "Alıcı IBAN ve isim otomatik yüklenecektir.",
-    },
-    {
-      label: amountValid
-        ? `Tutarı ₺${formatTRY(amount)} olarak girin`
-        : "Bağış tutarını kendiniz girin",
-      sub: "Tutar QR'a dâhil değildir — miktarı uygulamada siz belirlersiniz.",
-    },
-    {
-      label: "Açıklamaya 'Defne SMA' yazıp onaylayın",
-      sub: "Bu referans, bağışınızın kampanyaya doğru eşleşmesini sağlar.",
-    },
-  ];
 
   return (
     <AnimatePresence>
@@ -179,14 +148,14 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                 <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3">
                   1 · Tutar Seçin
                 </h3>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {QUICK_AMOUNTS.map((val) => {
-                    const isSel = selected === val;
+                    const isSel = amount === val;
                     return (
                       <button
                         key={val}
                         type="button"
-                        onClick={() => setSelected(val)}
+                        onClick={() => setAmount(val)}
                         className={cn(
                           "rounded-lg px-3 py-2.5 text-[13.5px] font-bold tabular-nums transition-all border",
                           isSel
@@ -198,82 +167,10 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       </button>
                     );
                   })}
-                  <button
-                    type="button"
-                    onClick={() => setSelected("custom")}
-                    className={cn(
-                      "rounded-lg px-3 py-2.5 text-[13.5px] font-bold transition-all border",
-                      selected === "custom"
-                        ? "bg-secondary text-on-secondary border-secondary shadow-[0_4px_6px_rgba(0,103,127,0.25)]"
-                        : "bg-white text-primary-container border-outline-variant hover:border-secondary hover:text-secondary",
-                    )}
-                  >
-                    Özel
-                  </button>
-                </div>
-
-                <AnimatePresence initial={false}>
-                  {selected === "custom" && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                      animate={{ height: "auto", opacity: 1, marginTop: 12 }}
-                      exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="overflow-hidden"
-                    >
-                      <label className="block">
-                        <span className="block text-[12px] font-semibold text-on-surface-variant mb-1.5">
-                          Özel tutar (₺ {formatTRY(MIN_CUSTOM)} –{" "}
-                          {formatTRY(MAX_CUSTOM)})
-                        </span>
-                        <div className="relative">
-                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-semibold">
-                            ₺
-                          </span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={customInput}
-                            onChange={(e) =>
-                              setCustomInput(
-                                e.target.value.replace(/[^\d]/g, ""),
-                              )
-                            }
-                            placeholder="Örn. 750"
-                            className="w-full rounded-lg border border-outline-variant pl-9 pr-4 py-3 text-[15px] text-on-surface font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary"
-                          />
-                        </div>
-                        {customInput &&
-                          Number(customInput) > 0 &&
-                          Number(customInput) < MIN_CUSTOM && (
-                            <p className="mt-1.5 text-[12px] text-error font-medium">
-                              Minimum bağış tutarı ₺{formatTRY(MIN_CUSTOM)}.
-                            </p>
-                          )}
-                      </label>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Selected amount info card */}
-                <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-secondary/25 bg-secondary/[0.06] px-4 py-3">
-                  <div>
-                    <p className="text-[11px] font-bold text-secondary uppercase tracking-[0.14em]">
-                      Seçili Tutar
-                    </p>
-                    <p className="mt-0.5 text-[12px] text-on-surface-variant leading-[18px] max-w-xs">
-                      Bu tutarı banka uygulamanızda manuel olarak gireceksiniz.
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[26px] md:text-[28px] font-bold text-primary-container tabular-nums tracking-tight leading-none">
-                      ₺{formatTRY(amountValid ? amount : 0)}
-                    </span>
-                  </div>
                 </div>
               </section>
 
-              {/* 2. QR card — static */}
+              {/* 2. QR card — dynamic */}
               <section className="px-5 md:px-7 pt-7">
                 <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3">
                   2 · FAST Karekod
@@ -283,7 +180,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-6 items-center">
                     <div className="bg-white p-3 rounded-xl shadow-[0_4px_6px_rgba(0,24,53,0.08)] border border-outline-variant w-fit mx-auto sm:mx-0">
                       <QRCodeSVG
-                        value={FAST_QR_PAYLOAD}
+                        value={buildFastQr(amount)}
                         size={180}
                         bgColor="#ffffff"
                         fgColor="#001835"
@@ -295,7 +192,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                     <div className="text-center sm:text-left">
                       <div className="flex items-center gap-1.5 text-secondary text-[11px] font-bold uppercase tracking-[0.14em] justify-center sm:justify-start">
                         <QrCode size={13} />
-                        FAST Karekod · Sabit
+                        FAST Karekod
                       </div>
                       <p className="mt-2 text-[15px] md:text-[16px] font-semibold text-primary-container leading-[22px]">
                         Defne Yardım Fonu
@@ -303,44 +200,30 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       <p className="mt-0.5 text-[12.5px] text-on-surface-variant font-mono">
                         TR&nbsp;**&nbsp;****&nbsp;****&nbsp;****&nbsp;****&nbsp;****
                       </p>
-                      <p className="mt-3 text-[12.5px] leading-[19px] text-on-surface-variant max-w-sm mx-auto sm:mx-0">
-                        QR yalnızca alıcı bilgilerini taşır. Bağış tutarını
-                        banka uygulamanızda siz girersiniz.
+                      <p className="mt-3 text-[26px] md:text-[30px] font-bold text-primary-container tabular-nums tracking-tight leading-none">
+                        ₺{formatTRY(amount)}
+                      </p>
+                      <p className="mt-2 text-[12.5px] leading-[19px] text-on-surface-variant max-w-sm mx-auto sm:mx-0">
+                        Bağışınız seçili tutar (₺{formatTRY(amount)}) ile
+                        bankanızda otomatik dolar.
                       </p>
                     </div>
                   </div>
                 </div>
-              </section>
 
-              {/* 3. How-to steps */}
-              <section className="px-5 md:px-7 pt-7">
-                <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3 inline-flex items-center gap-1.5">
-                  <Smartphone size={13} />
-                  Nasıl Bağış Yaparım?
-                </h3>
-                <ol className="space-y-2.5">
-                  {steps.map((step, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-3 rounded-xl border border-outline-variant bg-white px-4 py-3"
-                    >
-                      <span
-                        aria-hidden
-                        className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/10 text-secondary text-[12px] font-bold"
-                      >
-                        {i + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-[13.5px] font-semibold text-primary-container leading-[20px]">
-                          {step.label}
-                        </p>
-                        <p className="mt-0.5 text-[12px] leading-[18px] text-on-surface-variant">
-                          {step.sub}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
+                {/* Inline how-to */}
+                <p className="mt-4 text-[13px] leading-[21px] text-on-surface-variant">
+                  <Smartphone
+                    size={14}
+                    className="inline-block mr-1.5 -mt-0.5 text-secondary"
+                  />
+                  <strong className="text-primary-container">
+                    Nasıl bağış yaparım?
+                  </strong>{" "}
+                  Bankanızın mobil uygulamasını açın, &ldquo;FAST QR Karekod
+                  ile Öde&rdquo; menüsüne girin, yukarıdaki QR kodu okutun ve
+                  onaylayın.
+                </p>
               </section>
 
               {/* 4. Supported banks */}
