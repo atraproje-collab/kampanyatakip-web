@@ -1,0 +1,256 @@
+export type DonationMethod =
+  | "Banka Havalesi"
+  | "Kredi Kartı"
+  | `Kumbara #${string}`
+  | `Stant #${string}`;
+
+export type RecentDonor = {
+  id: number;
+  name: string;
+  amount: number;
+  method: string;
+  time: string;
+  timestamp?: number;
+  isFresh?: boolean;
+};
+
+export type BankAccount = {
+  bank: string;
+  iban: string;
+  accountName: string;
+};
+
+export type IncomeRow = {
+  date: string;
+  source: string;
+  amount: number;
+  details: string;
+};
+
+export type ExpenseRow = {
+  date: string;
+  category: string;
+  amount: number;
+  document: string;
+  description: string;
+  vendor: string;
+};
+
+export type Kumbara = {
+  id: string;
+  location: string;
+  responsible: string;
+  total: number;
+  lastOpened: string;
+};
+
+export type Stant = {
+  id: string;
+  location: string;
+  responsible: string;
+  total: number;
+  activeDays: number;
+};
+
+export type GalleryItem = {
+  type: "photo" | "video";
+  title: string;
+  placeholder:
+    | "family"
+    | "hospital"
+    | "donation-box"
+    | "stand"
+    | "video"
+    | "volunteers"
+    | "team"
+    | "treatment";
+};
+
+export type TeamMember = {
+  name: string;
+  role: string;
+  type: "doctor" | "coordinator" | "legal";
+};
+
+export type CampaignData = {
+  slug: string;
+  title: string;
+  subtitle: string;
+  story: string;
+  goal: number;
+  raised: number;
+  donorCount: number;
+  daysLeft: number;
+  createdAt: string;
+  provinceApproval: {
+    authority: string;
+    decisionNumber: string;
+    approvalDate: string;
+  };
+  bankAccounts: BankAccount[];
+  recentDonors: RecentDonor[];
+  transparency: {
+    income: IncomeRow[];
+    expenses: ExpenseRow[];
+    kumbaralar: Kumbara[];
+    stantlar: Stant[];
+  };
+  gallery: GalleryItem[];
+  team: TeamMember[];
+};
+
+export const demoCampaign: CampaignData = {
+  slug: "minik-defne",
+  title: "Minik Defne'ye Umut Ol",
+  subtitle: "8 Aylık Defne Bebek · SMA Tip 1 · Zolgensma Tedavisi",
+
+  story: `8 aylık minik Defne bebeğimiz, Spinal Musküler Atrofi Tip 1 hastası olarak dünyaya geldi. SMA, bebeklerin kas kontrolünü yitirdiği, tedavi edilmezse yaşam beklentisinin 2 yaşına kadar düştüğü genetik bir hastalıktır.
+
+Defne için tek umut: Zolgensma gen tedavisi. Tek doz, tek şans. Amerika'da üretilen bu ilaç, Türkiye'de henüz SGK kapsamında değil.
+
+Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 yaşına girmeden tedaviyi almalı.
+
+İstanbul Valiliği onayıyla açtığımız bu kampanya, KAMPANYATAKİP platformu üzerinden şeffaf şekilde yürütülmektedir. Her bağış anında kayıt altına alınır, her harcama belgelendirilir.`,
+
+  goal: 60_000_000,
+  raised: 42_350_000,
+  donorCount: 12847,
+  daysLeft: 87,
+  createdAt: "2026-01-27",
+
+  provinceApproval: {
+    authority: "İstanbul Valiliği",
+    decisionNumber: "2026/4521",
+    approvalDate: "2026-01-25",
+  },
+
+  bankAccounts: [
+    {
+      bank: "Ziraat Bankası",
+      iban: "TR** **** **** **** **** ****",
+      accountName: "Defne Yardım Hesabı",
+    },
+    {
+      bank: "Vakıfbank",
+      iban: "TR** **** **** **** **** ****",
+      accountName: "Defne Yardım Hesabı",
+    },
+    {
+      bank: "İş Bankası",
+      iban: "TR** **** **** **** **** ****",
+      accountName: "Defne Yardım Hesabı",
+    },
+  ],
+
+  recentDonors: [
+    { id: 1, name: "K***** Y*****", amount: 500, method: "Banka Havalesi", time: "2 dakika önce" },
+    { id: 2, name: "A**** D****", amount: 1000, method: "Kredi Kartı", time: "5 dakika önce" },
+    { id: 3, name: "M***** T*****", amount: 250, method: "Banka Havalesi", time: "8 dakika önce" },
+    { id: 4, name: "Ş**** K****", amount: 100, method: "Kredi Kartı", time: "12 dakika önce" },
+    { id: 5, name: "İsimsiz Bağışçı", amount: 5000, method: "Banka Havalesi", time: "15 dakika önce" },
+    { id: 6, name: "E*** A*****", amount: 750, method: "Kredi Kartı", time: "22 dakika önce" },
+    { id: 7, name: "H***** B*****", amount: 1500, method: "Banka Havalesi", time: "31 dakika önce" },
+    { id: 8, name: "İsimsiz Bağışçı", amount: 10000, method: "Banka Havalesi", time: "45 dakika önce" },
+    { id: 9, name: "Z*** Ç*****", amount: 300, method: "Kumbara #12 (Kadıköy)", time: "1 saat önce" },
+    { id: 10, name: "M**** K*****", amount: 2000, method: "Kredi Kartı", time: "1 saat önce" },
+    { id: 11, name: "D**** G*****", amount: 500, method: "Banka Havalesi", time: "2 saat önce" },
+    { id: 12, name: "İsimsiz Bağışçı", amount: 250, method: "Kumbara #5 (Şişli)", time: "3 saat önce" },
+    { id: 13, name: "B**** Y*****", amount: 1000, method: "Banka Havalesi", time: "4 saat önce" },
+    { id: 14, name: "İsimsiz Bağışçı", amount: 25000, method: "Banka Havalesi", time: "5 saat önce" },
+    { id: 15, name: "R**** S*****", amount: 750, method: "Kredi Kartı", time: "6 saat önce" },
+    { id: 16, name: "F**** O*****", amount: 400, method: "Banka Havalesi", time: "8 saat önce" },
+    { id: 17, name: "T**** A*****", amount: 1200, method: "Stant #3 (İstinye Park)", time: "10 saat önce" },
+    { id: 18, name: "C*** Y*****", amount: 600, method: "Banka Havalesi", time: "14 saat önce" },
+    { id: 19, name: "İsimsiz Bağışçı", amount: 50000, method: "Banka Havalesi", time: "20 saat önce" },
+    { id: 20, name: "S**** K*****", amount: 300, method: "Kumbara #8 (Beşiktaş)", time: "1 gün önce" },
+  ],
+
+  transparency: {
+    income: [
+      { date: "2026-04-24", source: "Banka Havalesi Toplamı", amount: 852340, details: "Bugünkü toplam (437 bağış)" },
+      { date: "2026-04-23", source: "Kredi Kartı Toplamı", amount: 324500, details: "Dünkü toplam (189 bağış)" },
+      { date: "2026-04-23", source: "Kumbara #12 (Kadıköy Meydan)", amount: 3450, details: "Açılış tutanağı mevcut" },
+      { date: "2026-04-22", source: "Stant #3 (İstinye Park)", amount: 12850, details: "Günlük kapanış raporu" },
+      { date: "2026-04-22", source: "Banka Havalesi Toplamı", amount: 678900, details: "432 bağış" },
+      { date: "2026-04-21", source: "Canlı Yayın Geliri", amount: 45600, details: "Sosyal medya canlı yayını (20.04.2026)" },
+      { date: "2026-04-20", source: "Kurumsal Bağış", amount: 1000000, details: "X Holding A.Ş." },
+      { date: "2026-04-19", source: "Banka Havalesi Toplamı", amount: 543200, details: "298 bağış" },
+    ],
+    expenses: [
+      { date: "2026-04-22", category: "Tedavi Ön Ödeme", amount: 5000000, document: "#", description: "Zolgensma rezervasyon ücreti", vendor: "Novartis Pharma" },
+      { date: "2026-04-20", category: "Hastane Transfer", amount: 12500, document: "#", description: "İlk muayene ve testler", vendor: "Amerikan Hastanesi" },
+      { date: "2026-04-18", category: "Tıbbi Malzeme", amount: 3450, document: "#", description: "Genetik test kiti", vendor: "Genomed Lab" },
+      { date: "2026-04-15", category: "Ulaşım", amount: 8900, document: "#", description: "Aile için uçak bileti (tedavi için ABD)", vendor: "Turkish Airlines" },
+      { date: "2026-04-10", category: "Banka İşlem Ücreti", amount: 2400, document: "#", description: "Uluslararası havale komisyonu", vendor: "Ziraat Bankası" },
+    ],
+    kumbaralar: [
+      { id: "12", location: "Kadıköy Meydan", responsible: "Ahmet Y.", total: 23450, lastOpened: "2026-04-23" },
+      { id: "13", location: "Bakırköy Pazar", responsible: "Mehmet K.", total: 18650, lastOpened: "2026-04-22" },
+      { id: "14", location: "Üsküdar Çarşı", responsible: "Zeynep A.", total: 15200, lastOpened: "2026-04-21" },
+      { id: "15", location: "Beşiktaş İskele", responsible: "Fatma T.", total: 12800, lastOpened: "2026-04-20" },
+      { id: "16", location: "Eminönü Rıhtım", responsible: "Hasan D.", total: 9450, lastOpened: "2026-04-19" },
+    ],
+    stantlar: [
+      { id: "3", location: "İstinye Park AVM", responsible: "Zeynep A.", total: 87500, activeDays: 12 },
+      { id: "4", location: "Zorlu Center", responsible: "Murat K.", total: 65200, activeDays: 8 },
+      { id: "5", location: "Palladium AVM", responsible: "Deniz B.", total: 42800, activeDays: 6 },
+    ],
+  },
+
+  gallery: [
+    { type: "photo", title: "Defne ailesiyle", placeholder: "family" },
+    { type: "photo", title: "Hastane muayenesi", placeholder: "hospital" },
+    { type: "photo", title: "Kumbara dağıtımı", placeholder: "donation-box" },
+    { type: "photo", title: "İstinye Park standı", placeholder: "stand" },
+    { type: "video", title: "Annenin çağrısı", placeholder: "video" },
+    { type: "photo", title: "Gönüllü ekibi", placeholder: "volunteers" },
+    { type: "photo", title: "Tedavi süreci", placeholder: "treatment" },
+    { type: "photo", title: "Kampanya ekibi", placeholder: "team" },
+  ],
+
+  team: [
+    { name: "Dr. Ayşe Demir", role: "Pediatrik Nöroloji Uzmanı", type: "doctor" },
+    { name: "Mehmet Yılmaz", role: "Kampanya Koordinatörü", type: "coordinator" },
+    { name: "Zeynep Kaya", role: "Hukuki Danışman", type: "legal" },
+  ],
+};
+
+export const formatTRY = (n: number): string =>
+  new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(n);
+
+export const DONATION_NAMES = [
+  "K***** Y*****",
+  "A**** D****",
+  "M***** T*****",
+  "Ş**** K****",
+  "E*** A*****",
+  "H***** B*****",
+  "Z*** Ç*****",
+  "M**** K*****",
+  "D**** G*****",
+  "B**** Y*****",
+  "R**** S*****",
+  "F**** O*****",
+  "T**** A*****",
+  "C*** Y*****",
+  "S**** K*****",
+  "Y***** D*****",
+  "G**** E*****",
+  "N**** İ*****",
+  "İsimsiz Bağışçı",
+  "İsimsiz Bağışçı",
+];
+
+export const DONATION_AMOUNTS = [
+  100, 150, 200, 250, 300, 500, 500, 750, 1000, 1000, 1500, 2000, 3000, 5000,
+];
+
+export const DONATION_METHODS = [
+  "Banka Havalesi",
+  "Banka Havalesi",
+  "Banka Havalesi",
+  "Kredi Kartı",
+  "Kredi Kartı",
+  "Kumbara #12 (Kadıköy)",
+  "Stant #3 (İstinye Park)",
+];
