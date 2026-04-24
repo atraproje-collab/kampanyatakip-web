@@ -59,7 +59,7 @@ export const siteConfig = {
   nav: [
     { label: "Ana Sayfa", href: "/" },
     { label: "Hakkımızda", href: "/hakkimizda" },
-    { label: "Modüller", href: "/#features" },
+    { label: "Modüller", href: "/moduller" },
     { label: "Fiyatlandırma", href: "/#pricing" },
     { label: "SSS", href: "/sss" },
     { label: "İletişim", href: "/iletisim" },

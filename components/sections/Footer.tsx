@@ -14,7 +14,7 @@ const CORPORATE_LINKS = [
 ];
 
 const SERVICE_LINKS = [
-  { label: "Modüller", href: "/#features" },
+  { label: "Modüller", href: "/moduller" },
   { label: "Fiyatlandırma", href: "/#pricing" },
   { label: "Demo İncele", href: "/kampanya/demo" },
   { label: "Başvuru", href: "/basvuru" },
