@@ -12,6 +12,7 @@ import {
   Copy,
   Info,
   QrCode,
+  Smartphone,
   Sparkles,
   Wallet,
   X,
@@ -33,10 +34,29 @@ const SUPPORTED_BANKS = [
   "Ziraat",
   "Vakıfbank",
   "İş Bankası",
-  "Garanti",
   "Akbank",
+  "Garanti BBVA",
   "Yapı Kredi",
+  "Halkbank",
+  "Denizbank",
+  "QNB",
+  "TEB",
+  "Albaraka",
+  "Kuveyt Türk",
+  "ING",
+  "Türkiye Finans",
+  "Vakıf Katılım",
 ];
+
+// Static TR FAST-style payload — never changes with amount. Amount is entered
+// manually by the donor in their banking app. KAMPANYATAKİP is not a payment
+// intermediary: the QR just carries the recipient IBAN + name + fixed reference.
+const FAST_QR_PAYLOAD = [
+  "TR-FAST",
+  "IBAN:TR000000000000000000000000",
+  "ALICI:Defne Yardim Fonu",
+  "ACIKLAMA:Defne SMA Kampanyasi",
+].join("|");
 
 export function DonateModal({ isOpen, onClose }: DonateModalProps) {
   const { campaign } = useCampaign();
@@ -68,17 +88,38 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
     return selected;
   }, [selected, customInput]);
 
-  const qrPayload = useMemo(
-    () =>
-      `BAGIS-DEMO|IBAN:TR00000000000000000000000000|TUTAR:${amount}|ACIKLAMA:Minik Defne SMA Kampanyasi`,
-    [amount],
-  );
+  const amountValid = amount >= MIN_CUSTOM;
 
   const handleCopyIban = async (index: number, iban: string) => {
     await navigator.clipboard.writeText(iban.replace(/\s/g, ""));
     setCopiedIban(index);
     setTimeout(() => setCopiedIban(null), 2000);
   };
+
+  const steps = [
+    {
+      label: "Bankanızın mobil uygulamasını açın",
+      sub: "Aşağıda listelenen bankaların tamamı desteklenir.",
+    },
+    {
+      label: "'FAST · Karekod ile Öde' menüsünü bulun",
+      sub: "Her bankada farklı isimde olabilir (QR ile Öde, Karekod, FAST).",
+    },
+    {
+      label: "Yukarıdaki QR kodu okutun",
+      sub: "Alıcı IBAN ve isim otomatik yüklenecektir.",
+    },
+    {
+      label: amountValid
+        ? `Tutarı ₺${formatTRY(amount)} olarak girin`
+        : "Bağış tutarını kendiniz girin",
+      sub: "Tutar QR'a dâhil değildir — miktarı uygulamada siz belirlersiniz.",
+    },
+    {
+      label: "Açıklamaya 'Defne SMA' yazıp onaylayın",
+      sub: "Bu referans, bağışınızın kampanyaya doğru eşleşmesini sağlar.",
+    },
+  ];
 
   return (
     <AnimatePresence>
@@ -133,7 +174,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
 
             {/* Scroll area */}
             <div className="flex-1 overflow-y-auto">
-              {/* 1. Amount */}
+              {/* 1. Amount selector */}
               <section className="px-5 md:px-7 pt-6">
                 <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3">
                   1 · Tutar Seçin
@@ -213,64 +254,137 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Selected amount info card */}
+                <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-secondary/25 bg-secondary/[0.06] px-4 py-3">
+                  <div>
+                    <p className="text-[11px] font-bold text-secondary uppercase tracking-[0.14em]">
+                      Seçili Tutar
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-on-surface-variant leading-[18px] max-w-xs">
+                      Bu tutarı banka uygulamanızda manuel olarak gireceksiniz.
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[26px] md:text-[28px] font-bold text-primary-container tabular-nums tracking-tight leading-none">
+                      ₺{formatTRY(amountValid ? amount : 0)}
+                    </span>
+                  </div>
+                </div>
               </section>
 
-              {/* 2. QR card */}
+              {/* 2. QR card — static */}
               <section className="px-5 md:px-7 pt-7">
                 <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3">
-                  2 · QR ile Hızlı Bağış
+                  2 · FAST Karekod
                 </h3>
 
                 <div className="rounded-2xl border-2 border-secondary/30 bg-gradient-to-br from-secondary/[0.06] to-secondary-container/[0.12] p-5 md:p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-6 items-center">
                     <div className="bg-white p-3 rounded-xl shadow-[0_4px_6px_rgba(0,24,53,0.08)] border border-outline-variant w-fit mx-auto sm:mx-0">
-                      {amount >= MIN_CUSTOM ? (
-                        <QRCodeSVG
-                          value={qrPayload}
-                          size={180}
-                          bgColor="#ffffff"
-                          fgColor="#001835"
-                          level="M"
-                          marginSize={0}
-                        />
-                      ) : (
-                        <div className="w-[180px] h-[180px] rounded-lg bg-surface-container-low flex items-center justify-center text-center px-4">
-                          <span className="text-[12px] text-on-surface-variant">
-                            Geçerli bir tutar seçin
-                          </span>
-                        </div>
-                      )}
+                      <QRCodeSVG
+                        value={FAST_QR_PAYLOAD}
+                        size={180}
+                        bgColor="#ffffff"
+                        fgColor="#001835"
+                        level="M"
+                        marginSize={0}
+                      />
                     </div>
 
                     <div className="text-center sm:text-left">
                       <div className="flex items-center gap-1.5 text-secondary text-[11px] font-bold uppercase tracking-[0.14em] justify-center sm:justify-start">
                         <QrCode size={13} />
-                        Kodu Okutun
+                        FAST Karekod · Sabit
                       </div>
-                      <p className="mt-1 text-[34px] md:text-[40px] font-bold text-primary-container tracking-tight leading-none tabular-nums">
-                        ₺{formatTRY(amount)}
+                      <p className="mt-2 text-[15px] md:text-[16px] font-semibold text-primary-container leading-[22px]">
+                        Defne Yardım Fonu
                       </p>
-                      <p className="mt-2 text-[13px] leading-[20px] text-on-surface-variant max-w-xs mx-auto sm:mx-0">
-                        Banka uygulamanızla bu QR kodu okutun — tutar otomatik
-                        yüklenir, tek tıkla gönderim.
+                      <p className="mt-0.5 text-[12.5px] text-on-surface-variant font-mono">
+                        TR&nbsp;**&nbsp;****&nbsp;****&nbsp;****&nbsp;****&nbsp;****
                       </p>
-
-                      <div className="mt-4 flex flex-wrap gap-1.5 justify-center sm:justify-start">
-                        {SUPPORTED_BANKS.map((bank) => (
-                          <span
-                            key={bank}
-                            className="inline-flex items-center text-[11px] font-semibold text-primary-container bg-white border border-outline-variant rounded-full px-2.5 py-1"
-                          >
-                            {bank}
-                          </span>
-                        ))}
-                      </div>
+                      <p className="mt-3 text-[12.5px] leading-[19px] text-on-surface-variant max-w-sm mx-auto sm:mx-0">
+                        QR yalnızca alıcı bilgilerini taşır. Bağış tutarını
+                        banka uygulamanızda siz girersiniz.
+                      </p>
                     </div>
                   </div>
                 </div>
               </section>
 
-              {/* 3. IBAN accordion */}
+              {/* 3. How-to steps */}
+              <section className="px-5 md:px-7 pt-7">
+                <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-3 inline-flex items-center gap-1.5">
+                  <Smartphone size={13} />
+                  Nasıl Bağış Yaparım?
+                </h3>
+                <ol className="space-y-2.5">
+                  {steps.map((step, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-3 rounded-xl border border-outline-variant bg-white px-4 py-3"
+                    >
+                      <span
+                        aria-hidden
+                        className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/10 text-secondary text-[12px] font-bold"
+                      >
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[13.5px] font-semibold text-primary-container leading-[20px]">
+                          {step.label}
+                        </p>
+                        <p className="mt-0.5 text-[12px] leading-[18px] text-on-surface-variant">
+                          {step.sub}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              {/* 4. Supported banks */}
+              <section className="px-5 md:px-7 pt-6">
+                <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-2">
+                  Desteklenen Bankalar
+                </h3>
+                <p className="text-[12px] text-on-surface-variant mb-3">
+                  Tüm FAST destekli Türk bankaları.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {SUPPORTED_BANKS.map((bank) => (
+                    <span
+                      key={bank}
+                      className="inline-flex items-center text-[11.5px] font-semibold text-primary-container bg-white border border-outline-variant rounded-full px-2.5 py-1"
+                    >
+                      {bank}
+                    </span>
+                  ))}
+                </div>
+              </section>
+
+              {/* 5. Role disclosure */}
+              <section className="px-5 md:px-7 pt-6">
+                <div className="rounded-xl border border-primary-container/20 bg-primary-container/[0.04] p-4 flex items-start gap-3">
+                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary-container/10 text-primary-container shrink-0">
+                    <Info size={16} />
+                  </div>
+                  <p className="text-[12.5px] leading-[20px] text-on-surface">
+                    Bağışınız{" "}
+                    <strong className="text-primary-container">
+                      KAMPANYATAKİP aracılığıyla değil
+                    </strong>
+                    , doğrudan{" "}
+                    <strong className="text-primary-container">
+                      Defne Yardım Fonu&apos;nun
+                    </strong>{" "}
+                    banka hesabına geçer. KAMPANYATAKİP sadece bağışı takip ve
+                    raporlama için kullanılır.
+                  </p>
+                </div>
+              </section>
+
+              {/* 6. IBAN accordion */}
               <section className="px-5 md:px-7 pt-6 pb-4">
                 <button
                   type="button"
@@ -379,9 +493,11 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                 </div>
                 <div className="text-[12.5px] leading-[19px] text-emerald-900">
                   <strong className="font-semibold">
-                    Bu bir DEMO kampanyadır.
+                    Bu bir demo kampanyadır.
                   </strong>{" "}
-                  Gerçek bağış alınmaz. Kendi kampanyanızı kurmak için{" "}
+                  KAMPANYATAKİP, kampanya sahiplerine platform sağlar ve
+                  bağışları takip eder. Paralar doğrudan kampanya sahibinin
+                  banka hesabına aktarılır.{" "}
                   <Link
                     href="/basvuru"
                     onClick={onClose}
