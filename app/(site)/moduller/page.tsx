@@ -46,14 +46,16 @@ export default function ModullerIndexPage() {
                 <Link
                   key={module.slug}
                   href={`/moduller/${module.slug}`}
-                  className="group flex flex-col h-full rounded-2xl bg-white border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250 p-6"
+                  className="group flex flex-col h-full rounded-2xl bg-white border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250 p-4 md:p-5"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mb-4 group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
-                    <Icon size={22} strokeWidth={1.85} />
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <span className="inline-flex w-9 h-9 items-center justify-center rounded-lg bg-secondary/10 text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors shrink-0">
+                      <Icon size={18} strokeWidth={1.85} />
+                    </span>
+                    <h2 className="text-[15px] font-semibold text-primary-container tracking-[-0.01em] leading-tight">
+                      {module.title}
+                    </h2>
                   </div>
-                  <h2 className="text-[16px] font-semibold text-primary-container tracking-[-0.01em] mb-2 leading-[22px]">
-                    {module.title}
-                  </h2>
                   <p className="flex-1 text-[13px] leading-[20px] text-on-surface-variant line-clamp-3">
                     {module.description}
                   </p>

@@ -22,9 +22,9 @@ const SERVICE_LINKS: Array<{ label: string; href: string; newTab?: boolean }> =
   ];
 
 const LEGAL_LINKS = [
-  { label: "Kullanım Koşulları", href: "#" },
-  { label: "KVKK Aydınlatma", href: "#" },
-  { label: "Gizlilik Politikası", href: "#" },
+  { label: "Kullanım Koşulları", href: "/kullanim-kosullari" },
+  { label: "KVKK Aydınlatma Metni", href: "/kvkk" },
+  { label: "Gizlilik Politikası", href: "/gizlilik" },
 ];
 
 export function Footer() {

@@ -51,9 +51,9 @@ export const siteConfig = {
     apply: "/basvuru",
     /** @deprecated use `apply` instead. Retained temporarily for call sites not yet migrated. */
     demo: "/basvuru",
-    terms: "#",
-    privacy: "#",
-    kvkk: "#",
+    terms: "/kullanim-kosullari",
+    privacy: "/gizlilik",
+    kvkk: "/kvkk",
   },
 
   nav: [

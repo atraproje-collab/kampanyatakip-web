@@ -82,18 +82,17 @@ export function ValueProps() {
             <motion.div
               key={title}
               variants={itemVariants}
-              className="group bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250"
+              className="group bg-surface-container-low p-5 rounded-xl border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250"
             >
-              <div className="bg-white w-12 h-12 rounded-lg flex items-center justify-center mb-6 shadow-[0_1px_2px_rgba(0,24,53,0.04)] group-hover:bg-secondary transition-colors duration-250">
-                <Icon
-                  size={22}
-                  className="text-primary-container group-hover:text-on-secondary transition-colors duration-250"
-                />
+              <div className="flex items-center gap-3 mb-2.5">
+                <span className="inline-flex w-9 h-9 items-center justify-center rounded-lg bg-white shadow-[0_1px_2px_rgba(0,24,53,0.04)] text-primary-container group-hover:bg-secondary group-hover:text-on-secondary transition-colors duration-250 shrink-0">
+                  <Icon size={18} strokeWidth={1.9} />
+                </span>
+                <h3 className="text-[13px] font-semibold text-primary-container uppercase tracking-widest leading-tight">
+                  {title}
+                </h3>
               </div>
-              <h3 className="text-[13px] font-semibold text-primary-container mb-3 uppercase tracking-widest">
-                {title}
-              </h3>
-              <p className="text-[14px] leading-[22px] text-on-surface-variant">
+              <p className="text-[13.5px] leading-[21px] text-on-surface-variant">
                 {description}
               </p>
             </motion.div>

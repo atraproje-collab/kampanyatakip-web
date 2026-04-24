@@ -65,20 +65,22 @@ export function Features() {
               <motion.article
                 key={module.slug}
                 variants={itemVariant}
-                className="flex flex-col h-full rounded-2xl bg-white border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250 p-5 md:p-6"
+                className="flex flex-col h-full rounded-2xl bg-white border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250 p-4 md:p-5"
               >
-                <div className="w-11 h-11 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mb-4">
-                  <Icon size={20} strokeWidth={1.9} />
+                <div className="flex items-center gap-2.5 mb-2">
+                  <span className="inline-flex w-9 h-9 items-center justify-center rounded-lg bg-secondary/10 text-secondary shrink-0">
+                    <Icon size={18} strokeWidth={1.9} />
+                  </span>
+                  <h3 className="text-[14.5px] md:text-[15px] font-semibold text-primary-container tracking-[-0.01em] leading-tight">
+                    {module.title}
+                  </h3>
                 </div>
-                <h3 className="text-[15px] md:text-[16px] font-semibold text-primary-container tracking-[-0.01em] mb-1.5 leading-[22px]">
-                  {module.title}
-                </h3>
                 <p className="flex-1 text-[13px] leading-[20px] text-on-surface-variant line-clamp-3">
                   {module.description}
                 </p>
                 <Link
                   href={`/moduller/${module.slug}`}
-                  className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-secondary hover:text-on-secondary-container group/link"
+                  className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-secondary hover:text-on-secondary-container group/link"
                 >
                   Detaylı İncele
                   <ArrowRight
