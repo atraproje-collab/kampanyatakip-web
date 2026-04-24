@@ -1,19 +1,17 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Container } from "@/components/Container";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-
-const NAV_LINKS = [
-  { label: "Nasıl Çalışır?", href: "#hero" },
-  { label: "Modüller", href: "#features" },
-  { label: "Fiyatlandırma", href: "#pricing" },
-];
+import { siteConfig } from "@/lib/site-config";
 
 export function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -23,6 +21,15 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const isActive = (href: string) => {
+    if (href.startsWith("/#")) return false;
+    return pathname === href;
+  };
 
   return (
     <header
@@ -36,27 +43,34 @@ export function Navbar() {
       <Container className="flex h-16 md:h-[72px] items-center justify-between">
         <Logo variant="horizontal" priority />
 
-        <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <a
+        <nav className="hidden lg:flex items-center gap-7 xl:gap-8">
+          {siteConfig.nav.map((link) => (
+            <Link
               key={link.href}
               href={link.href}
-              className="text-[14px] font-semibold text-on-surface-variant hover:text-primary-container transition-colors duration-250"
+              className={cn(
+                "text-[14px] font-semibold transition-colors duration-250",
+                isActive(link.href)
+                  ? "text-secondary"
+                  : "text-on-surface-variant hover:text-primary-container",
+              )}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
-        <div className="hidden md:block">
-          <Button variant="secondary" size="md">
-            Demo Al
-          </Button>
+        <div className="hidden lg:block">
+          <Link href={siteConfig.urls.demo}>
+            <Button variant="secondary" size="md">
+              Demo Al
+            </Button>
+          </Link>
         </div>
 
         <button
           type="button"
-          className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-primary-container hover:bg-surface-container transition-colors"
+          className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-primary-container hover:bg-surface-container transition-colors"
           onClick={() => setMobileOpen((o) => !o)}
           aria-label="Menüyü aç/kapat"
           aria-expanded={mobileOpen}
@@ -66,21 +80,27 @@ export function Navbar() {
       </Container>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-outline-variant bg-surface">
+        <div className="lg:hidden border-t border-outline-variant bg-surface">
           <Container className="py-4 flex flex-col gap-1">
-            {NAV_LINKS.map((link) => (
-              <a
+            {siteConfig.nav.map((link) => (
+              <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-4 py-3 rounded-lg text-[15px] font-semibold text-on-surface-variant hover:bg-surface-container hover:text-primary-container transition-colors"
+                className={cn(
+                  "px-4 py-3 rounded-lg text-[15px] font-semibold transition-colors",
+                  isActive(link.href)
+                    ? "bg-secondary/10 text-secondary"
+                    : "text-on-surface-variant hover:bg-surface-container hover:text-primary-container",
+                )}
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
-            <Button variant="secondary" size="lg" className="mt-2 w-full">
-              Demo Al
-            </Button>
+            <Link href={siteConfig.urls.demo} className="mt-2">
+              <Button variant="secondary" size="lg" className="w-full">
+                Demo Al
+              </Button>
+            </Link>
           </Container>
         </div>
       )}

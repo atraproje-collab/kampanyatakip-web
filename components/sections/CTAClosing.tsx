@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { BadgeCheck, Lock, ShieldCheck } from "lucide-react";
 import { Container } from "@/components/Container";
@@ -42,12 +43,16 @@ export function CTAClosing() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="primary" size="xl">
-                Ücretsiz Demo Al
-              </Button>
-              <Button variant="outline-white" size="xl">
-                Destek Ekibine Yaz
-              </Button>
+              <Link href="/demo">
+                <Button variant="primary" size="xl" className="w-full sm:w-auto">
+                  Ücretsiz Demo Al
+                </Button>
+              </Link>
+              <Link href="/iletisim">
+                <Button variant="outline-white" size="xl" className="w-full sm:w-auto">
+                  Destek Ekibine Yaz
+                </Button>
+              </Link>
             </div>
 
             <div className="mt-14 flex flex-wrap justify-center gap-x-10 gap-y-4 border-t border-white/15 pt-10">

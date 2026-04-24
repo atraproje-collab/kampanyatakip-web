@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -130,16 +131,20 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="primary" size="xl" className="group/btn">
-                {slide.primaryCta}
-                <ArrowRight
-                  size={20}
-                  className="transition-transform duration-250 group-hover/btn:translate-x-1"
-                />
-              </Button>
-              <Button variant="outline-white" size="xl">
-                Demo İzle
-              </Button>
+              <Link href="/demo">
+                <Button variant="primary" size="xl" className="group/btn w-full sm:w-auto">
+                  {slide.primaryCta}
+                  <ArrowRight
+                    size={20}
+                    className="transition-transform duration-250 group-hover/btn:translate-x-1"
+                  />
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button variant="outline-white" size="xl" className="w-full sm:w-auto">
+                  Demo İzle
+                </Button>
+              </Link>
             </div>
 
             <div className="mt-12 flex flex-wrap gap-6 md:gap-8">
