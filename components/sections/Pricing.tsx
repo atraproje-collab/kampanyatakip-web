@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Info, Plus } from "lucide-react";
 import { Container } from "@/components/Container";
 import { PricingCard } from "@/components/ui/PricingCard";
 import { CustomPackageModal } from "@/components/pricing/CustomPackageModal";
@@ -64,11 +64,21 @@ export function Pricing() {
           ))}
         </motion.div>
 
-        <p className="mt-8 text-center text-[12.5px] text-on-surface-variant/85 max-w-2xl mx-auto">
-          Fiyatlar KDV hariçtir. Aylık ödeme sistemiyle çalışıyoruz, minimum
-          sözleşme süresi yoktur. Paket limitlerinizi aştığınızda aşım
-          ücretleri şeffaf şekilde uygulanır.
-        </p>
+        <div className="mt-10 max-w-3xl mx-auto rounded-2xl border border-secondary/25 bg-secondary/[0.05] p-5 md:p-6 flex items-start gap-4">
+          <div className="shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/15 text-secondary">
+            <Info size={18} strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-bold text-secondary uppercase tracking-[0.14em] mb-1.5">
+              Bilgilendirme
+            </p>
+            <p className="text-[14px] leading-[22px] text-on-surface">
+              Fiyatlar KDV hariçtir. Aylık ödeme sistemiyle çalışıyoruz,
+              minimum sözleşme süresi yoktur. Paket limitlerinizi aştığınızda
+              aşım ücretleri şeffaf şekilde uygulanır.
+            </p>
+          </div>
+        </div>
 
         {/* Ek paketler */}
         <div className="mt-16 md:mt-20 max-w-5xl mx-auto">
