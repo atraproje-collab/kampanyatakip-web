@@ -1,30 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Sliders } from "lucide-react";
+import { Check, Sliders, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import type { PricingPackageData } from "@/lib/packages-data";
 
-export type PricingPackage = {
-  name: string;
-  tagline: string;
-  price?: string;
-  priceText?: string;
-  priceSubtext?: string;
-  currency?: string;
-  period?: string;
-  featured?: boolean;
-  isCustom?: boolean;
-  badge?: string | null;
-  includesBadge?: string | null;
-  features: string[];
-  ctaText: string;
-  ctaStyle: "primary" | "outline" | "custom";
-  href?: string;
-};
+export type PricingPackage = PricingPackageData;
 
 interface PricingCardProps {
-  pkg: PricingPackage;
+  pkg: PricingPackageData;
   onCustomClick?: () => void;
 }
 
@@ -42,6 +27,7 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
     badge,
     includesBadge,
     features,
+    exclusions,
     ctaText,
     ctaStyle,
     href,
@@ -169,7 +155,7 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
         </div>
       )}
 
-      <ul className="flex-1 space-y-2.5 mb-7">
+      <ul className="space-y-2.5 mb-5">
         {features.map((feature) => (
           <li
             key={feature}
@@ -192,6 +178,45 @@ export function PricingCard({ pkg, onCustomClick }: PricingCardProps) {
           </li>
         ))}
       </ul>
+
+      {exclusions && exclusions.length > 0 && (
+        <div
+          className={cn(
+            "mb-5 pt-4 border-t",
+            isCustom ? "border-white/15" : "border-outline-variant",
+          )}
+        >
+          <p
+            className={cn(
+              "mb-2 text-[10.5px] font-bold uppercase tracking-[0.14em]",
+              isCustom ? "text-white/70" : "text-on-surface-variant",
+            )}
+          >
+            Bu pakette bulunmaz
+          </p>
+          <ul className="space-y-2">
+            {exclusions.map((item) => (
+              <li
+                key={item}
+                className={cn(
+                  "flex items-start gap-2.5 text-[12.5px] leading-[18px]",
+                  isCustom ? "text-white/60" : "text-on-surface-variant",
+                )}
+              >
+                <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
+                  <X size={11} strokeWidth={3} />
+                </span>
+                <span className="line-through decoration-on-surface-variant/40 decoration-1">
+                  {item}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
 
       {ctaStyle === "custom" ? (
         <button

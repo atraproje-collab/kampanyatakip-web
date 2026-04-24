@@ -14,10 +14,18 @@ import {
 } from "lucide-react";
 import {
   calculateTotal,
-  customPackageConfig,
+  CUSTOM_BASE,
+  CUSTOM_MODULES,
+  isCustomMinimumMet,
+  MINIMUM_CUSTOM_TOTAL,
+  missingToMinimum,
   type Selection,
-} from "@/lib/custom-package-config";
+} from "@/lib/packages-data";
 import { cn } from "@/lib/utils";
+
+function formatAmount(n: number): string {
+  return new Intl.NumberFormat("tr-TR").format(n);
+}
 
 interface CustomPackageModalProps {
   isOpen: boolean;
@@ -63,7 +71,7 @@ export function CustomPackageModal({
 
   const updateStepper = useCallback((id: string, delta: number) => {
     setSelections((prev) => {
-      const mod = customPackageConfig.modules.find((m) => m.id === id);
+      const mod = CUSTOM_MODULES.find((m) => m.id === id);
       if (!mod) return prev;
       const current = prev[id] || 0;
       const next = Math.max(
@@ -74,7 +82,11 @@ export function CustomPackageModal({
     });
   }, []);
 
+  const meetsMinimum = isCustomMinimumMet(total);
+  const missing = missingToMinimum(total);
+
   const handleConfirm = () => {
+    if (!meetsMinimum) return;
     const params = new URLSearchParams({
       selections: JSON.stringify(selections),
       total: String(total),
@@ -147,15 +159,15 @@ export function CustomPackageModal({
                       <Check size={12} strokeWidth={3} /> Zorunlu
                     </span>
                     <h3 className="mt-1.5 text-[17px] font-semibold text-primary-container">
-                      {customPackageConfig.base.name}
+                      {CUSTOM_BASE.name}
                     </h3>
                     <p className="mt-1 text-[13px] leading-[20px] text-on-surface-variant">
-                      {customPackageConfig.base.description}
+                      {CUSTOM_BASE.description}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[22px] md:text-[24px] font-bold text-primary-container tracking-tight leading-none">
-                      {customPackageConfig.base.price.toLocaleString("tr-TR")} ₺
+                      {CUSTOM_BASE.price.toLocaleString("tr-TR")} ₺
                     </p>
                     <p className="mt-1 text-[11.5px] text-on-surface-variant">
                       /ay
@@ -191,7 +203,7 @@ export function CustomPackageModal({
                       }}
                       className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 overflow-hidden"
                     >
-                      {customPackageConfig.base.features.map((f) => (
+                      {CUSTOM_BASE.features.map((f) => (
                         <li
                           key={f}
                           className="flex items-start gap-2 text-[13px] leading-[20px] text-on-surface"
@@ -221,7 +233,7 @@ export function CustomPackageModal({
                 </div>
 
                 <div className="space-y-3">
-                  {customPackageConfig.modules.map((module) => {
+                  {CUSTOM_MODULES.map((module) => {
                     const value = selections[module.id] || 0;
                     const isSelected = value > 0;
 
@@ -366,10 +378,32 @@ export function CustomPackageModal({
                 </div>
               </div>
 
+              {!meetsMinimum && (
+                <div className="mb-3 rounded-lg border border-amber-400/50 bg-amber-50 p-3 flex items-start gap-2.5">
+                  <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white text-[13px] font-bold">
+                    !
+                  </span>
+                  <div className="text-[12.5px] leading-[18px] text-amber-900">
+                    <strong className="font-bold">
+                      Minimum tutar ₺{formatAmount(MINIMUM_CUSTOM_TOTAL)}
+                    </strong>{" "}
+                    — ₺{formatAmount(missing)} daha ekleyin. Ek modül
+                    seçiminizi genişleterek bu tutara ulaşabilirsiniz.
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="group/btn inline-flex items-center justify-center gap-2 w-full rounded-lg px-6 py-3.5 text-[15px] font-semibold bg-secondary text-on-secondary shadow-[0_4px_6px_rgba(0,24,53,0.08)] hover:bg-on-secondary-container hover:shadow-[0_10px_20px_rgba(0,103,127,0.3)] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-250"
+                disabled={!meetsMinimum}
+                aria-disabled={!meetsMinimum}
+                className={cn(
+                  "group/btn inline-flex items-center justify-center gap-2 w-full rounded-lg px-6 py-3.5 text-[15px] font-semibold transition-all duration-250",
+                  meetsMinimum
+                    ? "bg-secondary text-on-secondary shadow-[0_4px_6px_rgba(0,24,53,0.08)] hover:bg-on-secondary-container hover:shadow-[0_10px_20px_rgba(0,103,127,0.3)] hover:-translate-y-0.5 active:scale-[0.98]"
+                    : "bg-surface-container-high text-on-surface-variant/70 cursor-not-allowed",
+                )}
               >
                 Paketimi Onayla ve Talep Gönder
                 <ArrowRight

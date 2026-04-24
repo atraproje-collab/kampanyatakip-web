@@ -2,117 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { Plus } from "lucide-react";
 import { Container } from "@/components/Container";
-import { PricingCard, type PricingPackage } from "@/components/ui/PricingCard";
+import { PricingCard } from "@/components/ui/PricingCard";
 import { CustomPackageModal } from "@/components/pricing/CustomPackageModal";
-
-const PACKAGES: PricingPackage[] = [
-  {
-    name: "Temel",
-    tagline: "Yeni başlayan küçük kampanyalar için ideal",
-    price: "9.900",
-    currency: "₺",
-    period: "/ay",
-    features: [
-      "1 sosyal medya platformu (FB, IG veya YT)",
-      "2.000 mesaj/ay (1.000 gelen + 1.000 giden)",
-      "300 dakika sesli bilgi hattı/ay",
-      "5 Türkçe video içerik/ay",
-      "Canlı yayın gelir takibi (OCR + banka eşleştirme)",
-      "Para takibi ve anlık bildirim",
-      "Kumbara takip sistemi (QR kod)",
-      "Stant takip sistemi",
-      "Gönüllü yönetim sistemi (2 kullanıcı)",
-      "Şeffaflık merkezi (değiştirilemez)",
-      "Kampanya web sayfası + canlı sayaç",
-      "Bağışçı gizlilik maskesi (KVKK uyumlu)",
-      "7/24 yapay zeka mesajlaşma asistanı",
-      "Günlük otomatik yedekleme",
-      "İzole sunucu altyapısı + SSL",
-      "Günlük/haftalık rapor bildirimi",
-      "2-4 iş günü kurulum",
-    ],
-    ctaText: "Paketi Seç",
-    ctaStyle: "outline",
-    href: "/basvuru",
-  },
-  {
-    name: "Standart",
-    tagline: "Aktif büyüyen kampanyalar için en popüler seçim",
-    price: "17.900",
-    currency: "₺",
-    period: "/ay",
-    featured: true,
-    badge: "EN ÇOK TERCİH EDİLEN",
-    includesBadge: "TEMEL'DEKİ HER ŞEY + ŞUNLAR",
-    features: [
-      "Facebook + Instagram + YouTube entegrasyonu",
-      "5.000 mesaj/ay (2.500 gelen + 2.500 giden)",
-      "1.000 dakika sesli bilgi hattı/ay",
-      "15 video içerik/ay (Türkçe + İngilizce + Arapça)",
-      "3 dilde sesli bilgi hattı desteği",
-      "Banka entegrasyonu (tüm büyük Türk bankaları)",
-      "Otomatik bağış eşleştirme",
-      "Kurumsal bağış e-posta sistemi",
-      "Çok dilli kampanya sayfası (3 dil)",
-      "Sosyal medya otomatik paylaşım",
-      "Gelişmiş raporlama ve analitik",
-      "10 gönüllü kullanıcı",
-      "Öncelikli teknik destek (iş saatleri)",
-    ],
-    ctaText: "Hemen Başla",
-    ctaStyle: "primary",
-    href: "/basvuru",
-  },
-  {
-    name: "Premium",
-    tagline: "Yüksek hacimli global kampanyalar için",
-    price: "29.900",
-    currency: "₺",
-    period: "/ay",
-    includesBadge: "STANDART'TAKİ HER ŞEY + ŞUNLAR",
-    features: [
-      "4 sosyal platform aktif (kısa video dahil)",
-      "Sınırsız mesaj hakkı",
-      "Sınırsız sesli bilgi hattı",
-      "50 video içerik/ay (5 dil: TR + EN + AR + DE + FR)",
-      "5 dilde tam destek",
-      "Influencer radar sistemi",
-      "2 saat/ay hukuk danışmanlığı",
-      "Kurumsal bağış full sistem",
-      "Uluslararası ödeme altyapısı",
-      "Öncelikli sunucu kaynakları",
-      "VIP 7/24 canlı teknik destek",
-      "Sınırsız gönüllü kullanıcı",
-      "Dedicated hesap yöneticisi",
-      "Gelişmiş AI asistan (çok dilli)",
-      "Aylık strateji toplantısı",
-    ],
-    ctaText: "Paketi Seç",
-    ctaStyle: "outline",
-    href: "/basvuru",
-  },
-  {
-    name: "Özel",
-    tagline: "Dernekler ve vakıflar için özelleştirilebilir paket",
-    priceText: "4.900 ₺",
-    priceSubtext: "tabandan başlayan",
-    period: "+ modül seçimi",
-    isCustom: true,
-    badge: "KENDİN OLUŞTUR",
-    features: [
-      "İhtiyaca göre modül seçimi",
-      "Tam özelleştirilebilir fiyatlandırma",
-      "Taban standart modüller dahil",
-      "İsteğe bağlı ek modüller",
-      "Beyaz etiket (kendi markanız)",
-      "API erişimi opsiyonu",
-      "Özel destek hattı seçeneği",
-    ],
-    ctaText: "Paketini Oluştur",
-    ctaStyle: "custom",
-  },
-];
+import { ADDON_PACKAGES, PACKAGES } from "@/lib/packages-data";
 
 const container = {
   hidden: {},
@@ -161,7 +55,7 @@ export function Pricing() {
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch"
         >
           {PACKAGES.map((pkg) => (
-            <motion.div key={pkg.name} variants={item} className="h-full">
+            <motion.div key={pkg.id} variants={item} className="h-full">
               <PricingCard
                 pkg={pkg}
                 onCustomClick={() => setCustomOpen(true)}
@@ -175,6 +69,43 @@ export function Pricing() {
           sözleşme süresi yoktur. Paket limitlerinizi aştığınızda aşım
           ücretleri şeffaf şekilde uygulanır.
         </p>
+
+        {/* Ek paketler */}
+        <div className="mt-16 md:mt-20 max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-[0.14em]">
+              <Plus size={14} />
+              Ek Paketler
+            </span>
+            <h3 className="mt-2 text-[22px] md:text-[26px] font-semibold text-primary-container tracking-[-0.01em] leading-tight">
+              İhtiyacınıza göre her ana pakete ekleyin
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+            {ADDON_PACKAGES.map((addon) => (
+              <div
+                key={addon.id}
+                className="rounded-2xl border border-outline-variant bg-white p-6 hover:border-secondary hover:-translate-y-0.5 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all"
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <h4 className="text-[16px] font-semibold text-primary-container tracking-[-0.01em]">
+                    {addon.name}
+                  </h4>
+                  <span className="shrink-0 inline-flex items-center rounded-full bg-secondary/10 text-secondary px-3 py-1 text-[12px] font-bold tabular-nums whitespace-nowrap">
+                    {addon.priceLabel}
+                  </span>
+                </div>
+                <p className="text-[13px] leading-[21px] text-on-surface-variant">
+                  {addon.description}
+                </p>
+                <p className="mt-3 text-[11.5px] font-semibold text-on-surface-variant/85 uppercase tracking-wider">
+                  {addon.compatibility}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </Container>
 
       <CustomPackageModal
