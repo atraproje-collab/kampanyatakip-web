@@ -11,6 +11,7 @@ import {
   Copy,
   Info,
   QrCode,
+  ShieldCheck,
   Smartphone,
   Sparkles,
   Wallet,
@@ -26,24 +27,6 @@ interface DonateModalProps {
 }
 
 const QUICK_AMOUNTS = [50, 100, 250, 500, 750, 1000, 2000, 5000, 10000];
-
-const SUPPORTED_BANKS = [
-  "Ziraat",
-  "Vakıfbank",
-  "İş Bankası",
-  "Akbank",
-  "Garanti BBVA",
-  "Yapı Kredi",
-  "Halkbank",
-  "Denizbank",
-  "QNB",
-  "TEB",
-  "Albaraka",
-  "Kuveyt Türk",
-  "ING",
-  "Türkiye Finans",
-  "Vakıf Katılım",
-];
 
 const CURRENCY_SYMBOL: Record<"TL" | "USD" | "EUR", string> = {
   TL: "₺",
@@ -264,48 +247,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                 </p>
               </section>
 
-              {/* 4. Supported banks */}
-              <section className="px-5 md:px-7 pt-6">
-                <h3 className="text-[12px] font-bold text-on-surface-variant uppercase tracking-[0.14em] mb-2">
-                  Desteklenen Bankalar
-                </h3>
-                <p className="text-[12px] text-on-surface-variant mb-3">
-                  Tüm FAST destekli Türk bankaları.
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUPPORTED_BANKS.map((bank) => (
-                    <span
-                      key={bank}
-                      className="inline-flex items-center text-[11.5px] font-semibold text-primary-container bg-white border border-outline-variant rounded-full px-2.5 py-1"
-                    >
-                      {bank}
-                    </span>
-                  ))}
-                </div>
-              </section>
-
-              {/* 5. Role disclosure */}
-              <section className="px-5 md:px-7 pt-6">
-                <div className="rounded-xl border border-primary-container/20 bg-primary-container/[0.04] p-4 flex items-start gap-3">
-                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary-container/10 text-primary-container shrink-0">
-                    <Info size={16} />
-                  </div>
-                  <p className="text-[12.5px] leading-[20px] text-on-surface">
-                    Bağışınız{" "}
-                    <strong className="text-primary-container">
-                      KAMPANYATAKİP aracılığıyla değil
-                    </strong>
-                    , doğrudan{" "}
-                    <strong className="text-primary-container">
-                      Defne Yardım Fonu&apos;nun
-                    </strong>{" "}
-                    banka hesabına geçer. KAMPANYATAKİP sadece bağışı takip ve
-                    raporlama için kullanılır.
-                  </p>
-                </div>
-              </section>
-
-              {/* 6. IBAN accordion */}
+              {/* 4. IBAN accordion */}
               <section className="px-5 md:px-7 pt-6 pb-4">
                 <button
                   type="button"
@@ -453,6 +395,32 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Role disclosure — directly below the IBAN accordion */}
+                <div className="mt-3 flex items-start gap-3 p-4 rounded-lg border-l-4 border-secondary bg-secondary/[0.06]">
+                  <ShieldCheck
+                    size={20}
+                    className="text-secondary shrink-0 mt-[2px]"
+                    strokeWidth={2}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-secondary mb-1 tracking-tight">
+                      Güvenli & Şeffaf Bağış
+                    </p>
+                    <p className="text-[12.5px] leading-[19px] text-on-surface-variant">
+                      Bağışınız{" "}
+                      <strong className="text-primary-container">
+                        KAMPANYATAKİP aracılığıyla değil
+                      </strong>
+                      , doğrudan{" "}
+                      <strong className="text-primary-container">
+                        Defne Yardım Fonu&apos;nun
+                      </strong>{" "}
+                      banka hesabına geçer. KAMPANYATAKİP sadece bağışı takip
+                      ve raporlama için kullanılır.
+                    </p>
+                  </div>
+                </div>
               </section>
             </div>
 
