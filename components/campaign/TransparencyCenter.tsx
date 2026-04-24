@@ -14,6 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
+import { DocumentsSection } from "@/components/campaign/DocumentsSection";
 import { formatTRY } from "@/lib/mock-campaign-data";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +63,9 @@ export function TransparencyCenter() {
 
   return (
     <div className="space-y-8">
+      {/* Documents */}
+      <DocumentsSection />
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {stats.map(({ label, value, icon: Icon, tone, sub }) => {

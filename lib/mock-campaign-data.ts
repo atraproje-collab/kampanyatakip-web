@@ -72,6 +72,29 @@ export type TeamMember = {
   type: "doctor" | "coordinator" | "legal";
 };
 
+export type OfficialDocument = {
+  id: string;
+  kind: "official" | "medical" | "hospital";
+  title: string;
+  date: string;
+  issuer?: string;
+  doctor?: string;
+  hospital?: string;
+  number?: string;
+  diagnosis?: string;
+  amount?: string;
+  description: string;
+  signatory?: string;
+  signatoryTitle?: string;
+  body?: string[];
+};
+
+export type CampaignDocuments = {
+  valilik: OfficialDocument;
+  doktorRaporlari: OfficialDocument[];
+  hastaneBelgeleri: OfficialDocument[];
+};
+
 export type CampaignData = {
   slug: string;
   title: string;
@@ -97,6 +120,7 @@ export type CampaignData = {
   };
   gallery: GalleryItem[];
   team: TeamMember[];
+  documents: CampaignDocuments;
 };
 
 export const demoCampaign: CampaignData = {
@@ -213,6 +237,100 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
     { name: "Mehmet Yılmaz", role: "Kampanya Koordinatörü", type: "coordinator" },
     { name: "Zeynep Kaya", role: "Hukuki Danışman", type: "legal" },
   ],
+
+  documents: {
+    valilik: {
+      id: "valilik-001",
+      kind: "official",
+      title: "Valilik Yardım Toplama İzni",
+      issuer: "İstanbul Valiliği",
+      date: "2026-01-25",
+      number: "2026/4521",
+      description:
+        "5072 Sayılı Yardım Toplama Kanunu kapsamında, Defne Yılmaz adına SMA Tip 1 tedavisi için yardım toplama izni.",
+      signatory: "İstanbul Valisi Yardımcısı",
+      signatoryTitle: "Resmi yetkili imza",
+      body: [
+        "5072 Sayılı Yardım Toplama Kanunu ve ilgili yönetmelik hükümleri incelenmiştir. Defne Yılmaz (T.C. Kimlik No: *** ** *** ** **) adına açılması talep edilen yardım toplama kampanyasının, kampanya süresi boyunca KAMPANYATAKİP altyapısı üzerinden şeffaflık standartları dâhilinde yürütülmesi kaydıyla açılmasına izin verilmiştir.",
+        "Kampanya kapsamında toplanacak bağışlar, yalnızca beyan edilen tedavi ve refakat giderleri için kullanılacaktır. Toplanan her bağış ve yapılan her harcama, değiştirilemez kayıt altında tutulacak, talep hâlinde denetime açık tutulacaktır.",
+        "İşbu karar tebliğ tarihinden itibaren 180 (yüz seksen) gün süreyle geçerlidir. Süre sonunda yenileme talebi yapılabilir.",
+      ],
+    },
+    doktorRaporlari: [
+      {
+        id: "dr-001",
+        kind: "medical",
+        title: "Pediatrik Nöroloji Uzman Raporu",
+        doctor: "Dr. Ayşe Demir",
+        hospital: "Hacettepe Üniversitesi Hastanesi",
+        date: "2026-01-10",
+        diagnosis: "SMA Tip 1 (Werdnig-Hoffmann Hastalığı)",
+        description:
+          "Genetik test ile SMN1 gen mutasyonu doğrulanmıştır. Zolgensma gen tedavisi endikasyonu bulunmaktadır. Tedavi en geç 2 yaş öncesi uygulanmalıdır.",
+        signatory: "Dr. Ayşe Demir",
+        signatoryTitle: "Pediatrik Nöroloji Uzmanı",
+        body: [
+          "Hasta, 8 aylıkken ailesi tarafından gelişim geriliği, kas güçsüzlüğü ve başını dik tutamama şikâyetleri ile tarafımıza başvurmuştur. Yapılan muayenede motor nöron fonksiyonlarında belirgin azalma saptanmıştır.",
+          "EMG ve genetik inceleme sonucunda SMN1 geninde homozigot delesyon tespit edilmiş, SMA Tip 1 (Werdnig-Hoffmann) tanısı kesinleşmiştir. SMN2 kopya sayısı 2 olarak raporlanmıştır.",
+          "Tedavi seçenekleri değerlendirildiğinde, hastanın yaşı ve klinik tablosu göz önüne alınarak en uygun seçenek olarak Zolgensma (onasemnogene abeparvovec-xioi) gen tedavisi belirlenmiştir. Tedavinin en geç 2 yaş öncesi uygulanması, geri dönüşsüz motor nöron hasarının sınırlanması için kritiktir.",
+        ],
+      },
+      {
+        id: "dr-002",
+        kind: "medical",
+        title: "Tedavi Protokolü Onay Raporu",
+        doctor: "Prof. Dr. Mehmet Kaya",
+        hospital: "Boston Children's Hospital",
+        date: "2026-02-15",
+        description:
+          "Zolgensma (onasemnogene abeparvovec-xioi) tedavisi için uygunluk değerlendirmesi tamamlanmıştır. Tedavi tarihi 2026 Mayıs olarak planlanmıştır.",
+        signatory: "Prof. Dr. Mehmet Kaya",
+        signatoryTitle: "Pediatric Neurology Department Head",
+        body: [
+          "Türkiye'den iletilen genetik test ve klinik raporlar tarafımızca incelenmiştir. Hasta, Zolgensma uygulaması için gerekli kriterlerin tamamını karşılamaktadır.",
+          "Tedavi planı: Mayıs 2026'da tek seans intravenöz uygulama. Ön hazırlık olarak bağışıklık baskılayıcı ilaç kullanımı, uygulama sonrası 4 haftalık yakın takip protokolü öngörülmektedir.",
+          "Tedaviye başlangıç için gerekli ön ödeme (175.000 USD) ve toplam maliyet (2.100.000 USD) hakkında aile bilgilendirilmiş, rıza belgesi alınmıştır.",
+        ],
+      },
+    ],
+    hastaneBelgeleri: [
+      {
+        id: "hsp-001",
+        kind: "hospital",
+        title: "Tedavi Maliyet Onay Belgesi",
+        hospital: "Boston Children's Hospital",
+        date: "2026-02-20",
+        amount: "$2,100,000 USD (~60.000.000 ₺)",
+        description:
+          "Zolgensma ilaç maliyeti + hastane tedavi giderleri + hasta refakat giderleri toplam maliyeti.",
+        signatory: "Financial Services Office",
+        signatoryTitle: "Billing Department",
+        body: [
+          "Zolgensma İlaç Bedeli: $2,000,000 USD",
+          "Hastane Tedavi Giderleri: $75,000 USD (yatış, laboratuvar, izlem)",
+          "Hasta ve Refakat Giderleri: $25,000 USD (konaklama, transfer, tercüme)",
+          "TOPLAM: $2,100,000 USD — ödeme planı, 175.000 USD rezervasyon ön ödemesi ve 1.925.000 USD tedavi öncesi bakiye olarak iki taksitte yapılacaktır.",
+        ],
+      },
+      {
+        id: "hsp-002",
+        kind: "hospital",
+        title: "Rezervasyon Ön Ödeme Dekontu",
+        hospital: "Boston Children's Hospital",
+        date: "2026-04-22",
+        amount: "$175,000 USD (5.000.000 ₺)",
+        description:
+          "Tedavi rezervasyonu ön ödemesi yapılmıştır. Ödeme referansı KAMPANYATAKİP değişmez veritabanına işlenmiştir.",
+        signatory: "Treasury Office",
+        signatoryTitle: "Payment Reference: BCH-2026-04-RES-8841",
+        body: [
+          "22.04.2026 tarihinde uluslararası havale yoluyla $175,000 USD rezervasyon ön ödemesi alınmıştır.",
+          "Bu ödeme, tedavi tarihinin kesinleşmesi ve ilaç rezervasyonu için gereklidir.",
+          "Bakiye ($1,925,000 USD) tedavi başlangıç tarihinden en geç 14 gün önce ödenmelidir.",
+        ],
+      },
+    ],
+  },
 };
 
 export const formatTRY = (n: number): string =>
