@@ -3,8 +3,15 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, EyeOff, Filter } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import { formatTRY, type RecentDonor } from "@/lib/mock-campaign-data";
+import type { RecentDonor } from "@/lib/mock-campaign-data";
+import { formatTRY, formatUSD, toTRY } from "@/lib/exchange-rate";
 import { cn } from "@/lib/utils";
+
+function formatDonation(d: RecentDonor): string {
+  if (d.currency === "USD") return `$${formatUSD(d.amount)}`;
+  if (d.currency === "EUR") return `€${formatTRY(d.amount)}`;
+  return `₺${formatTRY(d.amount)}`;
+}
 
 type SortKey = "recent" | "amount";
 type RangeKey = "24h" | "7d" | "all";
@@ -54,7 +61,9 @@ export function DonorsList() {
     const base = recentDonors.filter((d) => donorIsWithin(d.time, range));
     const sorted = [...base];
     if (sortKey === "amount") {
-      sorted.sort((a, b) => b.amount - a.amount);
+      sorted.sort(
+        (a, b) => toTRY(b.amount, b.currency) - toTRY(a.amount, a.currency),
+      );
     } else {
       sorted.sort(
         (a, b) =>
@@ -159,7 +168,7 @@ export function DonorsList() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[15.5px] font-bold text-secondary tabular-nums">
-                    ₺{formatTRY(donor.amount)}
+                    {formatDonation(donor)}
                   </p>
                   <p className="text-[11px] text-on-surface-variant">
                     {donor.time}

@@ -4,8 +4,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Activity, Heart, Minimize2, Users } from "lucide-react";
 import { useState } from "react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import { formatTRY } from "@/lib/mock-campaign-data";
+import { formatUSD, formatTRY } from "@/lib/exchange-rate";
+import type { RecentDonor } from "@/lib/mock-campaign-data";
 import { cn } from "@/lib/utils";
+
+function formatDonation(d: RecentDonor): string {
+  if (d.currency === "USD") return `$${formatUSD(d.amount)}`;
+  if (d.currency === "EUR") return `€${formatTRY(d.amount)}`;
+  return `₺${formatTRY(d.amount)}`;
+}
 
 interface RecentDonorsFeedProps {
   limit?: number;
@@ -67,7 +74,7 @@ export function RecentDonorsFeed({ limit = 6 }: RecentDonorsFeedProps) {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[13.5px] font-bold text-secondary tabular-nums">
-                      ₺{formatTRY(donor.amount)}
+                      {formatDonation(donor)}
                     </p>
                     <p className="text-[10.5px] text-on-surface-variant">
                       {donor.time}
@@ -159,7 +166,7 @@ export function RecentDonorsFeed({ limit = 6 }: RecentDonorsFeedProps) {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-[14px] font-bold text-secondary tabular-nums">
-                          ₺{formatTRY(donor.amount)}
+                          {formatDonation(donor)}
                         </p>
                         <p className="text-[11px] text-on-surface-variant">
                           {donor.time}

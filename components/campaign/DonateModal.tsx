@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
 import { formatTRY } from "@/lib/mock-campaign-data";
+import { mockExchangeRate, toUSD, formatUSD } from "@/lib/exchange-rate";
 import { cn } from "@/lib/utils";
 
 interface DonateModalProps {
@@ -28,14 +29,14 @@ interface DonateModalProps {
 
 const QUICK_AMOUNTS = [50, 100, 250, 500, 750, 1000, 2000, 5000, 10000];
 
-const CURRENCY_SYMBOL: Record<"TL" | "USD" | "EUR", string> = {
-  TL: "₺",
+const CURRENCY_SYMBOL: Record<"TRY" | "USD" | "EUR", string> = {
+  TRY: "₺",
   USD: "$",
   EUR: "€",
 };
 
 const CURRENCY_TONE: Record<
-  "TL" | "USD" | "EUR",
+  "TRY" | "USD" | "EUR",
   {
     badge: string;
     label: string;
@@ -44,7 +45,7 @@ const CURRENCY_TONE: Record<
     footerBorder: string;
   }
 > = {
-  TL: {
+  TRY: {
     badge: "bg-secondary/10 text-secondary",
     label: "text-secondary",
     border: "border-secondary/25",
@@ -224,6 +225,12 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       <p className="mt-3 text-[26px] md:text-[30px] font-bold text-primary-container tabular-nums tracking-tight leading-none">
                         ₺{formatTRY(amount)}
                       </p>
+                      <p className="mt-1 text-[12.5px] tabular-nums text-on-surface-variant">
+                        ≈ ${formatUSD(Math.round(toUSD(amount, "TRY")))} USD
+                        <span className="text-on-surface-variant/70">
+                          {" "}(1$ = ₺{mockExchangeRate.usd_try.toFixed(2)})
+                        </span>
+                      </p>
                       <p className="mt-2 text-[12.5px] leading-[19px] text-on-surface-variant max-w-sm mx-auto sm:mx-0">
                         Bağışınız seçili tutar (₺{formatTRY(amount)}) ile
                         bankanızda otomatik dolar.
@@ -357,7 +364,7 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                                 </button>
                               </div>
 
-                              {acc.currency !== "TL" && (
+                              {acc.currency !== "TRY" && (
                                 <div
                                   className={cn(
                                     "px-4 py-2 border-t text-[11.5px] font-mono text-on-surface-variant flex items-center gap-2 flex-wrap",

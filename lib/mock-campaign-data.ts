@@ -4,17 +4,19 @@ export type DonationMethod =
   | `Kumbara #${string}`
   | `Stant #${string}`;
 
+export type CurrencyCode = "TRY" | "USD" | "EUR";
+
 export type RecentDonor = {
   id: number;
   name: string;
   amount: number;
+  /** Native currency of the donation. New donations default to USD (primary campaign currency). */
+  currency: CurrencyCode;
   method: string;
   time: string;
   timestamp?: number;
   isFresh?: boolean;
 };
-
-export type CurrencyCode = "TL" | "USD" | "EUR";
 
 export type BankAccount = {
   currency: CurrencyCode;
@@ -29,6 +31,7 @@ export type IncomeRow = {
   date: string;
   source: string;
   amount: number;
+  currency: CurrencyCode;
   details: string;
 };
 
@@ -105,8 +108,12 @@ export type CampaignData = {
   title: string;
   subtitle: string;
   story: string;
-  goal: number;
-  raised: number;
+  /** Primary currency of this campaign (what the counters lead with). */
+  currency: CurrencyCode;
+  /** Secondary currency shown under the primary figures for local context. */
+  secondaryCurrency: CurrencyCode;
+  goalUsd: number;
+  raisedUsd: number;
   donorCount: number;
   daysLeft: number;
   createdAt: string;
@@ -141,8 +148,10 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
 
 İstanbul Valiliği onayıyla açtığımız bu kampanya, KAMPANYATAKİP platformu üzerinden şeffaf şekilde yürütülmektedir. Her bağış anında kayıt altına alınır, her harcama belgelendirilir.`,
 
-  goal: 60_000_000,
-  raised: 42_350_000,
+  currency: "USD",
+  secondaryCurrency: "TRY",
+  goalUsd: 2_100_000,
+  raisedUsd: 1_247_500,
   donorCount: 12847,
   daysLeft: 87,
   createdAt: "2026-01-27",
@@ -155,7 +164,7 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
 
   bankAccounts: [
     {
-      currency: "TL",
+      currency: "TRY",
       currencyLabel: "Türk Lirası (TL)",
       bank: "Ziraat Bankası",
       iban: "TR98 0006 2000 0000 0062 9562 28",
@@ -181,38 +190,42 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
   ],
 
   recentDonors: [
-    { id: 1, name: "K***** Y*****", amount: 500, method: "Banka Havalesi", time: "2 dakika önce" },
-    { id: 2, name: "A**** D****", amount: 1000, method: "Kredi Kartı", time: "5 dakika önce" },
-    { id: 3, name: "M***** T*****", amount: 250, method: "Banka Havalesi", time: "8 dakika önce" },
-    { id: 4, name: "Ş**** K****", amount: 100, method: "Kredi Kartı", time: "12 dakika önce" },
-    { id: 5, name: "İsimsiz Bağışçı", amount: 5000, method: "Banka Havalesi", time: "15 dakika önce" },
-    { id: 6, name: "E*** A*****", amount: 750, method: "Kredi Kartı", time: "22 dakika önce" },
-    { id: 7, name: "H***** B*****", amount: 1500, method: "Banka Havalesi", time: "31 dakika önce" },
-    { id: 8, name: "İsimsiz Bağışçı", amount: 10000, method: "Banka Havalesi", time: "45 dakika önce" },
-    { id: 9, name: "Z*** Ç*****", amount: 300, method: "Kumbara #12 (Kadıköy)", time: "1 saat önce" },
-    { id: 10, name: "M**** K*****", amount: 2000, method: "Kredi Kartı", time: "1 saat önce" },
-    { id: 11, name: "D**** G*****", amount: 500, method: "Banka Havalesi", time: "2 saat önce" },
-    { id: 12, name: "İsimsiz Bağışçı", amount: 250, method: "Kumbara #5 (Şişli)", time: "3 saat önce" },
-    { id: 13, name: "B**** Y*****", amount: 1000, method: "Banka Havalesi", time: "4 saat önce" },
-    { id: 14, name: "İsimsiz Bağışçı", amount: 25000, method: "Banka Havalesi", time: "5 saat önce" },
-    { id: 15, name: "R**** S*****", amount: 750, method: "Kredi Kartı", time: "6 saat önce" },
-    { id: 16, name: "F**** O*****", amount: 400, method: "Banka Havalesi", time: "8 saat önce" },
-    { id: 17, name: "T**** A*****", amount: 1200, method: "Stant #3 (İstinye Park)", time: "10 saat önce" },
-    { id: 18, name: "C*** Y*****", amount: 600, method: "Banka Havalesi", time: "14 saat önce" },
-    { id: 19, name: "İsimsiz Bağışçı", amount: 50000, method: "Banka Havalesi", time: "20 saat önce" },
-    { id: 20, name: "S**** K*****", amount: 300, method: "Kumbara #8 (Beşiktaş)", time: "1 gün önce" },
+    { id: 1, name: "K***** Y*****", amount: 500, currency: "TRY", method: "Banka Havalesi", time: "2 dakika önce" },
+    { id: 2, name: "A**** D****", amount: 30, currency: "USD", method: "Kredi Kartı", time: "5 dakika önce" },
+    { id: 3, name: "M***** T*****", amount: 250, currency: "TRY", method: "Banka Havalesi", time: "8 dakika önce" },
+    { id: 4, name: "Ş**** K****", amount: 100, currency: "TRY", method: "Kredi Kartı", time: "12 dakika önce" },
+    { id: 5, name: "İsimsiz Bağışçı", amount: 150, currency: "USD", method: "Banka Havalesi", time: "15 dakika önce" },
+    { id: 6, name: "E*** A*****", amount: 750, currency: "TRY", method: "Kredi Kartı", time: "22 dakika önce" },
+    { id: 7, name: "H***** B*****", amount: 50, currency: "EUR", method: "Banka Havalesi", time: "31 dakika önce" },
+    { id: 8, name: "İsimsiz Bağışçı", amount: 300, currency: "USD", method: "Banka Havalesi", time: "45 dakika önce" },
+    { id: 9, name: "Z*** Ç*****", amount: 300, currency: "TRY", method: "Kumbara #12 (Kadıköy)", time: "1 saat önce" },
+    { id: 10, name: "M**** K*****", amount: 2000, currency: "TRY", method: "Kredi Kartı", time: "1 saat önce" },
+    { id: 11, name: "D**** G*****", amount: 75, currency: "USD", method: "Banka Havalesi", time: "2 saat önce" },
+    { id: 12, name: "İsimsiz Bağışçı", amount: 250, currency: "TRY", method: "Kumbara #5 (Şişli)", time: "3 saat önce" },
+    { id: 13, name: "B**** Y*****", amount: 1000, currency: "TRY", method: "Banka Havalesi", time: "4 saat önce" },
+    { id: 14, name: "İsimsiz Bağışçı", amount: 500, currency: "USD", method: "Banka Havalesi", time: "5 saat önce" },
+    { id: 15, name: "R**** S*****", amount: 100, currency: "EUR", method: "Kredi Kartı", time: "6 saat önce" },
+    { id: 16, name: "F**** O*****", amount: 400, currency: "TRY", method: "Banka Havalesi", time: "8 saat önce" },
+    { id: 17, name: "T**** A*****", amount: 1200, currency: "TRY", method: "Stant #3 (İstinye Park)", time: "10 saat önce" },
+    { id: 18, name: "C*** Y*****", amount: 25, currency: "USD", method: "Banka Havalesi", time: "14 saat önce" },
+    { id: 19, name: "İsimsiz Bağışçı", amount: 1000, currency: "USD", method: "Banka Havalesi", time: "20 saat önce" },
+    { id: 20, name: "S**** K*****", amount: 300, currency: "TRY", method: "Kumbara #8 (Beşiktaş)", time: "1 gün önce" },
   ],
 
   transparency: {
     income: [
-      { date: "2026-04-24", source: "Banka Havalesi Toplamı", amount: 852340, details: "Bugünkü toplam (437 bağış)" },
-      { date: "2026-04-23", source: "Kredi Kartı Toplamı", amount: 324500, details: "Dünkü toplam (189 bağış)" },
-      { date: "2026-04-23", source: "Kumbara #12 (Kadıköy Meydan)", amount: 3450, details: "Açılış tutanağı mevcut" },
-      { date: "2026-04-22", source: "Stant #3 (İstinye Park)", amount: 12850, details: "Günlük kapanış raporu" },
-      { date: "2026-04-22", source: "Banka Havalesi Toplamı", amount: 678900, details: "432 bağış" },
-      { date: "2026-04-21", source: "Canlı Yayın Geliri", amount: 45600, details: "Sosyal medya canlı yayını (20.04.2026)" },
-      { date: "2026-04-20", source: "Kurumsal Bağış", amount: 1000000, details: "X Holding A.Ş." },
-      { date: "2026-04-19", source: "Banka Havalesi Toplamı", amount: 543200, details: "298 bağış" },
+      { date: "2026-04-24", source: "Banka Havalesi Toplamı (₺)", amount: 852340, currency: "TRY", details: "Bugünkü toplam (437 bağış)" },
+      { date: "2026-04-24", source: "Kurumsal Bağış (USD)", amount: 15000, currency: "USD", details: "Uluslararası kurumsal destek" },
+      { date: "2026-04-23", source: "Kredi Kartı Toplamı", amount: 324500, currency: "TRY", details: "Dünkü toplam (189 bağış)" },
+      { date: "2026-04-23", source: "Almanya Diaspora Havalesi", amount: 500, currency: "EUR", details: "Münih KAMPANYA grubu" },
+      { date: "2026-04-23", source: "Kumbara #12 (Kadıköy Meydan)", amount: 3450, currency: "TRY", details: "Açılış tutanağı mevcut" },
+      { date: "2026-04-22", source: "Stant #3 (İstinye Park)", amount: 12850, currency: "TRY", details: "Günlük kapanış raporu" },
+      { date: "2026-04-22", source: "Banka Havalesi Toplamı (₺)", amount: 678900, currency: "TRY", details: "432 bağış" },
+      { date: "2026-04-21", source: "Canlı Yayın Geliri", amount: 45600, currency: "TRY", details: "Sosyal medya canlı yayını (20.04.2026)" },
+      { date: "2026-04-20", source: "Kurumsal Bağış", amount: 1000000, currency: "TRY", details: "X Holding A.Ş." },
+      { date: "2026-04-19", source: "ABD Havalesi", amount: 5000, currency: "USD", details: "New York bağışçı grubu" },
+      { date: "2026-04-19", source: "Banka Havalesi Toplamı (₺)", amount: 543200, currency: "TRY", details: "298 bağış" },
+      { date: "2026-04-18", source: "Banka Havalesi (₺)", amount: 5000, currency: "TRY", details: "Bireysel bağış" },
     ],
     expenses: [
       { date: "2026-04-22", category: "Tedavi Ön Ödeme", amount: 5000000, document: "#", description: "Zolgensma rezervasyon ücreti", vendor: "Novartis Pharma" },
@@ -373,8 +386,9 @@ export const DONATION_NAMES = [
   "İsimsiz Bağışçı",
 ];
 
-export const DONATION_AMOUNTS = [
-  100, 150, 200, 250, 300, 500, 500, 750, 1000, 1000, 1500, 2000, 3000, 5000,
+/** USD-denominated values used for live mock donation ticks. */
+export const DONATION_AMOUNTS_USD = [
+  15, 25, 30, 50, 50, 75, 100, 100, 150, 200, 250, 300, 500, 1000,
 ];
 
 export const DONATION_METHODS = [

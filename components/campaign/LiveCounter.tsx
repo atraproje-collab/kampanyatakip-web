@@ -2,16 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { CalendarClock, Users } from "lucide-react";
+import { CalendarClock, RefreshCw, Users } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import { formatTRY } from "@/lib/mock-campaign-data";
+import {
+  formatTRY,
+  formatUSD,
+  mockExchangeRate,
+} from "@/lib/exchange-rate";
 
 interface LiveCounterProps {
   variant?: "light" | "dark";
 }
 
 export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
-  const { raised, donorCount, campaign } = useCampaign();
+  const { raisedUsd, donorCount, campaign } = useCampaign();
+  const rate = mockExchangeRate;
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [animated, setAnimated] = useState(0);
@@ -25,8 +30,8 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const duration = 2000;
     const start = performance.now();
     const from = 0;
-    const to = raised;
-    prevRaisedRef.current = raised;
+    const to = raisedUsd;
+    prevRaisedRef.current = raisedUsd;
 
     let rafId = 0;
     const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
@@ -42,14 +47,14 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [inView, hasStarted, raised]);
+  }, [inView, hasStarted, raisedUsd]);
 
   // Smooth updates after live donations
   useEffect(() => {
     if (!hasStarted) return;
-    if (raised === prevRaisedRef.current) return;
+    if (raisedUsd === prevRaisedRef.current) return;
     const from = prevRaisedRef.current;
-    const to = raised;
+    const to = raisedUsd;
     prevRaisedRef.current = to;
     const duration = 900;
     const start = performance.now();
@@ -66,56 +71,65 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [raised, hasStarted]);
+  }, [raisedUsd, hasStarted]);
 
-  const pct = Math.min((raised / campaign.goal) * 100, 100);
+  const pct = Math.min((raisedUsd / campaign.goalUsd) * 100, 100);
   const isDark = variant === "dark";
+
+  const animatedTry = animated * rate.usd_try;
+  const goalTry = campaign.goalUsd * rate.usd_try;
 
   return (
     <div
       ref={ref}
-      className={
-        isDark ? "text-white" : "text-on-surface"
-      }
+      className={isDark ? "text-white" : "text-on-surface"}
     >
-      <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
-        <div>
-          <p
-            className={`text-[11px] md:text-[12px] font-bold uppercase tracking-[0.14em] ${
-              isDark ? "text-white/65" : "text-on-surface-variant"
-            }`}
-          >
-            Toplanan Bağış
-          </p>
-          <p
-            className={`mt-1 text-[34px] md:text-[46px] lg:text-[56px] font-bold tracking-tight leading-none tabular-nums ${
+      {/* Primary — USD raised */}
+      <div>
+        <p
+          className={`text-[11px] md:text-[12px] font-bold uppercase tracking-[0.14em] ${
+            isDark ? "text-white/65" : "text-on-surface-variant"
+          }`}
+        >
+          Toplanan
+        </p>
+        <div className="mt-1 flex items-baseline flex-wrap gap-x-2">
+          <span
+            className={`text-[34px] md:text-[46px] lg:text-[54px] font-bold tracking-tight leading-none tabular-nums ${
               isDark ? "text-white" : "text-primary-container"
             }`}
           >
-            ₺{formatTRY(animated)}
-          </p>
+            ${formatUSD(animated)}
+          </span>
+          <span
+            className={`text-[14px] md:text-[16px] font-semibold ${
+              isDark ? "text-white/70" : "text-on-surface-variant"
+            }`}
+          >
+            USD
+          </span>
         </div>
-        <div className="text-right">
-          <p
-            className={`text-[11px] md:text-[12px] font-bold uppercase tracking-[0.14em] ${
-              isDark ? "text-white/65" : "text-on-surface-variant"
+
+        {/* Secondary — TRY equivalent */}
+        <div
+          className={`mt-2 flex items-center flex-wrap gap-x-2 text-[13px] md:text-[14px] tabular-nums ${
+            isDark ? "text-white/75" : "text-on-surface-variant"
+          }`}
+        >
+          <span>≈ ₺{formatTRY(animatedTry)}</span>
+          <span
+            className={`text-[11px] font-medium ${
+              isDark ? "text-white/45" : "text-on-surface-variant/70"
             }`}
           >
-            Hedef
-          </p>
-          <p
-            className={`mt-1 text-[18px] md:text-[22px] font-semibold tracking-tight tabular-nums ${
-              isDark ? "text-white/90" : "text-on-surface-variant"
-            }`}
-          >
-            ₺{formatTRY(campaign.goal)}
-          </p>
+            (1$ = ₺{rate.usd_try.toFixed(2)})
+          </span>
         </div>
       </div>
 
       {/* Progress */}
       <div
-        className={`relative h-3 md:h-3.5 rounded-full overflow-hidden ${
+        className={`mt-5 relative h-3 md:h-3.5 rounded-full overflow-hidden ${
           isDark ? "bg-white/15" : "bg-surface-container-high"
         }`}
       >
@@ -126,12 +140,38 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
           className="absolute inset-y-0 left-0 bg-gradient-to-r from-secondary-container to-secondary-fixed-dim rounded-full shadow-[0_0_16px_rgba(102,218,255,0.5)]"
         />
       </div>
-      <div className="mt-2 flex items-center justify-between text-[12px] md:text-[13px] font-semibold">
+
+      {/* Goal row */}
+      <div className="mt-2 flex items-center justify-between text-[12px] md:text-[13px] font-semibold flex-wrap gap-1">
         <span className={isDark ? "text-secondary-container" : "text-secondary"}>
           %{pct.toFixed(1)} tamamlandı
         </span>
-        <span className={isDark ? "text-white/70" : "text-on-surface-variant"}>
-          ₺{formatTRY(campaign.goal - raised)} kaldı
+        <span
+          className={
+            isDark ? "text-white/70 text-right" : "text-on-surface-variant"
+          }
+        >
+          Hedef: ${formatUSD(campaign.goalUsd)}
+          <span
+            className={`ml-2 font-normal text-[11px] ${
+              isDark ? "text-white/50" : "text-on-surface-variant/80"
+            }`}
+          >
+            ≈ ₺{formatTRY(goalTry)}
+          </span>
+        </span>
+      </div>
+
+      {/* Rate disclosure */}
+      <div
+        className={`mt-3 flex items-center gap-1.5 text-[11px] ${
+          isDark ? "text-white/50" : "text-on-surface-variant/80"
+        }`}
+      >
+        <RefreshCw size={11} />
+        <span>
+          Döviz kuru günlük güncellenir · Son: {rate.last_updated} ·{" "}
+          {rate.source}
         </span>
       </div>
 

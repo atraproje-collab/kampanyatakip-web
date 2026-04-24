@@ -10,10 +10,11 @@ import {
   type ReactNode,
 } from "react";
 import {
-  DONATION_AMOUNTS,
+  DONATION_AMOUNTS_USD,
   DONATION_METHODS,
   DONATION_NAMES,
   type CampaignData,
+  type CurrencyCode,
   type RecentDonor,
 } from "@/lib/mock-campaign-data";
 
@@ -21,11 +22,13 @@ type Toast = {
   id: number;
   name: string;
   amount: number;
+  currency: CurrencyCode;
 };
 
 type ContextValue = {
   campaign: CampaignData;
-  raised: number;
+  /** Total raised in campaign's primary currency (USD for Defne demo). */
+  raisedUsd: number;
   donorCount: number;
   recentDonors: RecentDonor[];
   toasts: Toast[];
@@ -46,7 +49,7 @@ export function CampaignProvider({
   campaign: CampaignData;
   children: ReactNode;
 }) {
-  const [raised, setRaised] = useState(campaign.raised);
+  const [raisedUsd, setRaisedUsd] = useState(campaign.raisedUsd);
   const [donorCount, setDonorCount] = useState(campaign.donorCount);
   const [recentDonors, setRecentDonors] = useState<RecentDonor[]>(
     campaign.recentDonors,
@@ -64,7 +67,7 @@ export function CampaignProvider({
     const scheduleNext = () => {
       const wait = randomBetween(15000, 30000);
       timer = setTimeout(() => {
-        const amount = pick(DONATION_AMOUNTS);
+        const amount = pick(DONATION_AMOUNTS_USD);
         const name = pick(DONATION_NAMES);
         const method = pick(DONATION_METHODS);
         const id = nextIdRef.current++;
@@ -73,16 +76,20 @@ export function CampaignProvider({
           id,
           name,
           amount,
+          currency: "USD",
           method,
           time: "az önce",
           timestamp: Date.now(),
           isFresh: true,
         };
 
-        setRaised((r) => r + amount);
+        setRaisedUsd((r) => r + amount);
         setDonorCount((c) => c + 1);
         setRecentDonors((list) => [donor, ...list].slice(0, 40));
-        setToasts((list) => [...list, { id, name, amount }]);
+        setToasts((list) => [
+          ...list,
+          { id, name, amount, currency: "USD" },
+        ]);
 
         // Remove toast after a while
         setTimeout(() => {
@@ -111,7 +118,7 @@ export function CampaignProvider({
     <CampaignContext.Provider
       value={{
         campaign,
-        raised,
+        raisedUsd,
         donorCount,
         recentDonors,
         toasts,

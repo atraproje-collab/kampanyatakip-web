@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Heart, X } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import { formatTRY } from "@/lib/mock-campaign-data";
+import { formatUSD, formatTRY } from "@/lib/exchange-rate";
 
 export function DonationToast() {
   const { toasts, dismissToast } = useCampaign();
@@ -26,7 +26,11 @@ export function DonationToast() {
             <div className="flex-1 min-w-0">
               <p className="text-[12.5px] font-semibold text-primary-container leading-tight">
                 <span className="text-secondary">
-                  ₺{formatTRY(toast.amount)}
+                  {toast.currency === "USD"
+                    ? `$${formatUSD(toast.amount)}`
+                    : toast.currency === "EUR"
+                      ? `€${formatTRY(toast.amount)}`
+                      : `₺${formatTRY(toast.amount)}`}
                 </span>{" "}
                 bağış alındı 🎉
               </p>
