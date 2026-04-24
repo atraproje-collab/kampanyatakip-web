@@ -6,12 +6,15 @@ interface LogoProps {
   variant?: "horizontal" | "square";
   className?: string;
   priority?: boolean;
+  /** Set true when placed on a dark background so the logo blends via 'screen' instead of 'multiply'. */
+  onDark?: boolean;
 }
 
 export function Logo({
   variant = "horizontal",
   className,
   priority = false,
+  onDark = false,
 }: LogoProps) {
   const isHorizontal = variant === "horizontal";
 
@@ -31,6 +34,9 @@ export function Logo({
           "object-contain",
           isHorizontal ? "h-8 md:h-10 w-auto" : "h-12 w-12",
         )}
+        style={{
+          mixBlendMode: onDark ? "screen" : "multiply",
+        }}
       />
     </Link>
   );
