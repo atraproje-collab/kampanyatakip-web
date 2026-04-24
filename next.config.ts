@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
         destination: "/basvuru",
         permanent: true,
       },
+      // Temporary (307): only the live campaign demo is public for launch.
+      // Remove this entry to re-enable the marketing site root.
+      {
+        source: "/",
+        destination: "/kampanya/demo",
+        permanent: false,
+      },
     ];
   },
 };
