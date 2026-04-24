@@ -2,19 +2,21 @@
 
 import { motion } from "framer-motion";
 import {
-  CheckCircle2,
+  BarChart3,
   CreditCard,
   Database,
   Eye,
   EyeOff,
   FileText,
   Globe,
+  Languages,
   Lock,
   MessageCircle,
   Phone,
   QrCode,
   Radio,
   Shield,
+  Smartphone,
   Store,
   Users,
   type LucideIcon,
@@ -104,11 +106,31 @@ const MODULES: Module[] = [
   },
 ];
 
-const TAGS = [
-  "SMS Entegrasyonu",
-  "Sosyal Medya Raporu",
-  "QR Bağış Sistemi",
-  "Çoklu Dil Desteği",
+const EXTRA_FEATURES: Module[] = [
+  {
+    icon: Smartphone,
+    title: "SMS Entegrasyonu",
+    description:
+      "Bağışçılarınıza toplu SMS ile bilgilendirme yapın, bağış onay kodları gönderin, kampanya güncellemelerini anında iletin.",
+  },
+  {
+    icon: BarChart3,
+    title: "Sosyal Medya Raporu",
+    description:
+      "Facebook, Instagram, YouTube ve kısa video performansınızı tek panelde görün. Etkileşim, erişim ve dönüşüm oranları otomatik raporlanır.",
+  },
+  {
+    icon: QrCode,
+    title: "QR Bağış Sistemi",
+    description:
+      "Her kumbara, stant ve materyal için özel QR kod üretin. Bağışçılar telefonlarını okutup saniyeler içinde bağış yapabilir.",
+  },
+  {
+    icon: Languages,
+    title: "Çoklu Dil Desteği",
+    description:
+      "Kampanya sayfanız 5 dilde yayında: Türkçe, İngilizce, Arapça, Almanca, Fransızca. Uluslararası bağışçılara ulaşın.",
+  },
 ];
 
 const containerVariant = {
@@ -197,17 +219,51 @@ export function Features() {
           ))}
         </motion.div>
 
-        {/* Tags strip */}
-        <div className="mt-8 bg-surface-container p-5 md:p-6 rounded-2xl flex flex-wrap justify-center gap-x-8 gap-y-3">
-          {TAGS.map((tag) => (
-            <span
-              key={tag}
-              className="flex items-center gap-2 text-[13px] font-semibold text-primary-container"
-            >
-              <CheckCircle2 size={16} className="text-secondary" />
-              {tag}
+        {/* Extra features subsection */}
+        <div className="mt-16 md:mt-20 pt-12 md:pt-16 border-t border-outline-variant">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="text-center max-w-2xl mx-auto mb-10 md:mb-12"
+          >
+            <span className="text-[12px] font-semibold text-secondary uppercase tracking-[0.18em]">
+              Tüm Paketlerde Standart
             </span>
-          ))}
+            <h3 className="mt-3 text-[22px] md:text-[26px] font-semibold tracking-[-0.01em] text-primary-container leading-tight">
+              Ek Entegre Özellikler
+            </h3>
+            <p className="mt-3 text-[15px] leading-[24px] text-on-surface-variant">
+              12 ana modüle ek olarak, kampanyanızı güçlendiren entegrasyonlar.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariant}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+          >
+            {EXTRA_FEATURES.map(({ icon: Icon, title, description }) => (
+              <motion.div
+                key={title}
+                variants={itemVariant}
+                className="h-full p-6 rounded-xl bg-surface-container-lowest border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_10px_20px_rgba(0,24,53,0.08)] transition-all duration-250"
+              >
+                <div className="w-12 h-12 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center mb-4">
+                  <Icon size={22} strokeWidth={1.9} />
+                </div>
+                <h4 className="text-[15.5px] font-semibold text-primary-container tracking-[-0.01em] mb-2">
+                  {title}
+                </h4>
+                <p className="text-[13px] leading-[20px] text-on-surface-variant">
+                  {description}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </Container>
     </section>
