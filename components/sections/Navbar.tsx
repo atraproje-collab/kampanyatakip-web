@@ -61,7 +61,11 @@ export function Navbar() {
         </nav>
 
         <div className="hidden lg:block">
-          <Link href={siteConfig.urls.campaignDemo}>
+          <Link
+            href={siteConfig.urls.campaignDemo}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <Button variant="outline-navy" size="md">
               Demo İncele
             </Button>
@@ -96,7 +100,12 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link href={siteConfig.urls.campaignDemo} className="mt-2">
+            <Link
+              href={siteConfig.urls.campaignDemo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2"
+            >
               <Button variant="outline-navy" size="lg" className="w-full">
                 Demo İncele
               </Button>

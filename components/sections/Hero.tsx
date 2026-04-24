@@ -131,7 +131,11 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/kampanya/demo">
+              <Link
+                href="/kampanya/demo"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Button variant="primary" size="xl" className="group/btn w-full sm:w-auto">
                   Canlı Demo&apos;yu İncele
                   <ArrowRight

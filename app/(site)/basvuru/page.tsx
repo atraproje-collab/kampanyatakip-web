@@ -169,6 +169,8 @@ export default function BasvuruPage() {
                 Önce{" "}
                 <Link
                   href={siteConfig.urls.campaignDemo}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-secondary font-semibold hover:underline"
                 >
                   canlı demo kampanyayı

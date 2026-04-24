@@ -13,12 +13,13 @@ const CORPORATE_LINKS = [
   { label: "SSS", href: "/sss" },
 ];
 
-const SERVICE_LINKS = [
-  { label: "Modüller", href: "/moduller" },
-  { label: "Fiyatlandırma", href: "/#pricing" },
-  { label: "Demo İncele", href: "/kampanya/demo" },
-  { label: "Başvuru", href: "/basvuru" },
-];
+const SERVICE_LINKS: Array<{ label: string; href: string; newTab?: boolean }> =
+  [
+    { label: "Modüller", href: "/moduller" },
+    { label: "Fiyatlandırma", href: "/#pricing" },
+    { label: "Demo İncele", href: "/kampanya/demo", newTab: true },
+    { label: "Başvuru", href: "/basvuru" },
+  ];
 
 const LEGAL_LINKS = [
   { label: "Kullanım Koşulları", href: "#" },
@@ -77,6 +78,10 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    {...(link.newTab && {
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                    })}
                     className="text-[14px] text-on-surface-variant hover:text-secondary transition-colors duration-250"
                   >
                     {link.label}

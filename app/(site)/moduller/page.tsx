@@ -93,7 +93,11 @@ export default function ModullerIndexPage() {
                 başvurunuzu iletin.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <Link href={siteConfig.urls.campaignDemo}>
+                <Link
+                  href={siteConfig.urls.campaignDemo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Button
                     variant="primary"
                     size="xl"
