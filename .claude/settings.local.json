@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --use-npm --yes)",
+      "Bash(npx create-next-app@latest kampanyatakip --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --use-npm --yes --turbopack)",
+      "Bash(shopt -s dotglob)",
+      "Bash(mv kampanyatakip/* .)",
+      "Bash(npm install *)"
+    ]
+  }
+}

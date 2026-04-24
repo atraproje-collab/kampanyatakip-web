@@ -1,0 +1,672 @@
+{
+  "version": "2.0.0",
+  "last_updated": "2026-04-24",
+  "brand": {
+    "name": "KAMPANYATAKİP",
+    "name_styling": {
+      "KAMPANYA": "navy/siyah (#2D2D2D)",
+      "TAKİP": "turkuaz (#1BA5C4)"
+    },
+    "tagline": "Bağışın Her Adımı, Şeffaf ve Güvende",
+    "tagline_en": "Every Step of Your Donation, Transparent and Secure",
+    "description": "Türkiye'nin ilk valilik onaylı, yapay zeka destekli bağış şeffaflık platformu",
+    "description_en": "Turkey's first AI-powered donation transparency platform for government-approved fundraising campaigns",
+    "industry": "FinTech / NGO SaaS / Donation Management",
+    "target_audience": "Yardım dernekleri, valilikler, SMA/DMD kampanyaları, kurumsal bağışçılar",
+    "voice": {
+      "tone": ["güvenilir", "kurumsal", "şeffaf", "insani", "teknolojik"],
+      "personality": "Otoriter ama samimi, net ve jargonsuz, fintech güvenilirliği + SaaS verimliliği",
+      "philosophy": "Radical Transparency - UI finansal işlemlerin sessiz ve güvenilir tanığı olmalı",
+      "avoid": ["aşırı teknik dil", "satış odaklı abartı", "belirsiz vaatler"]
+    }
+  },
+  "colors": {
+    "note": "Stitch tasarımından alınan Material Design 3 tabanlı renk sistemi",
+    "primary": {
+      "main": { "hex": "#001835", "usage": "Ana navy - global navigation, header, marka anchor" },
+      "container": { "hex": "#012d59", "usage": "Primary container - koyu vurgular, footer" },
+      "on_primary": { "hex": "#ffffff" },
+      "on_primary_container": { "hex": "#7696c8" },
+      "fixed": { "hex": "#d5e3ff" },
+      "fixed_dim": { "hex": "#a8c8fd" },
+      "on_fixed": { "hex": "#001c3b" },
+      "on_fixed_variant": { "hex": "#254775" },
+      "inverse": { "hex": "#a8c8fd" }
+    },
+    "secondary": {
+      "main": { "hex": "#00677f", "usage": "Ana turkuaz - CTA butonları, interactive noktalar" },
+      "container": { "hex": "#66daff", "usage": "Secondary container - açık turkuaz vurgu" },
+      "on_secondary": { "hex": "#ffffff" },
+      "on_secondary_container": { "hex": "#005e74" },
+      "fixed": { "hex": "#b6ebff" },
+      "fixed_dim": { "hex": "#5fd5f9" },
+      "on_fixed": { "hex": "#001f28" },
+      "on_fixed_variant": { "hex": "#004e60" }
+    },
+    "tertiary": {
+      "main": { "hex": "#15191a" },
+      "container": { "hex": "#2a2d2f" },
+      "on_tertiary": { "hex": "#ffffff" },
+      "on_tertiary_container": { "hex": "#919496" }
+    },
+    "surface": {
+      "main": { "hex": "#f8f9ff", "usage": "Ana arka plan" },
+      "dim": { "hex": "#cbdbf5" },
+      "bright": { "hex": "#f8f9ff" },
+      "container_lowest": { "hex": "#ffffff", "usage": "Beyaz kartlar" },
+      "container_low": { "hex": "#eff4ff" },
+      "container": { "hex": "#e5eeff", "usage": "Standart kart arka planı" },
+      "container_high": { "hex": "#dce9ff" },
+      "container_highest": { "hex": "#d3e4fe" },
+      "variant": { "hex": "#d3e4fe" },
+      "inverse": { "hex": "#213145" }
+    },
+    "text": {
+      "on_surface": { "hex": "#0b1c30", "usage": "Ana metin rengi" },
+      "on_surface_variant": { "hex": "#43474f", "usage": "İkincil metin" },
+      "inverse_on_surface": { "hex": "#eaf1ff" },
+      "on_background": { "hex": "#0b1c30" }
+    },
+    "border": {
+      "outline": { "hex": "#737780", "usage": "Ana border/divider" },
+      "outline_variant": { "hex": "#c3c6d0", "usage": "Soft border" }
+    },
+    "semantic": {
+      "success": { "hex": "#10B981" },
+      "warning": { "hex": "#F59E0B" },
+      "error": { "hex": "#ba1a1a", "container": "#ffdad6" },
+      "info": { "hex": "#3B82F6" }
+    },
+    "gradients": {
+      "hero": "linear-gradient(135deg, #001835 0%, #012d59 50%, #00677f 100%)",
+      "hero_subtle": "linear-gradient(180deg, #001835 0%, #012d59 100%)",
+      "card_featured": "linear-gradient(145deg, #00677f 0%, #66daff 100%)",
+      "footer": "linear-gradient(180deg, #012d59 0%, #001835 100%)",
+      "overlay_dark": "linear-gradient(180deg, rgba(0,24,53,0) 0%, rgba(0,24,53,0.85) 100%)"
+    }
+  },
+  "typography": {
+    "font_families": {
+      "primary": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+      "loading_method": "next/font/google",
+      "weights_loaded": [400, 500, 600, 700, 800]
+    },
+    "scale": {
+      "h1": {
+        "size": "40px",
+        "size_mobile": "32px",
+        "weight": 700,
+        "line_height": "48px",
+        "letter_spacing": "-0.02em",
+        "usage": "Hero başlık"
+      },
+      "h2": {
+        "size": "32px",
+        "size_mobile": "24px",
+        "weight": 600,
+        "line_height": "40px",
+        "letter_spacing": "-0.02em",
+        "usage": "Bölüm başlıkları"
+      },
+      "h3": {
+        "size": "24px",
+        "size_mobile": "20px",
+        "weight": 600,
+        "line_height": "32px",
+        "letter_spacing": "-0.01em",
+        "usage": "Alt başlık, kart başlığı"
+      },
+      "body_lg": {
+        "size": "18px",
+        "weight": 400,
+        "line_height": "28px",
+        "usage": "Hero alt metin"
+      },
+      "body_md": {
+        "size": "16px",
+        "weight": 400,
+        "line_height": "24px",
+        "usage": "Gövde metin"
+      },
+      "body_sm": {
+        "size": "14px",
+        "weight": 400,
+        "line_height": "20px",
+        "usage": "Caption"
+      },
+      "label_md": {
+        "size": "14px",
+        "weight": 600,
+        "line_height": "20px",
+        "letter_spacing": "0.01em"
+      },
+      "label_sm": {
+        "size": "12px",
+        "weight": 500,
+        "line_height": "16px"
+      }
+    }
+  },
+  "spacing": {
+    "base_unit": "8px",
+    "scale": {
+      "xs": "4px",
+      "sm": "12px",
+      "base": "8px",
+      "md": "24px",
+      "lg": "48px",
+      "xl": "80px"
+    },
+    "layout": {
+      "container_max": "1280px",
+      "gutter": "24px",
+      "section_padding_y": "80px",
+      "section_padding_y_mobile": "48px"
+    }
+  },
+  "border_radius": {
+    "none": "0",
+    "default": "0.125rem",
+    "lg": "0.25rem",
+    "xl": "0.5rem",
+    "full": "0.75rem",
+    "usage": {
+      "button": "0.25rem",
+      "input": "0.25rem",
+      "card_small": "0.25rem",
+      "card_large": "0.5rem",
+      "pill_badge": "9999px"
+    }
+  },
+  "shadows": {
+    "philosophy": "Ambient shadows - düşük opaklık, yumuşak diffüzyon",
+    "sm": "0 1px 2px rgba(0, 24, 53, 0.04)",
+    "md": "0 4px 6px rgba(0, 24, 53, 0.06)",
+    "lg": "0 10px 20px rgba(0, 24, 53, 0.08)",
+    "xl": "0 20px 40px rgba(0, 24, 53, 0.10)",
+    "glow_turquoise": "0 0 30px rgba(102, 218, 255, 0.35)"
+  },
+  "buttons": {
+    "primary": {
+      "background": "#00677f",
+      "text_color": "#ffffff",
+      "padding": "14px 28px",
+      "border_radius": "0.25rem",
+      "font_weight": 600,
+      "font_size": "16px",
+      "hover_background": "#005e74",
+      "hover_transform": "translateY(-1px)",
+      "hover_shadow": "0 10px 20px rgba(0, 103, 127, 0.30)",
+      "transition": "all 250ms cubic-bezier(0.4, 0, 0.2, 1)"
+    },
+    "secondary": {
+      "background": "#001835",
+      "text_color": "#ffffff",
+      "padding": "14px 28px",
+      "border_radius": "0.25rem",
+      "hover_background": "#012d59"
+    },
+    "outline_navy": {
+      "background": "transparent",
+      "text_color": "#001835",
+      "border": "2px solid #001835",
+      "hover_background": "#001835",
+      "hover_text_color": "#ffffff"
+    },
+    "outline_white": {
+      "background": "transparent",
+      "text_color": "#ffffff",
+      "border": "2px solid #ffffff",
+      "hover_background": "#ffffff",
+      "hover_text_color": "#001835",
+      "usage": "Hero gradient arka plan üzerinde"
+    }
+  },
+  "components": {
+    "card": {
+      "default": {
+        "background": "#ffffff",
+        "border": "1px solid #c3c6d0",
+        "border_radius": "0.5rem",
+        "padding": "24px",
+        "shadow": "0 4px 6px rgba(0, 24, 53, 0.06)",
+        "hover_transform": "translateY(-4px)"
+      },
+      "elevated": {
+        "background": "#eff4ff",
+        "border": "none"
+      },
+      "featured": {
+        "background": "#00677f",
+        "border": "2px solid #66daff",
+        "text_color": "#ffffff",
+        "badge": "EN POPÜLER"
+      }
+    },
+    "badge": {
+      "default": {
+        "background": "rgba(0, 103, 127, 0.10)",
+        "text_color": "#00677f",
+        "padding": "6px 14px",
+        "border_radius": "9999px",
+        "font_size": "12px",
+        "font_weight": 600,
+        "text_transform": "uppercase"
+      }
+    },
+    "navbar": {
+      "background": "#f8f9ff",
+      "background_scrolled": "rgba(248, 249, 255, 0.95)",
+      "backdrop_filter_scrolled": "blur(12px)",
+      "height": "72px",
+      "height_mobile": "64px",
+      "border_bottom": "1px solid #c3c6d0",
+      "logo_height": "40px",
+      "logo_height_mobile": "32px"
+    },
+    "progress_bar": {
+      "height": "8px",
+      "track_background": "#e5eeff",
+      "fill_background": "#00677f",
+      "border_radius": "9999px"
+    }
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "line",
+    "stroke_width": "2px",
+    "size_default": "24px",
+    "size_large": "48px",
+    "color_default": "#001835",
+    "color_accent": "#00677f",
+    "material_to_lucide_map": {
+      "shield": "ShieldCheck",
+      "visibility": "Eye",
+      "trending_up": "TrendingUp",
+      "group": "Users",
+      "account_balance": "Landmark",
+      "qr_code": "QrCode",
+      "whatsapp": "MessageCircle",
+      "volunteer_activism": "Heart",
+      "receipt_long": "Receipt",
+      "campaign": "Megaphone",
+      "payments": "CreditCard",
+      "check_circle": "CheckCircle2",
+      "arrow_forward": "ArrowRight",
+      "arrow_back": "ArrowLeft",
+      "check": "Check",
+      "verified": "BadgeCheck",
+      "lock": "Lock",
+      "gavel": "Scale",
+      "auto_awesome": "Sparkles",
+      "support_agent": "Headphones",
+      "translate": "Languages",
+      "schedule": "Clock"
+    }
+  },
+  "logo": {
+    "files": {
+      "horizontal": {
+        "filename": "logo_yatay_kampanya.png",
+        "public_path": "/logo.png",
+        "usage": "Navbar, Footer, genel web kullanımı",
+        "aspect_ratio": "5:1"
+      },
+      "square": {
+        "filename": "LOGO.jpeg",
+        "public_path": "/logo-square.jpeg",
+        "usage": "Favicon, OG image, sosyal medya profil",
+        "aspect_ratio": "1:1"
+      }
+    },
+    "design": {
+      "icon": "Büyüteç + kalp + yükselen grafik çubukları (navy + turkuaz gradient)",
+      "wordmark": {
+        "KAMPANYA": { "color": "#2D2D2D" },
+        "TAKİP": { "color": "#1BA5C4" }
+      },
+      "tagline": {
+        "text": "BAĞIŞIN HER ADIMI, ŞEFFAF VE GÜVENDE",
+        "color": "#6B7280",
+        "separator_color": "#1BA5C4"
+      }
+    },
+    "usage_rules": {
+      "navbar": {
+        "variant": "horizontal",
+        "height_desktop": "40px",
+        "height_mobile": "32px",
+        "priority": true
+      },
+      "footer": {
+        "variant": "horizontal",
+        "height": "36px"
+      },
+      "favicon": {
+        "source": "square",
+        "sizes": ["32x32", "16x16"]
+      },
+      "og_image": {
+        "source": "square",
+        "dimensions": "1200x630"
+      },
+      "minimum_size": {
+        "digital": "80px genişlik",
+        "print": "25mm genişlik"
+      },
+      "clear_space": "Logo yüksekliğinin %25'i",
+      "prohibited": [
+        "Logo üzerine metin veya efekt uygulamak",
+        "Oranlarını bozmak",
+        "Renklerini değiştirmek",
+        "Karmaşık arka planlar üzerine yerleştirmek"
+      ]
+    }
+  },
+  "landing_page": {
+    "structure": [
+      {
+        "id": "navbar",
+        "sticky": true,
+        "content": {
+          "logo_left": "logo_yatay_kampanya.png",
+          "nav_links": ["Nasıl Çalışır?", "Modüller", "Fiyatlandırma"],
+          "cta_right": "Demo Al"
+        }
+      },
+      {
+        "id": "hero",
+        "background": "gradient (primary → secondary)",
+        "headline": "Bağışın Her Kuruşu, Gerçek Zamanlı Şeffaflıkla",
+        "headline_accent_word": "Gerçek Zamanlı",
+        "subheadline": "Profesyonel yönetim paneli ile her bağışı anlık takip edin, destekçilerinize tam güven verin ve hedefinize daha hızlı ulaşın.",
+        "cta_primary": "Kampanyanı Kur",
+        "cta_secondary": "Demo İzle",
+        "trust_badges": [
+          { "icon": "BadgeCheck", "text": "VALİLİK ONAYLI" },
+          { "icon": "ShieldCheck", "text": "KVKK UYUMLU" }
+        ],
+        "carousel": {
+          "enabled": true,
+          "auto_play": true,
+          "interval": 5000
+        }
+      },
+      {
+        "id": "value_props",
+        "title": "Neden KAMPANYATAKİP?",
+        "layout": "4 sütun (desktop), 2 sütun (tablet), 1 sütun (mobile)",
+        "items": [
+          {
+            "icon": "ShieldCheck",
+            "title": "GÜVENLİ",
+            "description": "En üst düzey şifreleme ile verileriniz ve bağışlarınız her an güvende."
+          },
+          {
+            "icon": "Eye",
+            "title": "ŞEFFAF",
+            "description": "Bağışlar anında listeyebilir ve destekçilerinize raporlayabilirsiniz."
+          },
+          {
+            "icon": "TrendingUp",
+            "title": "ANLIK TAKİP",
+            "description": "Mobil uygulama üzerinden 7/24 tüm kampanya sürecini izleyin."
+          },
+          {
+            "icon": "Users",
+            "title": "DAHA FAZLA DESTEK",
+            "description": "Profesyonel görünüm ve şeffaflıkla güven tazele, desteği artır."
+          }
+        ]
+      },
+      {
+        "id": "features",
+        "eyebrow": "GÜÇLÜ ALTYAPI",
+        "title": "12 Modül, Tek Sistem",
+        "description": "Kampanyanızın her aşamasını dijitalleştiren kapsamlı araç seti.",
+        "featured_primary": {
+          "title": "Para Takibi",
+          "description": "Gelen tüm bağışları banka entegrasyonu ile otomatik eşleştirir.",
+          "icon": "CreditCard"
+        },
+        "featured_secondary": {
+          "title": "Mesajlaşma AI",
+          "description": "Destekçilere otomatik bilgilendirme.",
+          "icon": "MessageCircle"
+        },
+        "grid_items": [
+          { "title": "Kumbara Takip", "description": "Saha kumbaralarını QR kod ile yönetin.", "icon": "QrCode" },
+          { "title": "Gönüllü Yönetimi", "icon": "Users" },
+          { "title": "Resmi Evraklar", "icon": "FileText" },
+          { "title": "Duyuru Paneli", "icon": "Megaphone" },
+          { "title": "Gider Takibi", "icon": "Receipt" }
+        ],
+        "tags": [
+          "SMS Entegrasyonu",
+          "Sosyal Medya Raporu",
+          "QR Bağış Sistemi",
+          "Çoklu Dil Desteği"
+        ]
+      },
+      {
+        "id": "pricing",
+        "title": "Size Uygun Paketi Seçin",
+        "subtitle": "Her bütçeye ve kampanya büyüklüğüne uygun çözümler.",
+        "packages": [
+          {
+            "name": "Temel",
+            "tagline": "Yeni başlayan küçük kampanyalar için.",
+            "price": "9.900",
+            "currency": "TL",
+            "period": "/ay",
+            "featured": false,
+            "features": ["Manuel Bağış Girişi", "Basit İstatistikler", "2 Gönüllü Kullanıcı"],
+            "cta_text": "Seç",
+            "cta_style": "outline"
+          },
+          {
+            "name": "Standart",
+            "tagline": "Aktif büyüyen tüm kampanyalar için.",
+            "price": "17.900",
+            "currency": "TL",
+            "period": "/ay",
+            "featured": true,
+            "badge": "EN ÇOK TERCİH EDİLEN",
+            "features": ["Banka Entegrasyonu", "QR Bağış Sistemi", "10 Gönüllü Kullanıcı", "Gider Takip Modülü"],
+            "cta_text": "Hemen Başla",
+            "cta_style": "primary"
+          },
+          {
+            "name": "Premium",
+            "tagline": "Yüksek hacimli global kampanyalar.",
+            "price": "29.900",
+            "currency": "TL",
+            "period": "/ay",
+            "featured": false,
+            "features": ["Mesajlaşma AI Asistan", "Çoklu Dil Desteği", "Sınırsız Kullanıcı"],
+            "cta_text": "Seç",
+            "cta_style": "outline"
+          },
+          {
+            "name": "Özel",
+            "tagline": "Dernekler ve vakıflar için özel.",
+            "price_text": "Teklife Özel",
+            "featured": false,
+            "features": ["Beyaz Etiket (Logo)", "API Erişimi", "Özel Destek Hattı"],
+            "cta_text": "İletişime Geç",
+            "cta_style": "outline"
+          }
+        ]
+      },
+      {
+        "id": "cta_closing",
+        "background": "gradient (primary → primary-container)",
+        "title": "Kampanyanızı Bugün Başlatın",
+        "description": "Zaman kaybetmeyin, şeffaf yönetim sistemiyle bağışçılarınıza güven verin ve hedefinize ulaşın.",
+        "cta_primary": "Ücretsiz Demo Al",
+        "cta_secondary": "Destek Ekibine Yaz",
+        "trust_badges_bottom": [
+          { "icon": "BadgeCheck", "text": "VALİLİK ONAYLI SİSTEM" },
+          { "icon": "Lock", "text": "SSL GÜVENLİ ÖDEME" },
+          { "icon": "ShieldCheck", "text": "KVKK UYUMLU ALTYAPI" }
+        ]
+      },
+      {
+        "id": "footer",
+        "columns": [
+          {
+            "heading": "KAMPANYATAKİP",
+            "description": "Şeffaf bağış yönetimi ve güvenilir kampanya takibi için profesyonel çözüm ortağınız."
+          },
+          {
+            "heading": "Kurumsal",
+            "links": ["Hakkımızda", "İletişim"]
+          },
+          {
+            "heading": "Yasal",
+            "links": ["Kullanım Koşulları", "KVKK Aydınlatma Metni"]
+          }
+        ],
+        "copyright": "© 2026 KAMPANYATAKİP. Tüm Hakları Saklıdır."
+      }
+    ]
+  },
+  "messaging": {
+    "headlines_pool": [
+      "Bağışın Her Kuruşu, Gerçek Zamanlı Şeffaflıkla",
+      "Yapay Zeka Destekli Bağış Şeffaflık Sistemi",
+      "Valilik Onaylı Kampanyalar İçin Türkiye'nin İlk Denetim Standardı"
+    ],
+    "ctas": {
+      "primary": ["Kampanyanı Kur", "Hemen Başla", "Ücretsiz Demo Al"],
+      "secondary": ["Demo İzle", "Nasıl Çalışır?", "Paketleri İncele"],
+      "tertiary": ["İletişime Geç", "Destek Ekibine Yaz"]
+    },
+    "trust_signals": [
+      "Valilik Onaylı",
+      "KVKK Uyumlu",
+      "SSL Güvenli",
+      "Değiştirilemez Kayıt",
+      "İzole Sunucu",
+      "Günlük Otomatik Yedek",
+      "Kurumsal Güvenlik Katmanı"
+    ]
+  },
+  "brand_protection": {
+    "rule": "Landing page'de ve tüm müşteri iletişiminde HİÇBİR üçüncü parti marka ismi geçmeyecek",
+    "hidden_vendors": {
+      "Twilio": "Kurumsal iletişim altyapısı",
+      "Claude Haiku": "Yapay zeka asistanı",
+      "Claude": "Yapay zeka motoru",
+      "Anthropic": "Yapay zeka ortağı",
+      "HeyGen": "Çok dilli video çeviri sistemi",
+      "n8n": "Otomasyon motoru",
+      "Hostinger": "İzole bulut sunucu",
+      "Google TTS": "Çok dilli sesli hat sistemi",
+      "Google Cloud": "Bulut altyapı sağlayıcı",
+      "PostgreSQL": "Değiştirilemez veritabanı",
+      "Cloudflare": "Kurumsal güvenlik katmanı",
+      "Meta": "Sosyal medya entegrasyonu",
+      "Facebook": "Sosyal medya entegrasyonu",
+      "Instagram": "Sosyal medya entegrasyonu",
+      "YouTube": "Video platformu entegrasyonu",
+      "TikTok": "Kısa video platformu entegrasyonu",
+      "Canva": "Tasarım altyapısı",
+      "WhatsApp Business API": "Mesajlaşma altyapısı"
+    },
+    "feature_naming_rules": {
+      "WhatsApp Asistan": "Mesajlaşma Asistanı",
+      "TikTok canlı yayın takibi": "Canlı Yayın Gelir Takibi",
+      "Instagram DM": "Sosyal Medya Mesajlaşma",
+      "Facebook Messenger": "Sosyal Medya Mesajlaşma"
+    }
+  },
+  "animations": {
+    "philosophy": "Subtle, corporate, professional",
+    "duration": {
+      "fast": "150ms",
+      "normal": "250ms",
+      "slow": "400ms"
+    },
+    "easing": {
+      "default": "cubic-bezier(0.4, 0, 0.2, 1)",
+      "bounce": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    },
+    "patterns": {
+      "scroll_reveal": {
+        "initial": { "opacity": 0, "y": 40 },
+        "animate": { "opacity": 1, "y": 0 },
+        "transition": { "duration": 0.6, "ease": "easeOut" },
+        "viewport": { "once": true, "margin": "-100px" }
+      },
+      "stagger_children": {
+        "staggerChildren": 0.1,
+        "delayChildren": 0.2
+      },
+      "hover_card": {
+        "y": -4,
+        "transition": { "duration": 0.25 }
+      }
+    }
+  },
+  "breakpoints": {
+    "mobile_sm": "0-374px",
+    "mobile": "375-639px",
+    "tablet": "640-1023px",
+    "desktop": "1024-1279px",
+    "wide": "1280px+"
+  },
+  "accessibility": {
+    "contrast_standard": "WCAG AA (4.5:1 normal, 3:1 large)",
+    "focus_visible": "2px secondary outline",
+    "keyboard_navigation": "Tüm interactive elementler Tab ile erişilebilir",
+    "reduced_motion": "@media (prefers-reduced-motion: reduce)",
+    "lang": "tr",
+    "semantic_html": "header, main, section, article, nav, footer"
+  },
+  "seo": {
+    "title": "KAMPANYATAKİP - Şeffaf Bağış Takip Sistemi",
+    "description": "SMA, DMD ve tüm yardım kampanyaları için yapay zeka destekli, valilik onaylı şeffaf bağış yönetim platformu. Bağışın her kuruşu gerçek zamanlı takipte.",
+    "keywords": [
+      "bağış takip",
+      "kampanya yönetimi",
+      "SMA kampanyası",
+      "DMD kampanyası",
+      "şeffaflık platformu",
+      "yardım kampanyası",
+      "valilik onaylı",
+      "bağış şeffaflık",
+      "dernek yönetim sistemi"
+    ],
+    "og_locale": "tr_TR",
+    "og_type": "website"
+  },
+  "technical_stack": {
+    "framework": "Next.js 14 (App Router)",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS",
+    "icons": "lucide-react",
+    "animations": "framer-motion",
+    "utilities": ["clsx", "tailwind-merge"],
+    "fonts": "next/font/google (Inter)",
+    "images": "next/image",
+    "deployment": "Vercel"
+  },
+  "references": {
+    "design_inspiration": ["Stripe", "Linear", "Vercel", "Notion"],
+    "feel": "Modern SaaS, kurumsal, güven veren, fintech güvenilirliği",
+    "anti_patterns": [
+      "Aşırı parlak renkler",
+      "Gereksiz animasyon",
+      "Stock photo insanlar",
+      "Düşük kontrast metin",
+      "Clickbait başlıklar"
+    ]
+  },
+  "project_context": {
+    "saas_model": "Her kampanyaya izole VPS",
+    "installation_time": "2-4 iş günü",
+    "target_customers": "Valilik onaylı yardım kampanyası düzenleyen kurumlar",
+    "campaign_types": ["SMA", "DMD", "Sağlık kampanyaları", "Afet yardım", "Eğitim bağışları"]
+  }
+}

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KAMPANYATAKİP - Şeffaf Bağış Takip Sistemi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-surface": "#0b1c30",
+                    "tertiary-fixed": "#e0e3e5",
+                    "on-secondary-fixed-variant": "#004e60",
+                    "outline": "#737780",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#001835",
+                    "surface-container-high": "#dce9ff",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#66daff",
+                    "error-container": "#ffdad6",
+                    "tertiary": "#15191a",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "on-primary-fixed": "#001c3b",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "inverse-primary": "#a8c8fd",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-secondary-container": "#005e74",
+                    "tertiary-container": "#2a2d2f",
+                    "on-background": "#0b1c30",
+                    "on-primary-fixed-variant": "#254775",
+                    "surface": "#f8f9ff",
+                    "surface-bright": "#f8f9ff",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "background": "#f8f9ff",
+                    "surface-container": "#e5eeff",
+                    "on-surface-variant": "#43474f",
+                    "on-tertiary-fixed": "#191c1e",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed-dim": "#5fd5f9",
+                    "primary-fixed-dim": "#a8c8fd",
+                    "secondary": "#00677f",
+                    "on-primary-container": "#7696c8",
+                    "surface-tint": "#3f5f8e",
+                    "on-tertiary-container": "#919496",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#eff4ff",
+                    "primary-fixed": "#d5e3ff",
+                    "on-secondary-fixed": "#001f28",
+                    "outline-variant": "#c3c6d0",
+                    "primary-container": "#012d59",
+                    "secondary-fixed": "#b6ebff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "xl": "80px",
+                    "gutter": "24px",
+                    "lg": "48px",
+                    "xs": "4px",
+                    "md": "24px",
+                    "base": "8px",
+                    "container-max": "1280px",
+                    "sm": "12px"
+            },
+            "fontFamily": {
+                    "h2": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "h1": ["Inter"],
+                    "h3": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "h2": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "h1": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h3": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bg-mesh-gradient {
+            background: radial-gradient(at 0% 0%, rgba(1, 45, 89, 0.05) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(4, 161, 196, 0.05) 0px, transparent 50%);
+        }
+        .slider-container {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .slider-item {
+            scroll-snap-align: start;
+            flex: 0 0 100%;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+<div class="flex justify-between items-center px-8 h-16 w-full max-w-7xl mx-auto font-['Inter'] antialiased tracking-tight">
+<div class="text-xl font-extrabold text-[#012d59] tracking-tighter">KAMPANYATAKİP</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-[#04a1c4] font-semibold border-b-2 border-[#04a1c4] pb-1" href="#">Nasıl Çalışır?</a>
+<a class="text-slate-600 font-medium hover:text-[#012d59] transition-all duration-200" href="#">Modüller</a>
+<a class="text-slate-600 font-medium hover:text-[#012d59] transition-all duration-200" href="#">Fiyatlandırma</a>
+</nav>
+<button class="bg-[#012d59] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 active:scale-95 transition-all">Demo Al</button>
+</div>
+</header>
+<main>
+<!-- Primary Slider Hero Section -->
+<section class="relative bg-white overflow-hidden">
+<div class="w-full relative group">
+<!-- Navigation Arrows -->
+<button class="absolute left-8 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/20 backdrop-blur-md shadow-lg border border-white/30 flex items-center justify-center text-white hover:bg-[#04a1c4] transition-all group-hover:scale-110 active:scale-95" onclick="document.getElementById('main-slider').scrollBy({left: -document.getElementById('main-slider').offsetWidth, behavior: 'smooth'})">
+<span class="material-symbols-outlined text-4xl">chevron_left</span>
+</button>
+<button class="absolute right-8 top-1/2 -translate-y-1/2 z-20 w-14 h-14 rounded-full bg-white/20 backdrop-blur-md shadow-lg border border-white/30 flex items-center justify-center text-white hover:bg-[#04a1c4] transition-all group-hover:scale-110 active:scale-95" onclick="document.getElementById('main-slider').scrollBy({left: document.getElementById('main-slider').offsetWidth, behavior: 'smooth'})">
+<span class="material-symbols-outlined text-4xl">chevron_right</span>
+</button>
+<div class="slider-container flex overflow-x-auto hide-scrollbar" id="main-slider">
+<!-- Slide 1 -->
+<div class="slider-item relative h-[85vh] min-h-[600px] w-full shrink-0">
+<img alt="Bağışçı Güveni" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAbHcRRpn431ERaQtm_lo61ePj417r8Lxo5CkEX8CB1yxykUYl5BeKNNI2wrRXB3Pn_Fa7bg38G90MxI5vZ5D1p1gcJBsiSDLDrcUHLYYZ6D8p2wONGD1a3bg73ZrVP5gUUNuEZ4JW1CdNONEyvjVvQp2IiXUqMAcfz9T2yOS9wLirxTFoqFULyLLwfh4NXLRxWiRdl8RAVJsz3SOTgdHg_egdypUGdtKfVPUNhTLnvirpgQLcctXk1N-bbLKy9RoZ2X19u2BXU2U"/>
+<div class="absolute inset-0 bg-gradient-to-r from-[#012d59] via-[#012d59]/70 to-transparent flex items-center">
+<div class="px-8 md:px-24 max-w-7xl mx-auto w-full">
+<div class="max-w-3xl text-white">
+<span class="inline-block px-4 py-1.5 bg-[#04a1c4] text-white text-xs font-bold rounded-full mb-6 tracking-widest uppercase">SMA &amp; DMD KAMPANYA YÖNETİMİ</span>
+<h1 class="text-4xl md:text-7xl font-h1 font-bold mb-6 leading-tight">Bağışın Her Kuruşu,<br/><span class="text-[#66daff]">Gerçek Zamanlı</span> Şeffaflıkla</h1>
+<p class="text-lg md:text-xl text-slate-200 mb-10 font-medium max-w-2xl">Profesyonel yönetim paneli ile her bağışı anlık takip edin, destekçilerinize tam güven verin ve hedefinize daha hızlı ulaşın.</p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-[#04a1c4] hover:bg-[#038ba9] text-white px-10 py-5 rounded-xl font-bold text-lg shadow-xl hover:shadow-[#04a1c4]/20 transition-all flex items-center justify-center gap-3 group/btn">
+                                        Kampanyanı Kur <span class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="bg-white/10 backdrop-blur-md border-2 border-white/30 text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-white hover:text-[#012d59] transition-all">
+                                        Demo İzle
+                                    </button>
+</div>
+<div class="mt-12 flex flex-wrap gap-8 opacity-80">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#66daff]">verified</span>
+<span class="font-label-sm uppercase tracking-wider">Valilik Onaylı</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#66daff]">security</span>
+<span class="font-label-sm uppercase tracking-wider">KVKK Uyumlu</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Slide 2 -->
+<div class="slider-item relative h-[85vh] min-h-[600px] w-full shrink-0">
+<img alt="Yapay Zeka Desteği" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp5n1P5nCtqkRJJQPI2ifl-67rNbah4MfcM_QU3-ZYDQk9sIo0qSNBUpO8bpudJT6vbZNnokRFgXVLGV9fiNz8C1_EdWnrJ6naZ7y0Tj1RsYb-b0AT5IsIiwYcxc-TWmrnx06Xqz5Q4kxnTRbLpZJN-UKY23QMtER9aQVehAQNECDtJEEOwDqp37sJWx2eWVVsWtgRCZAjAhJ4ahOdamXMdxbtrIO_qsCIg8MBGFp1MfjuRsNJztHOEUTDJTuXncv6mpzKjw8xJE8"/>
+<div class="absolute inset-0 bg-gradient-to-r from-[#012d59] via-[#012d59]/70 to-transparent flex items-center">
+<div class="px-8 md:px-24 max-w-7xl mx-auto w-full">
+<div class="max-w-3xl text-white">
+<span class="inline-block px-4 py-1.5 bg-[#04a1c4] text-white text-xs font-bold rounded-full mb-6 tracking-widest uppercase">YAPAY ZEKA DESTEKLİ</span>
+<h2 class="text-4xl md:text-7xl font-h1 font-bold mb-6 leading-tight">7/24 Aktif<br/>WhatsApp <span class="text-[#66daff]">AI Asistan</span></h2>
+<p class="text-lg md:text-xl text-slate-200 mb-10 font-medium max-w-2xl">Destekçilerinizin tüm sorularını saniyeler içinde yanıtlayan, kampanya verilerini paylaşan yapay zeka altyapısı.</p>
+<button class="bg-[#04a1c4] hover:bg-[#038ba9] text-white px-10 py-5 rounded-xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-3 group/btn">
+                                    Modülleri İncele <span class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Slide 3 -->
+<div class="slider-item relative h-[85vh] min-h-[600px] w-full shrink-0">
+<img alt="Banka Entegrasyonu" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEatQWbLuYcqCCWTdJrYJLbINVXFPVOgfeSxmvQ8W7EQOMPZM3EsDI3r3Y43gy_f6o2sJY8LZU9Tn7dHvYmNQf7Qnx3Rgf3uv2uMfO37RjFV177trfRAN-l5ESwdBwD-qHYoQuVgL0vXGm22LVfp0_j6PEJZ0yUJgaJ1wdXB0sLVuJr7fSjJLIhR8VB5jGgCFt3evR3qvCYkQ8tytwMUUwi5PU2Ya8pVsd2MPVP89NZ3pO3lMijKWU_ZKWh1h8SnUiMkqV_tbDxiM"/>
+<div class="absolute inset-0 bg-gradient-to-r from-[#012d59] via-[#012d59]/70 to-transparent flex items-center">
+<div class="px-8 md:px-24 max-w-7xl mx-auto w-full">
+<div class="max-w-3xl text-white">
+<span class="inline-block px-4 py-1.5 bg-[#04a1c4] text-white text-xs font-bold rounded-full mb-6 tracking-widest uppercase">OTOMATİK TAKİP</span>
+<h2 class="text-4xl md:text-7xl font-h1 font-bold mb-6 leading-tight">Banka Hesaplarıyla<br/><span class="text-[#66daff]">Tam Entegrasyon</span></h2>
+<p class="text-lg md:text-xl text-slate-200 mb-10 font-medium max-w-2xl">Banka hareketlerinizi sistemle senkronize edin, gelen bağışları manuel işleme zahmetinden kurtulun.</p>
+<button class="bg-[#04a1c4] hover:bg-[#038ba9] text-white px-10 py-5 rounded-xl font-bold text-lg shadow-xl transition-all flex items-center justify-center gap-3 group/btn">
+                                    Hemen Başla <span class="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Indicators Overlay -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex justify-center gap-4 z-20">
+<button class="w-16 h-1.5 rounded-full bg-white transition-all hover:bg-[#66daff]" onclick="document.getElementById('main-slider').scrollTo({left: 0, behavior: 'smooth'})"></button>
+<button class="w-16 h-1.5 rounded-full bg-white/30 transition-all hover:bg-[#66daff]" onclick="document.getElementById('main-slider').scrollTo({left: document.getElementById('main-slider').offsetWidth, behavior: 'smooth'})"></button>
+<button class="w-16 h-1.5 rounded-full bg-white/30 transition-all hover:bg-[#66daff]" onclick="document.getElementById('main-slider').scrollTo({left: document.getElementById('main-slider').offsetWidth * 2, behavior: 'smooth'})"></button>
+</div>
+</div>
+</section>
+<!-- Value Propositions -->
+<section class="py-xl px-8 bg-white">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="font-h2 text-h2 text-primary-container mb-4">Neden KAMPANYATAKİP?</h2>
+<div class="w-20 h-1 bg-secondary mx-auto rounded-full"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Prop 1 -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:border-secondary transition-colors group">
+<div class="bg-white w-12 h-12 rounded-lg flex items-center justify-center mb-6 shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
+<span class="material-symbols-outlined" data-icon="shield_person">shield_person</span>
+</div>
+<h3 class="font-h3 text-h3 text-primary-container mb-3 uppercase text-sm tracking-widest">GÜVENLİ</h3>
+<p class="text-on-surface-variant font-body-sm">En üst düzey şifreleme ile verileriniz ve bağışlarınız her an güvende.</p>
+</div>
+<!-- Prop 2 -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:border-secondary transition-colors group">
+<div class="bg-white w-12 h-12 rounded-lg flex items-center justify-center mb-6 shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</div>
+<h3 class="font-h3 text-h3 text-primary-container mb-3 uppercase text-sm tracking-widest">ŞEFFAFR</h3>
+<p class="text-on-surface-variant font-body-sm">Her bağışı anında listeyebilir ve destekçilerinize raporlayabilirsiniz.</p>
+</div>
+<!-- Prop 3 -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:border-secondary transition-colors group">
+<div class="bg-white w-12 h-12 rounded-lg flex items-center justify-center mb-6 shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+</div>
+<h3 class="font-h3 text-h3 text-primary-container mb-3 uppercase text-sm tracking-widest">ANLIK TAKİP</h3>
+<p class="text-on-surface-variant font-body-sm">Mobil uygulama üzerinden 7/24 tüm kampanya sürecini izleyin.</p>
+</div>
+<!-- Prop 4 -->
+<div class="bg-surface-container-low p-8 rounded-xl border border-outline-variant hover:border-secondary transition-colors group">
+<div class="bg-white w-12 h-12 rounded-lg flex items-center justify-center mb-6 shadow-sm group-hover:bg-secondary group-hover:text-white transition-all">
+<span class="material-symbols-outlined" data-icon="volunteer_activism">volunteer_activism</span>
+</div>
+<h3 class="font-h3 text-h3 text-primary-container mb-3 uppercase text-sm tracking-widest">DAHA FAZLA DESTEK</h3>
+<p class="text-on-surface-variant font-body-sm">Profesyonel görünüm ve şeffaflıkla güven tazele, desteği artır.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="py-xl px-8 bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col lg:flex-row justify-between items-end mb-16 gap-4">
+<div>
+<span class="font-label-md text-secondary tracking-widest uppercase">Güçlü Altyapı</span>
+<h2 class="font-h2 text-h2 text-primary-container mt-2">12 Modül, Tek Sistem</h2>
+</div>
+<p class="font-body-md text-on-surface-variant max-w-md">Kampanyanızın her aşamasını dijitalleştiren kapsamlı araç seti.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+<!-- Module 1: Para Takibi -->
+<div class="col-span-2 row-span-2 bg-primary-container text-white p-8 rounded-2xl flex flex-col justify-between overflow-hidden relative group">
+<div class="z-10">
+<span class="material-symbols-outlined text-4xl text-secondary-container mb-4" data-icon="account_balance_wallet">account_balance_wallet</span>
+<h3 class="font-h3 text-h3 mb-2">Para Takibi</h3>
+<p class="font-body-sm text-surface-variant">Gelen tüm bağışları banka entegrasyonu ile otomatik eşleştirin.</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[140px]" data-icon="database">database</span>
+</div>
+</div>
+<!-- Module 2: Kumbara Takip -->
+<div class="col-span-2 bg-white p-6 rounded-2xl border border-outline-variant flex items-center gap-4">
+<div class="bg-surface-container-high w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary-container" data-icon="savings">savings</span>
+</div>
+<div>
+<h4 class="font-label-md text-primary-container">Kumbara Takip</h4>
+<p class="text-xs text-on-surface-variant">Saha kumbaralarını QR kod ile yönetin.</p>
+</div>
+</div>
+<!-- Module 3: WhatsApp AI -->
+<div class="col-span-2 bg-secondary text-white p-6 rounded-2xl flex items-center gap-4">
+<div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h4 class="font-label-md">WhatsApp AI</h4>
+<p class="text-xs text-white/80">Destekçilere otomatik bilgilendirme.</p>
+</div>
+</div>
+<!-- Small Modules Grid -->
+<div class="bg-white p-4 rounded-2xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="groups">groups</span>
+<p class="text-xs font-semibold">Gönüllü Yönetimi</p>
+</div>
+<div class="bg-white p-4 rounded-2xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="description">description</span>
+<p class="text-xs font-semibold">Resmi Evraklar</p>
+</div>
+<div class="bg-white p-4 rounded-2xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="campaign">campaign</span>
+<p class="text-xs font-semibold">Duyuru Paneli</p>
+</div>
+<div class="bg-white p-4 rounded-2xl border border-outline-variant text-center">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="receipt_long">receipt_long</span>
+<p class="text-xs font-semibold">Gider Takibi</p>
+</div>
+<!-- Remaining modules placeholder -->
+<div class="col-span-2 md:col-span-4 lg:col-span-6 bg-surface-container p-6 rounded-2xl flex flex-wrap justify-center gap-8">
+<span class="flex items-center gap-2 text-primary-container font-label-sm"><span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> SMS Entegrasyonu</span>
+<span class="flex items-center gap-2 text-primary-container font-label-sm"><span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> Sosyal Medya Raporu</span>
+<span class="flex items-center gap-2 text-primary-container font-label-sm"><span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> QR Bağış Sistemi</span>
+<span class="flex items-center gap-2 text-primary-container font-label-sm"><span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span> Çoklu Dil Desteği</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-xl px-8 bg-white">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="font-h2 text-h2 text-primary-container mb-4">Size Uygun Paketi Seçin</h2>
+<p class="font-body-md text-on-surface-variant">Her bütçeye ve kampanya büyüklüğüne uygun çözümler.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
+<!-- Temel -->
+<div class="bg-surface p-8 rounded-2xl border border-outline-variant">
+<h3 class="font-h3 text-h3 text-primary-container text-lg mb-2">Temel</h3>
+<p class="text-on-surface-variant font-body-sm mb-6">Yeni başlayan küçük kampanyalar için.</p>
+<ul class="space-y-4 mb-8">
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Manuel Bağış Girişi</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Basit İstatistikler</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> 2 Gönüllü Kullanıcı</li>
+</ul>
+<button class="w-full py-3 rounded-lg border-2 border-primary-container text-primary-container font-label-md hover:bg-primary-container hover:text-white transition-all">Seç</button>
+</div>
+<!-- Standart (Highlighted) -->
+<div class="bg-white p-8 rounded-2xl border-2 border-secondary shadow-lg relative lg:-mt-4">
+<span class="absolute top-0 right-8 -translate-y-1/2 bg-secondary text-white px-4 py-1 rounded-full text-xs font-bold">EN ÇOK TERCİH EDİLEN</span>
+<h3 class="font-h3 text-h3 text-primary-container text-lg mb-2">Standart</h3>
+<p class="text-on-surface-variant font-body-sm mb-6">Aktif büyüyen tüm kampanyalar için.</p>
+<ul class="space-y-4 mb-8">
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Banka Entegrasyonu</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> QR Bağış Sistemi</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> 10 Gönüllü Kullanıcı</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Gider Takip Modülü</li>
+</ul>
+<button class="w-full py-3 rounded-lg bg-secondary text-white font-label-md hover:opacity-90 shadow-md transition-all">Hemen Başla</button>
+</div>
+<!-- Premium -->
+<div class="bg-surface p-8 rounded-2xl border border-outline-variant">
+<h3 class="font-h3 text-h3 text-primary-container text-lg mb-2">Premium</h3>
+<p class="text-on-surface-variant font-body-sm mb-6">Yüksek hacimli global kampanyalar.</p>
+<ul class="space-y-4 mb-8">
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> WhatsApp AI Asistan</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Çoklu Dil Desteği</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Sınırsız Kullanıcı</li>
+</ul>
+<button class="w-full py-3 rounded-lg border-2 border-primary-container text-primary-container font-label-md hover:bg-primary-container hover:text-white transition-all">Seç</button>
+</div>
+<!-- Özel -->
+<div class="bg-surface p-8 rounded-2xl border border-outline-variant">
+<h3 class="font-h3 text-h3 text-primary-container text-lg mb-2">Özel</h3>
+<p class="text-on-surface-variant font-body-sm mb-6">Dernekler ve vakıflar için özel.</p>
+<ul class="space-y-4 mb-8">
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Beyaz Etiket (Logo)</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> API Erişimi</li>
+<li class="flex items-center gap-2 font-body-sm"><span class="material-symbols-outlined text-secondary text-sm" data-icon="done">done</span> Özel Destek Hattı</li>
+</ul>
+<button class="w-full py-3 rounded-lg border-2 border-primary-container text-primary-container font-label-md hover:bg-primary-container hover:text-white transition-all">İletişime Geç</button>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Closing -->
+<section class="py-xl px-8">
+<div class="max-w-5xl mx-auto bg-primary-container rounded-3xl p-12 text-center text-white relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+<img alt="Background texture" class="w-full h-full object-cover" data-alt="abstract geometric pattern with dark blue gradients and soft lines for subtle texture background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAw_cp3jWn3N2KFXr2i-YGHCUywS_G_mXLF6YZADMuWJIrU6gqDsBQj7uQsR_4X--r9NoTRodvmrULFbiz5015FZCigqJ23lX-Kmsj1PjLE_EwvPNlYmVuNeSsa0ZzsXsGxei3ayGdi-Yeo1cFlTzIm50oYojKeZ8aBQZBmMH8fyIsyyHRWfgAMIq6kQeDM9PR_tBLPbXml3wDzRl43Dw9F0FgqbRa8ilvqQDVNtbFuZT_d1p5-SDQcj78p7va--fvduYSCd3SXAZ8"/>
+</div>
+<h2 class="font-h1 text-h1 mb-6 relative z-10">Kampanyanızı Bugün Başlatın</h2>
+<p class="font-body-lg text-surface-variant mb-10 max-w-xl mx-auto relative z-10">Zaman kaybetmeyin, şeffaf yönetim sistemiyle bağışçılarınıza güven verin ve hedefinize ulaşın.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
+<button class="bg-secondary-container text-on-secondary-container px-10 py-4 rounded-xl font-h3 text-label-md shadow-lg hover:brightness-105 active:scale-95 transition-all">Ücretsiz Demo Al</button>
+<button class="bg-white/10 backdrop-blur-sm text-white px-10 py-4 rounded-xl font-h3 text-label-md border border-white/20 hover:bg-white/20 transition-all">Destek Ekibine Yaz</button>
+</div>
+<!-- Trust Badges -->
+<div class="mt-16 flex flex-wrap justify-center gap-12 grayscale brightness-200 opacity-60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="gpp_good">gpp_good</span>
+<span class="font-label-sm">VALİLİK ONAYLI SİSTEM</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="verified_user">verified_user</span>
+<span class="font-label-sm">SSL GÜVENLİ ÖDEME</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="privacy_tip">privacy_tip</span>
+<span class="font-label-sm">KVKK UYUMLU ALTYAPI</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 bg-slate-50 border-t border-slate-200">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center px-8 max-w-7xl mx-auto gap-8 font-['Inter'] text-sm leading-relaxed">
+<div class="flex flex-col gap-4">
+<div class="text-lg font-bold text-[#012d59]">KAMPANYATAKİP</div>
+<p class="text-slate-500 max-w-xs">Şeffaf bağış yönetimi ve güvenli kampanya takibi için profesyonel çözüm ortağınız.</p>
+</div>
+<div class="flex flex-wrap gap-8">
+<div class="flex flex-col gap-3">
+<span class="font-bold text-primary-container mb-2">Kurumsal</span>
+<a class="text-slate-500 hover:text-[#04a1c4] transition-colors cursor-pointer" href="#">Hakkımızda</a>
+<a class="text-slate-500 hover:text-[#04a1c4] transition-colors cursor-pointer" href="#">İletişim</a>
+</div>
+<div class="flex flex-col gap-3">
+<span class="font-bold text-primary-container mb-2">Yasal</span>
+<a class="text-slate-500 hover:text-[#04a1c4] transition-colors cursor-pointer" href="#">Kullanım Koşulları</a>
+<a class="text-slate-500 hover:text-[#04a1c4] transition-colors cursor-pointer" href="#">KVKK Aydınlatma Metni</a>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-8 mt-12 pt-8 border-t border-slate-200 text-center md:text-left">
+<p class="text-slate-400 text-xs">© 2024 KAMPANYATAKİP. Tüm Hakları Saklıdır.</p>
+</div>
+</footer>
+<script>
+    const slider = document.getElementById('main-slider');
+    const indicators = document.querySelectorAll('.absolute.bottom-10.left-1/2 button');
+    
+    slider.addEventListener('scroll', () => {
+        const scrollIndex = Math.round(slider.scrollLeft / slider.offsetWidth);
+        indicators.forEach((ind, i) => {
+            if (i === scrollIndex) {
+                ind.classList.remove('bg-white/30');
+                ind.classList.add('bg-white');
+            } else {
+                ind.classList.remove('bg-white');
+                ind.classList.add('bg-white/30');
+            }
+        });
+    });
+</script>
+</body></html>
