@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, Lock } from "lucide-react";
 
 export function DemoBanner() {
   return (
@@ -14,13 +14,24 @@ export function DemoBanner() {
             Gerçek bağış alınmaz. Tüm veriler örnektir.
           </span>
         </div>
-        <Link
-          href="/basvuru"
-          className="inline-flex items-center gap-1 font-bold text-amber-950 hover:text-black transition-colors whitespace-nowrap"
-        >
-          Kendi Kampanyanızı Kurun
-          <ArrowRight size={14} strokeWidth={2.5} />
-        </Link>
+        <div className="flex items-center gap-3 whitespace-nowrap">
+          <Link
+            href="/admin/defne/login"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-amber-900/80 hover:text-amber-950 transition-colors underline-offset-2 hover:underline"
+            aria-label="Kampanya Yönetim Paneli"
+          >
+            <Lock size={12} strokeWidth={2.5} />
+            Yönetim Paneli
+          </Link>
+          <span className="hidden sm:inline h-3 w-px bg-amber-900/30" />
+          <Link
+            href="/basvuru"
+            className="inline-flex items-center gap-1 font-bold text-amber-950 hover:text-black transition-colors"
+          >
+            Kendi Kampanyanızı Kurun
+            <ArrowRight size={14} strokeWidth={2.5} />
+          </Link>
+        </div>
       </div>
     </div>
   );
