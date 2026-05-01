@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { isAdminAuthenticated, loginAdmin } from "@/lib/admin-auth";
 
@@ -132,9 +133,18 @@ export default function AdminLoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-white/60 text-label-sm mt-6">
-          © 2026 KAMPANYATAKİP — Şeffaf Bağış Takip Sistemi
-        </p>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <Link
+            href="/kampanya/demo"
+            className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors"
+          >
+            <ArrowLeft size={14} />
+            Demo Kampanyaya Dön
+          </Link>
+          <p className="text-center text-white/60 text-label-sm">
+            © 2026 KAMPANYATAKİP — Şeffaf Bağış Takip Sistemi
+          </p>
+        </div>
       </div>
     </div>
   );
