@@ -112,7 +112,7 @@ export default function ReportsPage() {
       rows.push([], ["Son Bağışlar"]);
       rows.push(["Tarih", "Bağışçı", "Kaynak", "Tutar", "Para Birimi", "Durum"]);
       adminDonations.slice(0, 20).forEach((d) => {
-        rows.push([d.date, d.donorName, d.source, d.amount, d.currency, d.status]);
+        rows.push([d.date, d.donorName, d.source, String(d.amount), d.currency, d.status]);
       });
       downloadCsv(filename, rows);
     } else {
