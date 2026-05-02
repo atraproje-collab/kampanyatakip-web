@@ -153,6 +153,13 @@ export function Footer() {
           <p className="text-[12px] text-on-surface-variant/85">
             © {new Date().getFullYear()} {siteConfig.company.name}. Tüm
             Hakları Saklıdır.
+            {" "}
+            <Link
+              href="/master-admin/login"
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              Yönetim
+            </Link>
           </p>
           <p className="text-[12px] text-on-surface-variant/75">
             {siteConfig.company.status} · {siteConfig.contact.address}
