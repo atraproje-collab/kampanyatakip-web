@@ -1,28 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Download,
   FileSpreadsheet,
   FileText,
   Info,
+  Loader2,
   Paperclip,
   Shield,
   ShieldCheck,
   TrendingDown,
   TrendingUp,
   Wallet,
+  WifiOff,
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
 import { DocumentsSection } from "@/components/campaign/DocumentsSection";
-import type { CurrencyCode } from "@/lib/mock-campaign-data";
+import type { CurrencyCode, IncomeRow, ExpenseRow } from "@/lib/mock-campaign-data";
 import {
   formatTRY,
   formatUSD,
   mockExchangeRate,
   toTRY,
 } from "@/lib/exchange-rate";
+import { fetchIncome, fetchExpenses } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+const POLL_INTERVAL_MS = 30_000;
 
 const CURRENCY_SYMBOL: Record<CurrencyCode, string> = {
   TRY: "₺",
@@ -44,20 +49,87 @@ function formatNative(amount: number, currency: CurrencyCode): string {
 
 type Tab = "income" | "expenses";
 
+type DataStatus = "loading" | "live" | "mock";
+
 function handleDemoAction(message: string) {
   if (typeof window !== "undefined") window.alert(message);
 }
 
+function StatusBadge({ status }: { status: DataStatus }) {
+  if (status === "loading") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+        <Loader2 size={10} className="animate-spin" />
+        Veri yükleniyor…
+      </span>
+    );
+  }
+  if (status === "live") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/60" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+        </span>
+        Canlı Veri
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+      <WifiOff size={10} />
+      Demo Veri
+    </span>
+  );
+}
+
 export function TransparencyCenter() {
   const { campaign, raisedUsd } = useCampaign();
-  const { income, expenses } = campaign.transparency;
-  const [tab, setTab] = useState<Tab>("income");
   const rate = mockExchangeRate;
 
-  // Totals — campaign counter is the source of truth for 'Toplam Gelir'.
+  // Local state for API-driven lists (initialized from mock data as fallback)
+  const [incomeRows, setIncomeRows] = useState<IncomeRow[]>(campaign.transparency.income);
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>(campaign.transparency.expenses);
+  const [status, setStatus] = useState<DataStatus>("loading");
+  const [tab, setTab] = useState<Tab>("income");
+
+  // ── API polling ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+
+    const syncData = async () => {
+      const [incomeResult, expenseResult] = await Promise.allSettled([
+        fetchIncome(),
+        fetchExpenses(),
+      ]);
+
+      if (!mounted) return;
+
+      let gotAnyData = false;
+
+      if (incomeResult.status === "fulfilled" && incomeResult.value && incomeResult.value.length > 0) {
+        setIncomeRows(incomeResult.value);
+        gotAnyData = true;
+      }
+      if (expenseResult.status === "fulfilled" && expenseResult.value && expenseResult.value.length > 0) {
+        setExpenseRows(expenseResult.value);
+        gotAnyData = true;
+      }
+
+      setStatus(gotAnyData ? "live" : "mock");
+    };
+
+    syncData();
+    const interval = setInterval(syncData, POLL_INTERVAL_MS);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Totals — campaign counter (raisedUsd from context) is source of truth for revenue.
   const raisedTry = raisedUsd * rate.usd_try;
-  // Expenses remain denominated in TRY in the current mock.
-  const totalExpensesTry = expenses.reduce((s, e) => s + e.amount, 0);
+  const totalExpensesTry = expenseRows.reduce((s, e) => s + e.amount, 0);
   const totalExpensesUsd = totalExpensesTry / rate.usd_try;
   const netRemainingUsd = raisedUsd - totalExpensesUsd;
   const netRemainingTry = netRemainingUsd * rate.usd_try;
@@ -137,28 +209,31 @@ export function TransparencyCenter() {
         })}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs + toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div
-          role="tablist"
-          className="inline-flex p-1 rounded-xl bg-surface-container-low border border-outline-variant"
-        >
-          {(["income", "expenses"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-semibold transition-all",
-                tab === t
-                  ? "bg-white text-primary-container shadow-[0_1px_2px_rgba(0,24,53,0.06)]"
-                  : "text-on-surface-variant hover:text-primary-container",
-              )}
-            >
-              {t === "income" ? "Gelir" : "Gider"}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div
+            role="tablist"
+            className="inline-flex p-1 rounded-xl bg-surface-container-low border border-outline-variant"
+          >
+            {(["income", "expenses"] as Tab[]).map((t) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={tab === t}
+                onClick={() => setTab(t)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-[13px] font-semibold transition-all",
+                  tab === t
+                    ? "bg-white text-primary-container shadow-[0_1px_2px_rgba(0,24,53,0.06)]"
+                    : "text-on-surface-variant hover:text-primary-container",
+                )}
+              >
+                {t === "income" ? "Gelir" : "Gider"}
+              </button>
+            ))}
+          </div>
+          <StatusBadge status={status} />
         </div>
 
         <div className="flex gap-2">
@@ -210,48 +285,59 @@ export function TransparencyCenter() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
-                {income.map((row, i) => {
-                  const tryEquivalent = toTRY(row.amount, row.currency, rate);
-                  return (
-                    <tr
-                      key={i}
-                      className="hover:bg-surface-container-low/50 transition-colors"
+                {incomeRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-5 py-8 text-center text-[13px] text-on-surface-variant"
                     >
-                      <td className="px-4 md:px-5 py-3.5 text-on-surface-variant whitespace-nowrap">
-                        {row.date}
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-primary-container font-medium">
-                        {row.source}
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-right text-secondary font-bold tabular-nums whitespace-nowrap">
-                        +{formatNative(row.amount, row.currency)}
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-center">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold tracking-wider",
-                            CURRENCY_CHIP[row.currency],
+                      Gelir kaydı bulunamadı.
+                    </td>
+                  </tr>
+                ) : (
+                  incomeRows.map((row, i) => {
+                    const tryEquivalent = toTRY(row.amount, row.currency, rate);
+                    return (
+                      <tr
+                        key={i}
+                        className="hover:bg-surface-container-low/50 transition-colors"
+                      >
+                        <td className="px-4 md:px-5 py-3.5 text-on-surface-variant whitespace-nowrap">
+                          {row.date}
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-primary-container font-medium">
+                          {row.source}
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-right text-secondary font-bold tabular-nums whitespace-nowrap">
+                          +{formatNative(row.amount, row.currency)}
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-center">
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-bold tracking-wider",
+                              CURRENCY_CHIP[row.currency],
+                            )}
+                          >
+                            {row.currency}
+                          </span>
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-right tabular-nums text-on-surface whitespace-nowrap hidden md:table-cell">
+                          {row.currency === "TRY" ? (
+                            <span className="text-on-surface-variant">—</span>
+                          ) : (
+                            <>≈ ₺{formatTRY(tryEquivalent)}</>
                           )}
-                        >
-                          {row.currency}
-                        </span>
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-right tabular-nums text-on-surface whitespace-nowrap hidden md:table-cell">
-                        {row.currency === "TRY" ? (
-                          <span className="text-on-surface-variant">—</span>
-                        ) : (
-                          <>≈ ₺{formatTRY(tryEquivalent)}</>
-                        )}
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden lg:table-cell">
-                        {row.details}
-                      </td>
-                      <td className="px-4 md:px-5 py-3.5 text-center">
-                        <ImmutableBadge />
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden lg:table-cell">
+                          {row.details}
+                        </td>
+                        <td className="px-4 md:px-5 py-3.5 text-center">
+                          <ImmutableBadge />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -290,42 +376,53 @@ export function TransparencyCenter() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
-                {expenses.map((row, i) => (
-                  <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
-                    <td className="px-4 md:px-5 py-3.5 text-on-surface-variant whitespace-nowrap">
-                      {row.date}
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-primary-container font-medium whitespace-nowrap">
-                      {row.category}
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden md:table-cell whitespace-nowrap">
-                      {row.vendor}
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-right text-error font-bold tabular-nums whitespace-nowrap">
-                      −₺{formatTRY(row.amount)}
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden lg:table-cell">
-                      {row.description}
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-center">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDemoAction(
-                            `Demo belgesi: ${row.category} · ${row.vendor}. Gerçek ortamda PDF/JPG önizleme açılır.`,
-                          )
-                        }
-                        className="inline-flex items-center gap-1 text-secondary hover:text-on-secondary-container text-[12px] font-semibold"
-                      >
-                        <Paperclip size={13} />
-                        Görüntüle
-                      </button>
-                    </td>
-                    <td className="px-4 md:px-5 py-3.5 text-center">
-                      <ImmutableBadge />
+                {expenseRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-5 py-8 text-center text-[13px] text-on-surface-variant"
+                    >
+                      Gider kaydı bulunamadı.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  expenseRows.map((row, i) => (
+                    <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
+                      <td className="px-4 md:px-5 py-3.5 text-on-surface-variant whitespace-nowrap">
+                        {row.date}
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-primary-container font-medium whitespace-nowrap">
+                        {row.category}
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden md:table-cell whitespace-nowrap">
+                        {row.vendor}
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-right text-error font-bold tabular-nums whitespace-nowrap">
+                        −₺{formatTRY(row.amount)}
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-on-surface-variant hidden lg:table-cell">
+                        {row.description}
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleDemoAction(
+                              `Demo belgesi: ${row.category} · ${row.vendor}. Gerçek ortamda PDF/JPG önizleme açılır.`,
+                            )
+                          }
+                          className="inline-flex items-center gap-1 text-secondary hover:text-on-secondary-container text-[12px] font-semibold"
+                        >
+                          <Paperclip size={13} />
+                          Görüntüle
+                        </button>
+                      </td>
+                      <td className="px-4 md:px-5 py-3.5 text-center">
+                        <ImmutableBadge />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

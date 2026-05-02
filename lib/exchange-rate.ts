@@ -11,9 +11,9 @@ export interface ExchangeRate {
 }
 
 export const mockExchangeRate: ExchangeRate = {
-  usd_try: 34.0,
-  eur_try: 36.5,
-  last_updated: "2026-04-24 15:30",
+  usd_try: 45.15,
+  eur_try: 49.50,
+  last_updated: "2026-05-02 15:30",
   source: "TCMB",
 };
 
