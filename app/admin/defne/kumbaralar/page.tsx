@@ -1,7 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Camera, Loader2, MapPin, Pencil, PiggyBank, Plus, User } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Calendar,
+  Camera,
+  Image as ImageIcon,
+  Loader2,
+  Lock,
+  MapPin,
+  Pencil,
+  PiggyBank,
+  Plus,
+  User,
+  X,
+} from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -14,7 +26,16 @@ import {
 import { adminVolunteers } from "@/lib/admin-mock-data";
 import { demoCampaign, type Kumbara } from "@/lib/mock-campaign-data";
 
-type KumbaraDraft = Kumbara & { active: boolean };
+// ── Types ───────────────────────────────────────────────────────────────────
+
+type KumbaraStatus = "aktif" | "kapatildi";
+
+type KumbaraDraft = Kumbara & {
+  status: KumbaraStatus;
+  tutanakFoto?: string;
+};
+
+type Tab = "aktif" | "kapatildi";
 
 // ── API & Cloudinary constants ──────────────────────────────────────────────
 
@@ -24,7 +45,6 @@ const CLOUDINARY_PRESET = "kampanyatakip";
 
 // ── Cloudinary helper ───────────────────────────────────────────────────────
 
-/** Uploads a single file to Cloudinary using the unsigned preset. Returns secure_url. */
 async function uploadToCloudinary(file: File): Promise<string> {
   const fd = new FormData();
   fd.append("file", file);
@@ -44,6 +64,14 @@ async function uploadToCloudinary(file: File): Promise<string> {
 
 type RawKumbara = Record<string, unknown>;
 
+function normalizeStatus(raw: unknown): KumbaraStatus {
+  if (typeof raw === "string") {
+    const s = raw.toLocaleLowerCase("tr").trim();
+    if (s === "kapatildi" || s === "kapatıldı" || s === "closed") return "kapatildi";
+  }
+  return "aktif";
+}
+
 function parseKumbara(raw: RawKumbara): KumbaraDraft | null {
   const id = String(raw.kumbara_no ?? raw.id ?? raw.no ?? "").trim();
   if (!id) return null;
@@ -53,15 +81,16 @@ function parseKumbara(raw: RawKumbara): KumbaraDraft | null {
   const lastOpened = String(
     raw.son_acilis ?? raw.lastOpened ?? raw.son_acilis_tarihi ?? "—",
   );
-  const statusRaw = raw.durum ?? raw.status ?? raw.active;
-  let active = true;
-  if (typeof statusRaw === "boolean") {
-    active = statusRaw;
-  } else if (typeof statusRaw === "string") {
-    const s = statusRaw.toLocaleLowerCase("tr");
-    active = !["pasif", "passive", "inactive", "false", "0"].includes(s);
+  const status = normalizeStatus(raw.durum ?? raw.status);
+
+  let tutanakFoto: string | undefined;
+  const fotoRaw =
+    raw.tutanak_foto ?? raw.tutanakFoto ?? raw.foto_url ?? raw.photo_url ?? null;
+  if (typeof fotoRaw === "string" && fotoRaw.trim()) {
+    tutanakFoto = fotoRaw.trim();
   }
-  return { id, location, responsible, total, lastOpened, active };
+
+  return { id, location, responsible, total, lastOpened, status, tutanakFoto };
 }
 
 async function fetchKumbaralar(): Promise<KumbaraDraft[] | null> {
@@ -101,12 +130,17 @@ async function postJson(path: string, body: unknown): Promise<boolean> {
 
 export default function KumbaralarPage() {
   const [items, setItems] = useState<KumbaraDraft[]>(
-    demoCampaign.transparency.kumbaralar.map((k) => ({ ...k, active: true })),
+    demoCampaign.transparency.kumbaralar.map((k) => ({
+      ...k,
+      status: "aktif" as KumbaraStatus,
+    })),
   );
   const [loading, setLoading] = useState(true);
   const [savingEntry, setSavingEntry] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("aktif");
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openEntry, setOpenEntry] = useState<KumbaraDraft | null>(null);
@@ -122,7 +156,6 @@ export default function KumbaralarPage() {
 
   const [editLocation, setEditLocation] = useState("");
   const [editResp, setEditResp] = useState("");
-  const [editActive, setEditActive] = useState(true);
 
   // ── Initial fetch from API ────────────────────────────────────────────────
   useEffect(() => {
@@ -140,6 +173,18 @@ export default function KumbaralarPage() {
     };
   }, []);
 
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const aktifItems = useMemo(
+    () => items.filter((k) => k.status === "aktif"),
+    [items],
+  );
+  const kapatildiItems = useMemo(
+    () => items.filter((k) => k.status === "kapatildi"),
+    [items],
+  );
+  const visibleItems = tab === "aktif" ? aktifItems : kapatildiItems;
+  const totalRaised = items.reduce((s, k) => s + k.total, 0);
+
   const nextId = () => {
     const max = items.reduce(
       (m, k) => Math.max(m, parseInt(k.id, 10) || 0),
@@ -156,7 +201,7 @@ export default function KumbaralarPage() {
       responsible: newResp,
       total: 0,
       lastOpened: "—",
-      active: true,
+      status: "aktif",
     };
     setItems([k, ...items]);
     setNewLocation("");
@@ -190,10 +235,24 @@ export default function KumbaralarPage() {
         tutanak_foto: photoUrl,
       });
       if (!ok) {
-        throw new Error("Sunucu kaydı reddetti, daha sonra tekrar deneyin.");
+        throw new Error("Sunucu açılış kaydını reddetti.");
       }
 
-      // 3) Reflect in local state
+      // 3) Close the kumbara on backend (best-effort)
+      const closeOk = await postJson("/kumbara-guncelle", {
+        kumbara_no: openEntry.id,
+        durum: "kapatildi",
+      });
+      if (!closeOk) {
+        // Açılış was already recorded; backend close failed.
+        // Still close locally so user UX is consistent — next page load will sync.
+        // eslint-disable-next-line no-console
+        console.warn(
+          `Kumbara ${openEntry.id} açılışı kaydedildi ama backend kapama başarısız.`,
+        );
+      }
+
+      // 4) Reflect in local state — close + add total + photo
       setItems((prev) =>
         prev.map((k) =>
           k.id === openEntry.id
@@ -202,6 +261,8 @@ export default function KumbaralarPage() {
                 total: k.total + amount,
                 lastOpened: entryDate,
                 responsible: entryResp || k.responsible,
+                status: "kapatildi" as KumbaraStatus,
+                tutanakFoto: photoUrl,
               }
             : k,
         ),
@@ -209,6 +270,8 @@ export default function KumbaralarPage() {
       setOpenEntry(null);
       setEntryAmount("");
       setEntryFile(null);
+      // Switch to closed tab so user sees the moved item
+      setTab("kapatildi");
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Kayıt başarısız.");
     } finally {
@@ -230,7 +293,6 @@ export default function KumbaralarPage() {
     setOpenEdit(k);
     setEditLocation(k.location);
     setEditResp(k.responsible);
-    setEditActive(k.active);
   };
 
   const handleSaveEdit = async () => {
@@ -242,7 +304,7 @@ export default function KumbaralarPage() {
         kumbara_no: openEdit.id,
         konum: editLocation.trim(),
         sorumlu: editResp,
-        durum: editActive ? "aktif" : "pasif",
+        durum: "aktif",
       });
       if (!ok) {
         throw new Error("Sunucu kaydı reddetti, daha sonra tekrar deneyin.");
@@ -255,7 +317,6 @@ export default function KumbaralarPage() {
                 ...k,
                 location: editLocation.trim(),
                 responsible: editResp,
-                active: editActive,
               }
             : k,
         ),
@@ -268,15 +329,15 @@ export default function KumbaralarPage() {
     }
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <AdminLayout
       title="Kumbaralar"
       subtitle={
         loading
           ? "Yükleniyor…"
-          : `${items.length} kumbara — toplam ₺${items
-              .reduce((s, k) => s + k.total, 0)
-              .toLocaleString("tr-TR")}`
+          : `${items.length} kumbara — toplam ₺${totalRaised.toLocaleString("tr-TR")}`
       }
       actions={
         <Button variant="primary" size="sm" onClick={() => setOpenAdd(true)}>
@@ -285,6 +346,57 @@ export default function KumbaralarPage() {
         </Button>
       }
     >
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label="Kumbara sekmeleri"
+        className="flex gap-1 mb-4 border-b border-outline-variant overflow-x-auto -mx-1 px-1"
+      >
+        <button
+          role="tab"
+          aria-selected={tab === "aktif"}
+          onClick={() => setTab("aktif")}
+          className={`px-4 py-2.5 text-label-md font-semibold whitespace-nowrap transition border-b-2 -mb-px min-h-[44px] ${
+            tab === "aktif"
+              ? "border-secondary text-secondary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          Aktif Kumbaralar
+          <span
+            className={`ml-2 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-bold ${
+              tab === "aktif"
+                ? "bg-secondary-container text-secondary"
+                : "bg-surface-container text-on-surface-variant"
+            }`}
+          >
+            {aktifItems.length}
+          </span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "kapatildi"}
+          onClick={() => setTab("kapatildi")}
+          className={`px-4 py-2.5 text-label-md font-semibold whitespace-nowrap transition border-b-2 -mb-px min-h-[44px] ${
+            tab === "kapatildi"
+              ? "border-secondary text-secondary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          Kapatıldı
+          <span
+            className={`ml-2 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-bold ${
+              tab === "kapatildi"
+                ? "bg-red-100 text-red-700"
+                : "bg-surface-container text-on-surface-variant"
+            }`}
+          >
+            {kapatildiItems.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Cards */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -296,67 +408,162 @@ export default function KumbaralarPage() {
             </div>
           ))}
         </div>
+      ) : visibleItems.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-10 text-center">
+          <PiggyBank className="w-10 h-10 mx-auto mb-3 text-on-surface-variant/60" />
+          <p className="text-body-md text-on-surface-variant">
+            {tab === "aktif"
+              ? "Aktif kumbara yok. Yeni bir kumbara ekleyebilirsiniz."
+              : "Henüz kapatılmış kumbara yok."}
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((k) => (
+          {visibleItems.map((k) => (
             <article
               key={k.id}
-              className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden hover:border-secondary hover:shadow-[0_4px_12px_rgba(0,24,53,0.08)] transition"
+              className={`rounded-xl border overflow-hidden transition ${
+                k.status === "aktif"
+                  ? "bg-surface-container-lowest border-outline-variant hover:border-secondary hover:shadow-[0_4px_12px_rgba(0,24,53,0.08)]"
+                  : "bg-surface-container-low border-outline-variant"
+              }`}
             >
-              <div className="px-5 pt-4 pb-3 border-b border-outline-variant flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-lg bg-secondary-container/40 text-secondary flex items-center justify-center">
-                    <PiggyBank className="w-4 h-4" />
+              <div className="px-5 pt-4 pb-3 border-b border-outline-variant flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      k.status === "aktif"
+                        ? "bg-secondary-container/40 text-secondary"
+                        : "bg-red-50 text-red-600"
+                    }`}
+                  >
+                    {k.status === "aktif" ? (
+                      <PiggyBank className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-label-sm text-on-surface-variant">Kumbara No</p>
-                    <p className="text-body-lg font-semibold text-on-surface">#{k.id}</p>
+                    <p className="text-body-lg font-semibold text-on-surface truncate">
+                      #{k.id}
+                    </p>
                   </div>
                 </div>
-                <StatusPill status={k.active ? "Aktif" : "Pasif"} />
+                {k.status === "aktif" ? (
+                  <StatusPill status="Aktif" />
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-red-200 bg-red-50 text-red-700 text-label-sm font-medium shrink-0">
+                    <Lock className="w-3 h-3" />
+                    Kapatıldı
+                  </span>
+                )}
               </div>
 
               <div className="px-5 py-4 space-y-2.5 text-body-sm">
                 <div className="flex items-start gap-2 text-on-surface-variant">
                   <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-on-surface">{k.location}</span>
+                  <span className="text-on-surface break-words">{k.location}</span>
                 </div>
                 <div className="flex items-start gap-2 text-on-surface-variant">
                   <User className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="text-on-surface">{k.responsible}</span>
+                  <span className="text-on-surface break-words">{k.responsible}</span>
                 </div>
-                <div className="pt-2 mt-2 border-t border-outline-variant flex items-center justify-between">
+                <div className="pt-2 mt-2 border-t border-outline-variant flex items-center justify-between gap-2">
                   <span className="text-label-sm text-on-surface-variant">Toplanan</span>
                   <span className="font-bold text-on-surface tabular-nums">
                     {formatCurrency(k.total, "TRY")}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-label-sm text-on-surface-variant">Son açılış</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-label-sm text-on-surface-variant inline-flex items-center gap-1">
+                    {k.status === "kapatildi" ? (
+                      <>
+                        <Calendar className="w-3.5 h-3.5" />
+                        Kapanış
+                      </>
+                    ) : (
+                      "Son açılış"
+                    )}
+                  </span>
                   <span className="text-label-md text-on-surface tabular-nums">
                     {k.lastOpened}
                   </span>
                 </div>
+
+                {/* Photo thumbnail (closed tab only when present) */}
+                {k.status === "kapatildi" && k.tutanakFoto && (
+                  <button
+                    type="button"
+                    onClick={() => setPreviewPhoto(k.tutanakFoto ?? null)}
+                    className="mt-2 w-full h-28 rounded-lg overflow-hidden bg-surface-container-high border border-outline-variant hover:opacity-90 hover:border-secondary transition cursor-zoom-in flex items-center justify-center"
+                    aria-label="Tutanak fotoğrafını büyüt"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={k.tutanakFoto}
+                      alt={`Kumbara #${k.id} tutanak fotoğrafı`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
+                )}
+                {k.status === "kapatildi" && !k.tutanakFoto && (
+                  <div className="mt-2 w-full h-20 rounded-lg bg-surface-container-high/40 border border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant/70 text-label-sm gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    Tutanak yok
+                  </div>
+                )}
               </div>
 
-              <div className="px-5 pb-4 pt-1 grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => openEditModal(k)}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-label-md text-on-surface hover:bg-surface-container-low transition"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Düzenle
-                </button>
-                <button
-                  onClick={() => openEntryModal(k)}
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-on-secondary font-semibold text-label-md hover:bg-on-secondary-container transition"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Açılış Kaydet
-                </button>
-              </div>
+              {/* Action buttons — only on aktif tab */}
+              {k.status === "aktif" && (
+                <div className="px-5 pb-4 pt-1 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => openEditModal(k)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-label-md text-on-surface hover:bg-surface-container-low transition min-h-[40px]"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Düzenle
+                  </button>
+                  <button
+                    onClick={() => openEntryModal(k)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-on-secondary font-semibold text-label-md hover:bg-on-secondary-container transition min-h-[40px]"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Açılış Kaydet
+                  </button>
+                </div>
+              )}
             </article>
           ))}
+        </div>
+      )}
+
+      {/* Photo lightbox */}
+      {previewPhoto && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-150"
+          onClick={() => setPreviewPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tutanak fotoğrafı önizleme"
+        >
+          <button
+            type="button"
+            onClick={() => setPreviewPhoto(null)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition"
+            aria-label="Kapat"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewPhoto}
+            alt="Tutanak fotoğrafı büyük görünüm"
+            className="max-w-full max-h-full rounded-lg shadow-2xl object-contain cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
 
@@ -445,6 +652,10 @@ export default function KumbaralarPage() {
               {errorMsg}
             </div>
           )}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-label-sm text-amber-800">
+            Bu açılış kaydedildikten sonra kumbara <strong>kapatılacak</strong> ve
+            artık düzenlenemeyecek.
+          </div>
           <FormField label="Tarih" required>
             <input
               type="date"
@@ -491,7 +702,7 @@ export default function KumbaralarPage() {
               }`}
             >
               <Camera className="w-5 h-5" />
-              <span className="text-body-sm">
+              <span className="text-body-sm break-all">
                 {entryFile ? entryFile.name : "Fotoğraf seç"}
               </span>
               <input
@@ -511,7 +722,7 @@ export default function KumbaralarPage() {
         open={openEdit !== null}
         onClose={() => !savingEdit && setOpenEdit(null)}
         title={openEdit ? `Düzenle — Kumbara #${openEdit.id}` : ""}
-        description="Konum, sorumlu ve durum bilgisini güncelleyin"
+        description="Konum ve sorumlu bilgisini güncelleyin"
         footer={
           <>
             <Button
@@ -567,34 +778,6 @@ export default function KumbaralarPage() {
                 </option>
               ))}
             </select>
-          </FormField>
-          <FormField label="Durum">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setEditActive(true)}
-                disabled={savingEdit}
-                className={`px-3 py-2.5 rounded-lg border text-label-md font-medium transition disabled:opacity-50 ${
-                  editActive
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
-                }`}
-              >
-                ● Aktif
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditActive(false)}
-                disabled={savingEdit}
-                className={`px-3 py-2.5 rounded-lg border text-label-md font-medium transition disabled:opacity-50 ${
-                  !editActive
-                    ? "border-on-surface-variant bg-surface-container text-on-surface"
-                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
-                }`}
-              >
-                ○ Pasif
-              </button>
-            </div>
           </FormField>
         </div>
       </Modal>
