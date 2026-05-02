@@ -66,8 +66,8 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     setHasStarted(true);
     const duration = 2000;
     const start = performance.now();
-    const to = raisedUsd;
-    prevRaisedRef.current = raisedUsd;
+    const to = Math.max(0, raisedUsd);   // guard: never negative
+    prevRaisedRef.current = to;
 
     let rafId = 0;
     const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
@@ -75,7 +75,7 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      setAnimated(Math.round(to * easeOutQuart(progress)));
+      setAnimated(Math.max(0, Math.round(to * easeOutQuart(progress))));
       if (progress < 1) rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
@@ -86,8 +86,8 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
   useEffect(() => {
     if (!hasStarted) return;
     if (raisedUsd === prevRaisedRef.current) return;
-    const from = prevRaisedRef.current;
-    const to = raisedUsd;
+    const from = Math.max(0, prevRaisedRef.current);  // guard: never negative
+    const to   = Math.max(0, raisedUsd);              // guard: never negative
     prevRaisedRef.current = to;
     const duration = 900;
     const start = performance.now();
@@ -97,7 +97,7 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      setAnimated(Math.round(from + (to - from) * easeOutCubic(progress)));
+      setAnimated(Math.max(0, Math.round(from + (to - from) * easeOutCubic(progress))));
       if (progress < 1) rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
