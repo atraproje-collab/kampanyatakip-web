@@ -76,6 +76,8 @@ export interface CampaignStats {
   donorCount: number;
   daysLeft?: number;
   goalUsd?: number;
+  /** USD/TRY rate as returned by the API (usd_try field), fallback 45.15 */
+  usdTry: number;
 }
 
 // ── Generic fetch helper ──────────────────────────────────────────────────────
@@ -110,7 +112,7 @@ type RawStats = Record<string, unknown>;
  * Parses API stats response.
  * Handles:
  *  - { raised_usd, donor_count }
- *  - { total_try, total_usd, donor_count }   — converts TRY to USD using USD_TRY
+ *  - { total_try, total_usd, donor_count }   — converts TRY to USD using live usd_try rate
  *  - Array wrapping: [{ ... }]
  */
 function parseStats(raw: unknown): CampaignStats | null {
@@ -119,6 +121,9 @@ function parseStats(raw: unknown): CampaignStats | null {
     ? (raw[0] as RawStats)
     : (raw as RawStats);
   if (!obj || typeof obj !== "object") return null;
+
+  // Exchange rate from API; fallback to constant if missing / zero
+  const usdTry = parseFloat(String(obj.usd_try ?? obj.usdTry ?? 0)) || USD_TRY;
 
   // Direct USD total (preferred)
   const directUsd = Number(
@@ -135,7 +140,7 @@ function parseStats(raw: unknown): CampaignStats | null {
 
   let raisedUsd = directUsd;
   if (!raisedUsd && (totalTry > 0 || extraUsd > 0)) {
-    raisedUsd = extraUsd + totalTry / USD_TRY;
+    raisedUsd = extraUsd + totalTry / usdTry;
   }
   if (!raisedUsd || raisedUsd <= 0) return null;
 
@@ -145,7 +150,7 @@ function parseStats(raw: unknown): CampaignStats | null {
   const daysLeft = Number(obj.days_left ?? obj.daysLeft ?? obj.kalan_gun ?? 0) || undefined;
   const goalUsd = Number(obj.goal_usd ?? obj.goalUsd ?? obj.hedef_usd ?? 0) || undefined;
 
-  return { raisedUsd, donorCount, daysLeft, goalUsd };
+  return { raisedUsd, donorCount, daysLeft, goalUsd, usdTry };
 }
 
 export async function fetchStats(): Promise<CampaignStats | null> {
