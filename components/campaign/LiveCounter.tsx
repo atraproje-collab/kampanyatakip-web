@@ -14,8 +14,45 @@ interface LiveCounterProps {
   variant?: "light" | "dark";
 }
 
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+function CounterSkeleton({ isDark }: { isDark: boolean }) {
+  const p = isDark
+    ? "bg-white/15 animate-pulse rounded-md"
+    : "bg-surface-container-high animate-pulse rounded-md";
+  return (
+    <div aria-busy="true" aria-label="Yükleniyor…">
+      {/* "Toplanan" label */}
+      <div className={`h-3 w-16 ${p} mb-3`} />
+      {/* Big number row */}
+      <div className="flex items-baseline gap-2 mt-1">
+        <div className={`h-12 w-44 ${p}`} />
+        <div className={`h-4 w-9 ${p}`} />
+      </div>
+      {/* TRY row */}
+      <div className={`h-4 w-36 ${p} mt-2`} />
+      {/* Progress bar */}
+      <div className={`h-3 w-full rounded-full ${p} mt-5`} style={{ borderRadius: "9999px" }} />
+      {/* Goal row */}
+      <div className="mt-2 flex justify-between">
+        <div className={`h-3 w-24 ${p}`} />
+        <div className={`h-3 w-28 ${p}`} />
+      </div>
+      {/* Rate disclosure */}
+      <div className={`h-3 w-48 ${p} mt-3`} />
+      {/* Stat cards */}
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className={`h-[72px] rounded-xl ${p}`} style={{ borderRadius: "0.75rem" }} />
+        <div className={`h-[72px] rounded-xl ${p}`} style={{ borderRadius: "0.75rem" }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Counter ───────────────────────────────────────────────────────────────────
+
 export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
-  const { raisedUsd, donorCount, campaign } = useCampaign();
+  const { raisedUsd, donorCount, campaign, statsReady } = useCampaign();
   const rate = mockExchangeRate;
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -23,13 +60,12 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
   const prevRaisedRef = useRef(0);
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Initial count-up animation once visible
+  // Initial count-up: only starts after statsReady AND inView
   useEffect(() => {
-    if (!inView || hasStarted) return;
+    if (!inView || hasStarted || !statsReady) return;
     setHasStarted(true);
     const duration = 2000;
     const start = performance.now();
-    const from = 0;
     const to = raisedUsd;
     prevRaisedRef.current = raisedUsd;
 
@@ -39,17 +75,14 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = easeOutQuart(progress);
-      setAnimated(Math.round(from + (to - from) * eased));
-      if (progress < 1) {
-        rafId = requestAnimationFrame(tick);
-      }
+      setAnimated(Math.round(to * easeOutQuart(progress)));
+      if (progress < 1) rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [inView, hasStarted, raisedUsd]);
+  }, [inView, hasStarted, raisedUsd, statsReady]);
 
-  // Smooth updates after live donations
+  // Smooth updates for live ticker / API refreshes
   useEffect(() => {
     if (!hasStarted) return;
     if (raisedUsd === prevRaisedRef.current) return;
@@ -59,25 +92,34 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const duration = 900;
     const start = performance.now();
     let rafId = 0;
-
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = easeOutCubic(progress);
-      setAnimated(Math.round(from + (to - from) * eased));
+      setAnimated(Math.round(from + (to - from) * easeOutCubic(progress)));
       if (progress < 1) rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [raisedUsd, hasStarted]);
 
-  const pct = Math.min((raisedUsd / campaign.goalUsd) * 100, 100);
   const isDark = variant === "dark";
 
-  const animatedTry = animated * rate.usd_try;
-  const goalTry = campaign.goalUsd * rate.usd_try;
+  // Show skeleton while waiting for the first API response
+  if (!statsReady) {
+    return (
+      <div ref={ref}>
+        <CounterSkeleton isDark={isDark} />
+      </div>
+    );
+  }
+
+  const pct = Math.min((raisedUsd / campaign.goalUsd) * 100, 100);
+  // Guard against 0 exchange rate (should never happen with fallback 45.15)
+  const safeUsdTry = rate.usd_try > 0 ? rate.usd_try : 45.15;
+  const animatedTry = animated * safeUsdTry;
+  const goalTry = campaign.goalUsd * safeUsdTry;
 
   return (
     <div
@@ -110,21 +152,23 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
           </span>
         </div>
 
-        {/* Secondary — TRY equivalent */}
-        <div
-          className={`mt-2 flex items-center flex-wrap gap-x-2 text-[13px] md:text-[14px] tabular-nums ${
-            isDark ? "text-white/75" : "text-on-surface-variant"
-          }`}
-        >
-          <span>≈ ₺{formatTRY(animatedTry)}</span>
-          <span
-            className={`text-[11px] font-medium ${
-              isDark ? "text-white/45" : "text-on-surface-variant/70"
+        {/* Secondary — TRY equivalent (only when animated > 0) */}
+        {animated > 0 && (
+          <div
+            className={`mt-2 flex items-center flex-wrap gap-x-2 text-[13px] md:text-[14px] tabular-nums ${
+              isDark ? "text-white/75" : "text-on-surface-variant"
             }`}
           >
-            (1$ = ₺{rate.usd_try.toFixed(2)})
-          </span>
-        </div>
+            <span>≈ ₺{formatTRY(animatedTry)}</span>
+            <span
+              className={`text-[11px] font-medium ${
+                isDark ? "text-white/45" : "text-on-surface-variant/70"
+              }`}
+            >
+              (1$ = ₺{safeUsdTry.toFixed(2)})
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Progress */}

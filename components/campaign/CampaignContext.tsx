@@ -38,6 +38,8 @@ type ContextValue = {
   dismissToast: (id: number) => void;
   /** true once at least one successful API response has been received */
   apiConnected: boolean;
+  /** true after the first API call completes (success OR failure) — safe to render numbers */
+  statsReady: boolean;
 };
 
 const CampaignContext = createContext<ContextValue | null>(null);
@@ -61,6 +63,8 @@ export function CampaignProvider({
   );
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [apiConnected, setApiConnected] = useState(false);
+  /** Becomes true after the first syncFromApi completes, regardless of outcome. */
+  const [statsReady, setStatsReady] = useState(false);
 
   // Use large random starting ID for ticker-generated donors to avoid
   // collisions with real database IDs from the API.
@@ -99,6 +103,10 @@ export function CampaignProvider({
         setRecentDonors(recentResult.value.slice(0, 40));
         setApiConnected(true);
       }
+
+      // Always mark ready after first fetch — success or failure.
+      // LiveCounter waits for this before rendering numbers.
+      setStatsReady(true);
     };
 
     // Initial fetch
@@ -177,6 +185,7 @@ export function CampaignProvider({
         toasts,
         dismissToast,
         apiConnected,
+        statsReady,
       }}
     >
       {children}
