@@ -139,7 +139,30 @@ async function fetchKumbaralar(): Promise<FetchResult> {
   }
 }
 
-async function postJson(path: string, body: unknown): Promise<boolean> {
+type PostResult =
+  | { ok: true; data?: unknown }
+  | { ok: false; status: number; message: string; raw?: unknown };
+
+/** Extract a human-readable error from common API response shapes. */
+function extractErrorMessage(raw: unknown, fallback: string): string {
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    for (const key of ["message", "error", "reason", "detail", "hint"] as const) {
+      const v = obj[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    // n8n sometimes nests: { error: { message: "..." } }
+    const nested = obj.error;
+    if (nested && typeof nested === "object") {
+      const nestedMsg = (nested as Record<string, unknown>).message;
+      if (typeof nestedMsg === "string" && nestedMsg.trim()) return nestedMsg.trim();
+    }
+  }
+  return fallback;
+}
+
+async function postJson(path: string, body: unknown): Promise<PostResult> {
   try {
     const res = await fetch(`${PROXY_BASE}${path}`, {
       method: "POST",
@@ -149,9 +172,43 @@ async function postJson(path: string, body: unknown): Promise<boolean> {
       },
       body: JSON.stringify(body),
     });
-    return res.ok;
-  } catch {
-    return false;
+
+    // Read body once — JSON if possible, otherwise text
+    const contentType = res.headers.get("content-type") ?? "";
+    let raw: unknown = null;
+    try {
+      if (contentType.includes("application/json")) {
+        raw = await res.json();
+      } else {
+        const text = await res.text();
+        raw = text || null;
+      }
+    } catch {
+      // body unreadable — leave raw as null
+    }
+
+    if (!res.ok) {
+      const fallback = `HTTP ${res.status} ${res.statusText || "Hata"}`.trim();
+      const message = extractErrorMessage(raw, fallback);
+      // eslint-disable-next-line no-console
+      console.error(`[postJson] ${path} failed:`, {
+        status: res.status,
+        statusText: res.statusText,
+        body: raw,
+        sentBody: body,
+      });
+      return { ok: false, status: res.status, message, raw };
+    }
+
+    return { ok: true, data: raw };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error(`[postJson] ${path} network error:`, e, { sentBody: body });
+    return {
+      ok: false,
+      status: 0,
+      message: e instanceof Error ? e.message : "Ağ hatası",
+    };
   }
 }
 
@@ -264,28 +321,30 @@ export default function KumbaralarPage() {
       const photoUrl = await uploadToCloudinary(entryFile);
 
       // 2) POST entry to n8n webhook
-      const ok = await postJson("/kumbara-acilis", {
+      const entryResult = await postJson("/kumbara-acilis", {
         kumbara_no: openEntry.id,
         tutar: amount,
         tarih: entryDate,
         sorumlu: entryResp || openEntry.responsible,
         tutanak_foto: photoUrl,
       });
-      if (!ok) {
-        throw new Error("Sunucu açılış kaydını reddetti.");
+      if (!entryResult.ok) {
+        throw new Error(
+          `Açılış kaydı reddedildi: ${entryResult.message}`,
+        );
       }
 
       // 3) Close the kumbara on backend (best-effort)
-      const closeOk = await postJson("/kumbara-guncelle", {
+      const closeResult = await postJson("/kumbara-guncelle", {
         kumbara_no: openEntry.id,
         durum: "kapatildi",
       });
-      if (!closeOk) {
+      if (!closeResult.ok) {
         // Açılış was already recorded; backend close failed.
         // Still close locally so user UX is consistent — next page load will sync.
         // eslint-disable-next-line no-console
         console.warn(
-          `Kumbara ${openEntry.id} açılışı kaydedildi ama backend kapama başarısız.`,
+          `Kumbara ${openEntry.id} açılışı kaydedildi ama backend kapama başarısız: ${closeResult.message}`,
         );
       }
 
@@ -337,14 +396,14 @@ export default function KumbaralarPage() {
     setSavingEdit(true);
     setErrorMsg(null);
     try {
-      const ok = await postJson("/kumbara-guncelle", {
+      const result = await postJson("/kumbara-guncelle", {
         kumbara_no: openEdit.id,
         konum: editLocation.trim(),
         sorumlu: editResp,
         durum: "aktif",
       });
-      if (!ok) {
-        throw new Error("Sunucu kaydı reddetti, daha sonra tekrar deneyin.");
+      if (!result.ok) {
+        throw new Error(`Güncelleme reddedildi: ${result.message}`);
       }
 
       setItems((prev) =>
