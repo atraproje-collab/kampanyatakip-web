@@ -300,7 +300,11 @@ export default function KumbaralarPage() {
     return `K-${String(next).padStart(2, "0")}`;
   };
 
-  /** Open Add modal — refetch fresh kumbaralar so id calculation isn't stale. */
+  /**
+   * Open Add modal. Always fetches fresh DB list and computes the next id
+   * strictly from that DB response — never from local state. If the fetch
+   * fails, the id is left empty and an error is shown so the user can retry.
+   */
   const handleOpenAdd = async () => {
     setErrorMsg(null);
     setOpenAdd(true);
@@ -311,15 +315,19 @@ export default function KumbaralarPage() {
 
     const result = await fetchKumbaralar();
     if (result.ok) {
-      // Sync main list and compute id from fresh data
+      // Source of truth for id calculation is the DB list (result.items),
+      // never the local items state.
       setItems(result.items);
       setApiError(null);
       setNewKumbaraNo(computeNextKumbaraNo(result.items));
     } else {
-      // API failed — fall back to current local state
+      // DB read failed — block the form, show error, no local fallback.
       // eslint-disable-next-line no-console
       console.warn("[kumbara-ekle] modal açılışında fetch fail:", result.reason);
-      setNewKumbaraNo(computeNextKumbaraNo(items));
+      setErrorMsg(
+        `Kumbara no DB'den hesaplanamadı (${result.reason ?? "API'ye ulaşılamadı"}). Modalı kapatıp tekrar açın.`,
+      );
+      setNewKumbaraNo("");
     }
     setComputingId(false);
   };
@@ -359,16 +367,22 @@ export default function KumbaralarPage() {
         );
       }
 
-      // Local state güncelle (mock veya gerçek başarıda da)
-      const k: KumbaraDraft = {
-        id: newKumbaraNo,
-        location: newLocation.trim(),
-        responsible: newResp,
-        total: 0,
-        lastOpened: "—",
-        status: "aktif",
-      };
-      setItems((prev) => [k, ...prev]);
+      // Local state'e elle ekleme YAPMA — DB'den taze listeyi yeniden çek.
+      // Endpoint gerçekten kayıt ettiyse yeni satır listede görünür; mock
+      // başarı durumunda DB değişmedi → yeni satır görünmez (doğru davranış).
+      const fresh = await fetchKumbaralar();
+      if (fresh.ok) {
+        setItems(fresh.items);
+        setApiError(null);
+      } else {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[kumbara-ekle] post-add fetch fail:",
+          fresh.reason,
+        );
+        setApiError(fresh.reason ?? "API'ye ulaşılamadı");
+      }
+
       setNewLocation("");
       setNewKumbaraNo("");
       setOpenAdd(false);
