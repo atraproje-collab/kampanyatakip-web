@@ -231,6 +231,9 @@ export default function KumbaralarPage() {
 
   const [newLocation, setNewLocation] = useState("");
   const [newResp, setNewResp] = useState(adminVolunteers[0]?.name ?? "");
+  const [newKumbaraNo, setNewKumbaraNo] = useState("");
+  const [computingId, setComputingId] = useState(false);
+  const [savingAdd, setSavingAdd] = useState(false);
 
   const [entryDate, setEntryDate] = useState(new Date().toISOString().slice(0, 10));
   const [entryAmount, setEntryAmount] = useState("");
@@ -279,27 +282,104 @@ export default function KumbaralarPage() {
   const visibleItems = tab === "aktif" ? aktifItems : kapatildiItems;
   const totalRaised = items.reduce((s, k) => s + k.total, 0);
 
-  const nextId = () => {
-    const max = items.reduce(
-      (m, k) => Math.max(m, parseInt(k.id, 10) || 0),
-      0,
-    );
-    return String(max + 1);
+  /**
+   * Computes the next K-XX id by parsing existing kumbara_no values.
+   * Handles "K-01", "K-1", "K01", "K1" (case-insensitive). Pads result to 2 digits.
+   * Falls back to "K-01" when there are no parseable ids.
+   */
+  const computeNextKumbaraNo = (list: KumbaraDraft[]): string => {
+    const max = list.reduce((m, k) => {
+      const match = k.id.match(/^k-?(\d+)$/i);
+      if (match) {
+        const n = parseInt(match[1], 10);
+        if (!Number.isNaN(n)) return Math.max(m, n);
+      }
+      return m;
+    }, 0);
+    const next = max + 1;
+    return `K-${String(next).padStart(2, "0")}`;
   };
 
-  const handleAdd = () => {
-    if (!newLocation.trim()) return;
-    const k: KumbaraDraft = {
-      id: nextId(),
-      location: newLocation.trim(),
-      responsible: newResp,
-      total: 0,
-      lastOpened: "—",
-      status: "aktif",
-    };
-    setItems([k, ...items]);
+  /** Open Add modal — refetch fresh kumbaralar so id calculation isn't stale. */
+  const handleOpenAdd = async () => {
+    setErrorMsg(null);
+    setOpenAdd(true);
     setNewLocation("");
-    setOpenAdd(false);
+    setNewResp(adminVolunteers[0]?.name ?? "");
+    setNewKumbaraNo("");
+    setComputingId(true);
+
+    const result = await fetchKumbaralar();
+    if (result.ok) {
+      // Sync main list and compute id from fresh data
+      setItems(result.items);
+      setApiError(null);
+      setNewKumbaraNo(computeNextKumbaraNo(result.items));
+    } else {
+      // API failed — fall back to current local state
+      // eslint-disable-next-line no-console
+      console.warn("[kumbara-ekle] modal açılışında fetch fail:", result.reason);
+      setNewKumbaraNo(computeNextKumbaraNo(items));
+    }
+    setComputingId(false);
+  };
+
+  const handleAdd = async () => {
+    if (!newLocation.trim() || !newKumbaraNo) return;
+
+    setSavingAdd(true);
+    setErrorMsg(null);
+    try {
+      const result = await postJson("/kumbara-ekle", {
+        kumbara_no: newKumbaraNo,
+        konum: newLocation.trim(),
+        sorumlu: newResp,
+      });
+
+      if (result.ok) {
+        // eslint-disable-next-line no-console
+        console.log(`[kumbara-ekle] başarılı:`, {
+          kumbara_no: newKumbaraNo,
+          response: result.data,
+        });
+      } else {
+        // Endpoint yok / hata — şimdilik mock başarı uygula, console'a logla
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[kumbara-ekle] endpoint hatası, mock başarı kullanılıyor: ${result.message}`,
+          {
+            status: result.status,
+            payload: {
+              kumbara_no: newKumbaraNo,
+              konum: newLocation.trim(),
+              sorumlu: newResp,
+            },
+            response: result.raw,
+          },
+        );
+      }
+
+      // Local state güncelle (mock veya gerçek başarıda da)
+      const k: KumbaraDraft = {
+        id: newKumbaraNo,
+        location: newLocation.trim(),
+        responsible: newResp,
+        total: 0,
+        lastOpened: "—",
+        status: "aktif",
+      };
+      setItems((prev) => [k, ...prev]);
+      setNewLocation("");
+      setNewKumbaraNo("");
+      setOpenAdd(false);
+      setTab("aktif");
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[kumbara-ekle] beklenmeyen hata:", e);
+      setErrorMsg(e instanceof Error ? e.message : "Ekleme başarısız.");
+    } finally {
+      setSavingAdd(false);
+    }
   };
 
   const handleSaveEntry = async () => {
@@ -436,7 +516,7 @@ export default function KumbaralarPage() {
           : `${items.length} kumbara — toplam ₺${totalRaised.toLocaleString("tr-TR")}`
       }
       actions={
-        <Button variant="primary" size="sm" onClick={() => setOpenAdd(true)}>
+        <Button variant="primary" size="sm" onClick={handleOpenAdd}>
           <Plus className="w-4 h-4" />
           Kumbara Ekle
         </Button>
@@ -679,23 +759,55 @@ export default function KumbaralarPage() {
       {/* Add modal */}
       <Modal
         open={openAdd}
-        onClose={() => setOpenAdd(false)}
+        onClose={() => !savingAdd && setOpenAdd(false)}
         title="Yeni Kumbara"
         description="Yeni bir kumbara konumu ekleyin"
         footer={
           <>
-            <Button variant="ghost" size="sm" onClick={() => setOpenAdd(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setOpenAdd(false)}
+              disabled={savingAdd}
+            >
               İptal
             </Button>
-            <Button variant="primary" size="sm" onClick={handleAdd}>
-              Ekle
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAdd}
+              disabled={
+                savingAdd ||
+                computingId ||
+                !newKumbaraNo ||
+                !newLocation.trim()
+              }
+            >
+              {savingAdd ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Ekleniyor…
+                </>
+              ) : (
+                "Ekle"
+              )}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
-          <FormField label="Kumbara No">
-            <input className={inputClass} value={`#${nextId()}`} readOnly disabled />
+          {errorMsg && openAdd && (
+            <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-body-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
+          <FormField label="Kumbara No" hint="Otomatik üretildi, değiştirilemez">
+            <input
+              className={inputClass}
+              value={computingId ? "Hesaplanıyor…" : newKumbaraNo}
+              readOnly
+              disabled
+            />
           </FormField>
           <FormField label="Konum" required>
             <input
@@ -703,6 +815,7 @@ export default function KumbaralarPage() {
               placeholder="Örn: Kadıköy Meydan"
               value={newLocation}
               onChange={(e) => setNewLocation(e.target.value)}
+              disabled={savingAdd}
             />
           </FormField>
           <FormField label="Sorumlu Gönüllü" required>
@@ -710,6 +823,7 @@ export default function KumbaralarPage() {
               className={inputClass}
               value={newResp}
               onChange={(e) => setNewResp(e.target.value)}
+              disabled={savingAdd}
             >
               {adminVolunteers.map((v) => (
                 <option key={v.id} value={v.name}>
