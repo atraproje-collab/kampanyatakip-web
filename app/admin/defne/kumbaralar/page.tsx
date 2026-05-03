@@ -39,9 +39,9 @@ type Tab = "aktif" | "kapatildi";
 
 // ── API & Cloudinary constants ──────────────────────────────────────────────
 
-// n8n webhook base — used for direct POSTs (acilis, guncelle).
-const API_BASE = "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya/demo-defne";
-// Same-origin proxy route — avoids CORS for the GET listing.
+// Same-origin proxy route — all kumbara API calls go through here.
+// The Next.js route handlers forward to the n8n webhook server-side,
+// so the browser never hits n8n directly (avoids CORS issues).
 const PROXY_BASE = "/api/kampanya/demo-defne";
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dqyr5h96s/image/upload";
 const CLOUDINARY_PRESET = "kampanyatakip";
@@ -141,7 +141,7 @@ async function fetchKumbaralar(): Promise<FetchResult> {
 
 async function postJson(path: string, body: unknown): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${PROXY_BASE}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
