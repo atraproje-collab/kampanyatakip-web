@@ -39,7 +39,10 @@ type Tab = "aktif" | "kapatildi";
 
 // ── API & Cloudinary constants ──────────────────────────────────────────────
 
+// n8n webhook base — used for direct POSTs (acilis, guncelle).
 const API_BASE = "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya/demo-defne";
+// Same-origin proxy route — avoids CORS for the GET listing.
+const PROXY_BASE = "/api/kampanya/demo-defne";
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dqyr5h96s/image/upload";
 const CLOUDINARY_PRESET = "kampanyatakip";
 
@@ -97,7 +100,8 @@ type FetchResult = { items: KumbaraDraft[]; ok: boolean; reason?: string };
 
 async function fetchKumbaralar(): Promise<FetchResult> {
   try {
-    const res = await fetch(`${API_BASE}/kumbaralar`, {
+    // Use same-origin proxy to bypass CORS issues with the n8n webhook.
+    const res = await fetch(`${PROXY_BASE}/kumbaralar`, {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
