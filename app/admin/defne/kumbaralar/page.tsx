@@ -93,20 +93,45 @@ function parseKumbara(raw: RawKumbara): KumbaraDraft | null {
   return { id, location, responsible, total, lastOpened, status, tutanakFoto };
 }
 
-async function fetchKumbaralar(): Promise<KumbaraDraft[] | null> {
+type FetchResult = { items: KumbaraDraft[]; ok: boolean; reason?: string };
+
+async function fetchKumbaralar(): Promise<FetchResult> {
   try {
     const res = await fetch(`${API_BASE}/kumbaralar`, {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`[kumbaralar] API ${res.status} ${res.statusText}`);
+      return { items: [], ok: false, reason: `HTTP ${res.status}` };
+    }
     const data: unknown = await res.json();
-    const arr = Array.isArray(data) ? data : [data];
-    return (arr as RawKumbara[])
+
+    // Unwrap common response envelopes (n8n sometimes wraps in { data: [...] } etc.)
+    let arr: unknown = data;
+    if (data && typeof data === "object" && !Array.isArray(data)) {
+      const obj = data as Record<string, unknown>;
+      if (Array.isArray(obj.data)) arr = obj.data;
+      else if (Array.isArray(obj.items)) arr = obj.items;
+      else if (Array.isArray(obj.result)) arr = obj.result;
+      else if (Array.isArray(obj.kumbaralar)) arr = obj.kumbaralar;
+      else if (Array.isArray(obj.rows)) arr = obj.rows;
+    }
+    if (!Array.isArray(arr)) arr = [arr];
+
+    const items = (arr as RawKumbara[])
       .map(parseKumbara)
       .filter((k): k is KumbaraDraft => k !== null);
-  } catch {
-    return null;
+    return { items, ok: true };
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[kumbaralar] fetch failed:", e);
+    return {
+      items: [],
+      ok: false,
+      reason: e instanceof Error ? e.message : "network error",
+    };
   }
 }
 
@@ -129,16 +154,13 @@ async function postJson(path: string, body: unknown): Promise<boolean> {
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default function KumbaralarPage() {
-  const [items, setItems] = useState<KumbaraDraft[]>(
-    demoCampaign.transparency.kumbaralar.map((k) => ({
-      ...k,
-      status: "aktif" as KumbaraStatus,
-    })),
-  );
+  // Start empty — populated by API. Mock only used as fallback if API fails.
+  const [items, setItems] = useState<KumbaraDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingEntry, setSavingEntry] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("aktif");
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
@@ -161,10 +183,21 @@ export default function KumbaralarPage() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      const data = await fetchKumbaralar();
+      const result = await fetchKumbaralar();
       if (!mounted) return;
-      if (data && data.length > 0) {
-        setItems(data);
+      if (result.ok) {
+        // API succeeded — use whatever DB returned (even an empty list)
+        setItems(result.items);
+        setApiError(null);
+      } else {
+        // API failed — fall back to mock data and surface the error
+        setItems(
+          demoCampaign.transparency.kumbaralar.map((k) => ({
+            ...k,
+            status: "aktif" as KumbaraStatus,
+          })),
+        );
+        setApiError(result.reason ?? "API'ye ulaşılamadı");
       }
       setLoading(false);
     })();
@@ -346,6 +379,19 @@ export default function KumbaralarPage() {
         </Button>
       }
     >
+      {/* API error banner — shown when fetch failed and mock fallback is in use */}
+      {apiError && !loading && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-body-sm text-amber-900 flex items-start gap-2">
+          <span className="font-bold shrink-0">⚠</span>
+          <div className="min-w-0">
+            <p className="font-semibold">API'ye ulaşılamadı — mock veri gösteriliyor.</p>
+            <p className="text-label-sm text-amber-800 mt-0.5 break-all">
+              {apiError}. n8n endpoint'ini ve CORS başlıklarını kontrol edin.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div
         role="tablist"
