@@ -283,21 +283,38 @@ export default function KumbaralarPage() {
   const totalRaised = items.reduce((s, k) => s + k.total, 0);
 
   /**
-   * Computes the next K-XX id by parsing existing kumbara_no values.
-   * Handles "K-01", "K-1", "K01", "K1" (case-insensitive). Pads result to 2 digits.
-   * Falls back to "K-01" when there are no parseable ids.
+   * Computes the next K-XX id strictly from the DB list.
+   * Strategy:
+   *   1) For each kumbara, take its kumbara_no, strip the "K-" (or "K") prefix.
+   *   2) parseInt the remainder. Skip anything unparseable.
+   *   3) max + 1, zero-padded to 2 digits → "K-01", "K-02", "K-09", "K-10", ...
+   *   4) Empty list → "K-01".
+   * Logs the inputs, the max, and the produced id for debugging.
    */
   const computeNextKumbaraNo = (list: KumbaraDraft[]): string => {
-    const max = list.reduce((m, k) => {
-      const match = k.id.match(/^k-?(\d+)$/i);
-      if (match) {
-        const n = parseInt(match[1], 10);
-        if (!Number.isNaN(n)) return Math.max(m, n);
-      }
-      return m;
-    }, 0);
+    const allNos = list.map((k) => k.id);
+    const numbers = allNos
+      .map((no) => {
+        // "K-" / "K" prefix (case-insensitive) kaldır, kalanı int'e çevir
+        const stripped = no.replace(/^[Kk]-?/, "").trim();
+        const n = parseInt(stripped, 10);
+        return Number.isNaN(n) ? null : n;
+      })
+      .filter((n): n is number => n !== null);
+    const max = numbers.length > 0 ? Math.max(...numbers) : 0;
     const next = max + 1;
-    return `K-${String(next).padStart(2, "0")}`;
+    const newNo = `K-${String(next).padStart(2, "0")}`;
+
+    // eslint-disable-next-line no-console
+    console.log("[kumbara-ekle] DB'den gelen tüm kumbara no'ları:", allNos);
+    // eslint-disable-next-line no-console
+    console.log("[kumbara-ekle] parse edilen sayılar:", numbers);
+    // eslint-disable-next-line no-console
+    console.log("[kumbara-ekle] max bulunan:", max);
+    // eslint-disable-next-line no-console
+    console.log("[kumbara-ekle] üretilen yeni numara:", newNo);
+
+    return newNo;
   };
 
   /**
