@@ -294,6 +294,63 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Türkçe tarih formatı: "04.05.2026".
+ * Kabul edilen girdiler: ISO ("2026-05-04T00:00:00.000Z"), kısa ISO ("2026-05-04"),
+ * boş/"—"/parse edilemeyen değerler — son durumda girdi aynen geri döner.
+ */
+function formatTrDate(input: string | null | undefined): string {
+  if (!input) return "—";
+  const trimmed = input.trim();
+  if (!trimmed || trimmed === "—") return "—";
+  // Önce sadece "yyyy-mm-dd" kısmını al — UTC kayma olmasın diye.
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, y, m, d] = match;
+    return `${d}.${m}.${y}`;
+  }
+  // Düz "dd.mm.yyyy" zaten gelmişse aynen geri ver.
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)) return trimmed;
+  // Son çare: Date parse + manuel format (UTC olmadan).
+  const dt = new Date(trimmed);
+  if (!Number.isNaN(dt.getTime())) {
+    const dd = String(dt.getDate()).padStart(2, "0");
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const yy = dt.getFullYear();
+    return `${dd}.${mm}.${yy}`;
+  }
+  return trimmed;
+}
+
+/**
+ * "Aynı gün ikinci kapanış" hatası tespiti.
+ * n8n bu durumda genelde HTTP 500 + "Error in workflow" döner; PostgreSQL/MySQL
+ * unique constraint çıktıları "duplicate" / "unique" kelimelerini içerir.
+ */
+function isSameDayDuplicate(
+  message: string,
+  status: number,
+  raw: unknown,
+): boolean {
+  const haystack = [
+    message,
+    typeof raw === "string" ? raw : JSON.stringify(raw ?? ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (
+    haystack.includes("duplicate") ||
+    haystack.includes("unique") ||
+    haystack.includes("aynı gün") ||
+    haystack.includes("error in workflow")
+  ) {
+    return true;
+  }
+  // Sunucu salt 500 + bilgi vermeyen yanıt döndü → büyük olasılıkla duplicate.
+  if (status === 500) return true;
+  return false;
+}
+
 /** Filters kapanis rows by selected date range. */
 function filterByRange(rows: Kapanis[], range: GecmisFilter): Kapanis[] {
   if (range === "tum") return rows;
@@ -564,7 +621,14 @@ export default function StantlarPage() {
       });
 
       if (!result.ok) {
-        // n8n'den gelen mesajı doğrudan göster (örn. aynı gün ikinci kapanış reddi)
+        // Aynı gün ikinci kapanış hatası — kullanıcı dostu mesaj
+        if (isSameDayDuplicate(result.message, result.status, result.raw)) {
+          setErrorMsg(
+            "Bu stant için bu tarihte zaten kapanış kaydı var. Lütfen başka bir tarih seçin.",
+          );
+          return;
+        }
+        // Diğer hatalar — n8n'den gelen mesajı olduğu gibi göster
         throw new Error(result.message);
       }
 
@@ -756,7 +820,7 @@ export default function StantlarPage() {
                         Son kapanış
                       </span>
                       <span className="text-label-md text-on-surface tabular-nums">
-                        {s.lastClose}
+                        {formatTrDate(s.lastClose)}
                       </span>
                     </div>
                   </div>
@@ -845,7 +909,7 @@ export default function StantlarPage() {
                         {r.closeCount}
                       </td>
                       <td className="px-4 py-3 text-on-surface-variant tabular-nums whitespace-nowrap">
-                        {r.lastClose}
+                        {formatTrDate(r.lastClose)}
                       </td>
                     </tr>
                   ))}
@@ -1232,7 +1296,7 @@ export default function StantlarPage() {
                         className="border-b border-outline-variant last:border-0"
                       >
                         <td className="px-3 py-2 text-on-surface tabular-nums whitespace-nowrap">
-                          {r.date}
+                          {formatTrDate(r.date)}
                         </td>
                         <td className="px-3 py-2 text-right font-semibold text-on-surface tabular-nums whitespace-nowrap">
                           {formatCurrency(r.amount, "TRY")}
