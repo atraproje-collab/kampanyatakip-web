@@ -1,9 +1,19 @@
 "use client";
 
-import { CalendarDays, CalendarRange, Download, FileBarChart, Printer, Send } from "lucide-react";
+import { useState } from "react";
+import {
+  CalendarDays,
+  CalendarRange,
+  Download,
+  FileBarChart,
+  FileSpreadsheet,
+  FileText,
+  Printer,
+  Send,
+} from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
-import { PanelCard, formatCurrency } from "@/components/admin/AdminUI";
+import { Modal, PanelCard, formatCurrency } from "@/components/admin/AdminUI";
 import { adminDonations, dailyDonationChart } from "@/lib/admin-mock-data";
 import { demoCampaign } from "@/lib/mock-campaign-data";
 
@@ -73,6 +83,15 @@ function downloadCsv(filename: string, rows: (string | number)[][]) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+async function downloadXlsx(filename: string, rows: (string | number)[][]) {
+  const XLSX = await import("xlsx");
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 16 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rapor");
+  XLSX.writeFile(wb, filename);
+}
+
 function buildReportRows(label: string, period: string, income: number, expense: number, donors: number, currency: "TRY" | "USD") {
   const symbol = currency === "USD" ? "$" : "₺";
   return [
@@ -90,6 +109,8 @@ function buildReportRows(label: string, period: string, income: number, expense:
 }
 
 export default function ReportsPage() {
+  const [downloadTarget, setDownloadTarget] = useState<ReportPeriod | null>(null);
+
   const totalIncome = demoCampaign.transparency.income.reduce(
     (s, i) => s + (i.currency === "USD" ? i.amount * 34 : i.currency === "EUR" ? i.amount * 37 : i.amount),
     0,
@@ -101,23 +122,31 @@ export default function ReportsPage() {
   const incomePct = (totalIncome / total) * 100;
   const expensePct = (totalExpense / total) * 100;
 
-  const handleDownload = (r: ReportPeriod) => {
-    const choice = confirm(
-      `"${r.label}" raporu için:\n\nTAMAM → CSV olarak indir\nİPTAL → Yazdırma penceresi (PDF)`,
-    );
-    if (choice) {
-      const rows = buildReportRows(r.label, r.description, r.income, r.expense, r.donors, r.currency);
-      const filename = `defne-${r.key}-rapor-${new Date().toISOString().slice(0, 10)}.csv`;
-      // Bağışlar tablosunu da CSV'ye ekle (genel bağlam için)
-      rows.push([], ["Son Bağışlar"]);
-      rows.push(["Tarih", "Bağışçı", "Kaynak", "Tutar", "Para Birimi", "Durum"]);
-      adminDonations.slice(0, 20).forEach((d) => {
-        rows.push([d.date, d.donorName, d.source, String(d.amount), d.currency, d.status]);
-      });
-      downloadCsv(filename, rows);
-    } else {
-      window.print();
-    }
+  const buildRowsFor = (r: ReportPeriod) => {
+    const rows = buildReportRows(r.label, r.description, r.income, r.expense, r.donors, r.currency);
+    rows.push([], ["Son Bağışlar"]);
+    rows.push(["Tarih", "Bağışçı", "Kaynak", "Tutar", "Para Birimi", "Durum"]);
+    adminDonations.slice(0, 20).forEach((d) => {
+      rows.push([d.date, d.donorName, d.source, String(d.amount), d.currency, d.status]);
+    });
+    return rows;
+  };
+
+  const handleCsv = (r: ReportPeriod) => {
+    const filename = `defne-${r.key}-rapor-${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadCsv(filename, buildRowsFor(r));
+    setDownloadTarget(null);
+  };
+
+  const handleXlsx = async (r: ReportPeriod) => {
+    const filename = `defne-${r.key}-rapor-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    await downloadXlsx(filename, buildRowsFor(r));
+    setDownloadTarget(null);
+  };
+
+  const handlePdf = () => {
+    setDownloadTarget(null);
+    setTimeout(() => window.print(), 50);
   };
 
   const handleWhatsApp = (r: ReportPeriod) => {
@@ -183,7 +212,7 @@ export default function ReportsPage() {
 
               <div className="px-5 pb-4 pt-1 grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleDownload(r)}
+                  onClick={() => setDownloadTarget(r)}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-label-md text-on-surface hover:bg-surface-container-low transition"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -282,14 +311,82 @@ export default function ReportsPage() {
               Rapor paylaşımı
             </h3>
             <p className="text-body-sm text-on-primary-fixed-variant mt-1">
-              <span className="font-semibold">İndir:</span> Onay penceresinde TAMAM ile CSV
-              dosyası indirebilir, İPTAL ile sayfayı PDF olarak yazdırabilirsiniz.
+              <span className="font-semibold">İndir:</span> Açılan pencereden CSV, Excel
+              (.xlsx) veya PDF (yazdırma) seçeneklerinden birini seçebilirsiniz.
               <span className="font-semibold"> WhatsApp:</span> Rapor özeti otomatik
               hazırlanır, alıcıyı seçtiğiniz pencerede gönderirsiniz.
             </p>
           </div>
         </div>
       </div>
+
+      <Modal
+        open={downloadTarget !== null}
+        onClose={() => setDownloadTarget(null)}
+        title={downloadTarget ? `${downloadTarget.label} - İndirme Formatı` : ""}
+        description="Rapor hangi formatta indirilsin?"
+        size="sm"
+      >
+        <div className="grid grid-cols-1 gap-2">
+          <button
+            onClick={() => downloadTarget && handleCsv(downloadTarget)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-outline-variant text-left hover:border-secondary hover:bg-surface-container-low transition"
+          >
+            <span className="w-9 h-9 shrink-0 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-body-md font-semibold text-on-surface">
+                CSV olarak indir
+              </span>
+              <span className="block text-label-sm text-on-surface-variant">
+                Excel ve veri araçlarıyla uyumlu metin dosyası
+              </span>
+            </span>
+          </button>
+
+          <button
+            onClick={() => downloadTarget && handleXlsx(downloadTarget)}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-outline-variant text-left hover:border-secondary hover:bg-surface-container-low transition"
+          >
+            <span className="w-9 h-9 shrink-0 rounded-lg bg-green-100 text-green-700 flex items-center justify-center">
+              <FileSpreadsheet className="w-4 h-4" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-body-md font-semibold text-on-surface">
+                Excel (.xlsx) olarak indir
+              </span>
+              <span className="block text-label-sm text-on-surface-variant">
+                Microsoft Excel için biçimli çalışma kitabı
+              </span>
+            </span>
+          </button>
+
+          <button
+            onClick={handlePdf}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-outline-variant text-left hover:border-secondary hover:bg-surface-container-low transition"
+          >
+            <span className="w-9 h-9 shrink-0 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center">
+              <Printer className="w-4 h-4" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-body-md font-semibold text-on-surface">
+                PDF olarak yazdır
+              </span>
+              <span className="block text-label-sm text-on-surface-variant">
+                Yazdırma penceresini açar (Hedef: PDF olarak kaydet)
+              </span>
+            </span>
+          </button>
+
+          <button
+            onClick={() => setDownloadTarget(null)}
+            className="mt-1 px-4 py-2.5 rounded-lg text-label-md font-medium text-on-surface-variant hover:bg-surface-container-low transition"
+          >
+            İptal
+          </button>
+        </div>
+      </Modal>
     </AdminLayout>
   );
 }
