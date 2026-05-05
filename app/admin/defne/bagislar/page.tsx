@@ -16,14 +16,52 @@ import { adminDonations, type AdminDonation } from "@/lib/admin-mock-data";
 
 const PAGE_SIZE = 10;
 
+type QuickRange = "bugun" | "hafta" | "ay" | "tum" | "";
+
+const ymd = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const startOfWeek = (d: Date) => {
+  const r = new Date(d);
+  const dow = r.getDay(); // 0=Pazar ... 6=Cumartesi
+  const offset = (dow + 6) % 7; // pazartesiye kadar geri sayım
+  r.setDate(r.getDate() - offset);
+  return r;
+};
+
 export default function DonationsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [quickRange, setQuickRange] = useState<QuickRange>("tum");
   const [source, setSource] = useState("");
   const [currency, setCurrency] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<AdminDonation | null>(null);
+
+  const applyQuickRange = (k: QuickRange) => {
+    const today = new Date();
+    const todayStr = ymd(today);
+    if (k === "bugun") {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (k === "hafta") {
+      setStartDate(ymd(startOfWeek(today)));
+      setEndDate(todayStr);
+    } else if (k === "ay") {
+      setStartDate(ymd(new Date(today.getFullYear(), today.getMonth(), 1)));
+      setEndDate(todayStr);
+    } else {
+      setStartDate("");
+      setEndDate("");
+    }
+    setQuickRange(k);
+    setPage(1);
+  };
 
   const filtered = useMemo(() => {
     return adminDonations.filter((d) => {
@@ -62,7 +100,30 @@ export default function DonationsPage() {
     >
       {/* Filters */}
       <PanelCard title="Filtreler" description="Bağışları daraltmak için filtreleri kullanın" className="mb-4">
-        <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="px-5 pt-4 pb-1 flex flex-wrap gap-2">
+          {(
+            [
+              { k: "bugun", l: "Bugün" },
+              { k: "hafta", l: "Bu Hafta" },
+              { k: "ay", l: "Bu Ay" },
+              { k: "tum", l: "Tümü" },
+            ] as { k: QuickRange; l: string }[]
+          ).map(({ k, l }) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => applyQuickRange(k)}
+              className={`px-3 py-1.5 rounded-full text-label-sm font-medium transition ${
+                quickRange === k
+                  ? "bg-secondary text-on-secondary"
+                  : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="p-5 pt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           <FormField label="Başlangıç">
             <input
               type="date"
@@ -70,6 +131,7 @@ export default function DonationsPage() {
               value={startDate}
               onChange={(e) => {
                 setStartDate(e.target.value);
+                setQuickRange("");
                 setPage(1);
               }}
             />
@@ -81,6 +143,7 @@ export default function DonationsPage() {
               value={endDate}
               onChange={(e) => {
                 setEndDate(e.target.value);
+                setQuickRange("");
                 setPage(1);
               }}
             />
