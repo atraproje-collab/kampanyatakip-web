@@ -18,6 +18,12 @@ import {
   type RecentDonor,
 } from "@/lib/mock-campaign-data";
 import { fetchStats, fetchRecentDonors } from "@/lib/api";
+import {
+  applyCampaignSettings,
+  loadCampaignSettings,
+  CAMPAIGN_SETTINGS_EVENT,
+  type CampaignSettings,
+} from "@/lib/campaign-settings";
 
 const POLL_INTERVAL_MS = 30_000; // 30 saniye
 
@@ -50,16 +56,40 @@ const randomBetween = (min: number, max: number) =>
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 export function CampaignProvider({
-  campaign,
+  campaign: campaignProp,
   children,
 }: {
   campaign: CampaignData;
   children: ReactNode;
 }) {
-  const [raisedUsd, setRaisedUsd] = useState(campaign.raisedUsd);
-  const [donorCount, setDonorCount] = useState(campaign.donorCount);
+  // Server render starts with the static prop; on the client we merge any
+  // saved admin settings (localStorage) so /kampanya/demo and admin panel
+  // stay in sync within the same browser.
+  const [campaign, setCampaign] = useState<CampaignData>(campaignProp);
+
+  useEffect(() => {
+    setCampaign(applyCampaignSettings(campaignProp, loadCampaignSettings()));
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<CampaignSettings>).detail;
+      if (detail) {
+        setCampaign(applyCampaignSettings(campaignProp, detail));
+      }
+    };
+    const onStorage = () => {
+      setCampaign(applyCampaignSettings(campaignProp, loadCampaignSettings()));
+    };
+    window.addEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [campaignProp]);
+
+  const [raisedUsd, setRaisedUsd] = useState(campaignProp.raisedUsd);
+  const [donorCount, setDonorCount] = useState(campaignProp.donorCount);
   const [recentDonors, setRecentDonors] = useState<RecentDonor[]>(
-    campaign.recentDonors,
+    campaignProp.recentDonors,
   );
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [apiConnected, setApiConnected] = useState(false);

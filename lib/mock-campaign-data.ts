@@ -117,6 +117,7 @@ export type CampaignData = {
   donorCount: number;
   daysLeft: number;
   createdAt: string;
+  endDate?: string;
   provinceApproval: {
     authority: string;
     decisionNumber: string;
@@ -155,6 +156,7 @@ Tedavinin toplam maliyeti: 60.000.000 TL. Zamanla yarışıyoruz — Defne 2 ya�
   donorCount: 12847,
   daysLeft: 87,
   createdAt: "2026-01-27",
+  endDate: "2026-08-01",
 
   provinceApproval: {
     authority: "İstanbul Valiliği",
