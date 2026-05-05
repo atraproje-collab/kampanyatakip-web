@@ -394,6 +394,13 @@ export default function GiderlerPage() {
       .sort((a, b) => (a.date < b.date ? 1 : -1));
   }, [items, dateFilter, categoryFilter]);
 
+  // Belge kuralı:
+  //  • Yeni kayıtta belge zorunlu.
+  //  • Düzenlemede mevcut belge varsa zorunlu değil — yeni dosya seçilmezse
+  //    eski URL korunur. Mevcut belge yoksa düzenlemede de zorunlu.
+  const belgeRequired = editTarget === "new" || !keepExistingBelge;
+  const belgeMissing = belgeRequired && !formFile;
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const openAddModal = () => {
@@ -435,6 +442,10 @@ export default function GiderlerPage() {
     const amount = parseFloat(formAmount.replace(",", "."));
     if (Number.isNaN(amount) || amount <= 0) {
       setErrorMsg("Geçerli bir tutar girin.");
+      return;
+    }
+    if (belgeMissing) {
+      setErrorMsg("Belge yüklenmesi zorunludur.");
       return;
     }
 
@@ -825,7 +836,12 @@ export default function GiderlerPage() {
               variant="primary"
               size="sm"
               onClick={handleSaveForm}
-              disabled={savingForm || !formVendor.trim() || !formAmount}
+              disabled={
+                savingForm ||
+                !formVendor.trim() ||
+                !formAmount ||
+                belgeMissing
+              }
             >
               {savingForm ? (
                 <>
@@ -923,10 +939,13 @@ export default function GiderlerPage() {
 
           <FormField
             label="Belge / Fatura"
+            required={belgeRequired}
             hint={
               keepExistingBelge && !formFile
                 ? "Mevcut belge korunuyor — yeni dosya seçerseniz değiştirilir"
-                : "Opsiyonel: fatura veya makbuz fotoğrafı"
+                : belgeRequired
+                  ? "Fatura veya makbuz fotoğrafı (zorunlu)"
+                  : "Opsiyonel: fatura veya makbuz fotoğrafı"
             }
           >
             {keepExistingBelge && !formFile && (
@@ -936,9 +955,11 @@ export default function GiderlerPage() {
               </div>
             )}
             <label
-              className={`flex items-center justify-center gap-2 px-4 py-5 rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low hover:border-secondary hover:bg-secondary-container/20 cursor-pointer transition text-on-surface-variant ${
-                savingForm ? "opacity-50 pointer-events-none" : ""
-              }`}
+              className={`flex items-center justify-center gap-2 px-4 py-5 rounded-lg border-2 border-dashed cursor-pointer transition ${
+                belgeMissing
+                  ? "border-red-300 bg-red-50/50 text-red-600 hover:border-red-400 hover:bg-red-50"
+                  : "border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-secondary hover:bg-secondary-container/20"
+              } ${savingForm ? "opacity-50 pointer-events-none" : ""}`}
             >
               <Camera className="w-5 h-5" />
               <span className="text-body-sm break-all">
@@ -956,6 +977,11 @@ export default function GiderlerPage() {
                 disabled={savingForm}
               />
             </label>
+            {belgeMissing && (
+              <p className="mt-1.5 text-label-sm text-red-600 font-medium">
+                Belge yüklenmesi zorunludur.
+              </p>
+            )}
           </FormField>
         </div>
       </Modal>
