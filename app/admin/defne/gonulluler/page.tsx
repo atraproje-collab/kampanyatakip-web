@@ -2,525 +2,819 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  CheckSquare,
-  MessageCircle,
+  AlertTriangle,
+  BadgeCheck,
+  ClipboardList,
+  Loader2,
   Pencil,
+  Phone,
   Plus,
-  Send,
-  Square,
+  Sparkles,
   Trash2,
+  User,
   Users,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
-import { FormField, Modal, PanelCard, inputClass } from "@/components/admin/AdminUI";
-import { adminVolunteers, type Volunteer } from "@/lib/admin-mock-data";
-import { demoCampaign } from "@/lib/mock-campaign-data";
-import { cn } from "@/lib/utils";
+import {
+  FormField,
+  Modal,
+  inputClass,
+} from "@/components/admin/AdminUI";
+import { adminVolunteers } from "@/lib/admin-mock-data";
 
-const ROLES: Volunteer["role"][] = [
+// ── Types ───────────────────────────────────────────────────────────────────
+
+type GonulluTip = "genel" | "gorevli";
+
+type Gorev =
+  | "Kumbara Sorumlusu"
+  | "Stant Sorumlusu"
+  | "Sosyal Medya"
+  | "Lojistik"
+  | "Diğer";
+
+const GOREV_OPTIONS: Gorev[] = [
   "Kumbara Sorumlusu",
   "Stant Sorumlusu",
   "Sosyal Medya",
+  "Lojistik",
   "Diğer",
 ];
 
-type RecipientGroup = "all" | "kumbara" | "stant" | "manual";
+type Gonullu = {
+  id: string;
+  name: string;
+  phone?: string;
+  type: GonulluTip;
+  gorev?: Gorev;
+  notes?: string;
+};
 
-const TEMPLATES: { key: string; label: string; body: string }[] = [
-  {
-    key: "custom",
-    label: "Özel mesaj",
-    body: "",
-  },
-  {
-    key: "kumbara",
-    label: "Kumbara açılış hatırlatması",
-    body: `Merhaba [Ad],
-Bu hafta sorumlu olduğunuz kumbaranın açılışı planlanıyor. Lütfen tutanak fotoğrafını ve sayım tutarını paneli üzerinden iletmeyi unutmayın.
-Teşekkürler — Minik Defne Kampanya Ekibi`,
-  },
-  {
-    key: "meeting",
-    label: "Toplantı duyurusu",
-    body: `Merhaba [Ad],
-Bu hafta Cumartesi saat 18:00'de gönüllü toplantımız var. Yapılan ve planlanan işleri birlikte değerlendireceğiz.
-Katılımınızı bekliyoruz — Minik Defne Kampanya Ekibi`,
-  },
-  {
-    key: "thanks",
-    label: "Teşekkür mesajı",
-    body: `Sevgili [Ad],
-Minik Defne için verdiğiniz emek paha biçilemez. Sahada gösterdiğiniz özveri sayesinde hedefimize her gün biraz daha yaklaşıyoruz.
-Yürekten teşekkür ederiz — Defne Ailesi`,
-  },
-];
+type Tab = "tum" | "gorevliler" | "performans";
 
-export default function VolunteersPage() {
-  const [list, setList] = useState<Volunteer[]>(adminVolunteers);
-  const [openAdd, setOpenAdd] = useState(false);
-  const [openEdit, setOpenEdit] = useState<Volunteer | null>(null);
+// ── API constants ───────────────────────────────────────────────────────────
 
-  // Add form state
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<Volunteer["role"]>("Kumbara Sorumlusu");
-  const [assignedTo, setAssignedTo] = useState("");
+const PROXY_BASE = "/api/kampanya/demo-defne";
 
-  // Edit form state
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editRole, setEditRole] = useState<Volunteer["role"]>("Kumbara Sorumlusu");
-  const [editAssigned, setEditAssigned] = useState("");
+// ── Parsing ─────────────────────────────────────────────────────────────────
 
-  // Bulk message state
-  const [recipientGroup, setRecipientGroup] = useState<RecipientGroup>("all");
-  const [manualSelected, setManualSelected] = useState<Set<string>>(new Set());
-  const [templateKey, setTemplateKey] = useState("custom");
-  const [message, setMessage] = useState("");
+type RawRow = Record<string, unknown>;
 
-  const assignmentOptionsFor = (r: Volunteer["role"]) => {
-    if (r === "Kumbara Sorumlusu") {
-      return demoCampaign.transparency.kumbaralar.map(
-        (k) => `Kumbara #${k.id} (${k.location})`,
-      );
+function parseTip(raw: unknown): GonulluTip {
+  if (typeof raw === "string") {
+    const s = raw.toLocaleLowerCase("tr").trim();
+    if (s === "gorevli" || s === "görevli") return "gorevli";
+  }
+  return "genel";
+}
+
+function parseGorev(raw: unknown): Gorev | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const found = GOREV_OPTIONS.find(
+    (g) => g.toLocaleLowerCase("tr") === trimmed.toLocaleLowerCase("tr"),
+  );
+  if (found) return found;
+  // Tanımlı değilse "Diğer" olarak ele al, orijinal metin notes'da kalmasın
+  return "Diğer";
+}
+
+function parseGonullu(raw: RawRow): Gonullu | null {
+  const id = String(raw.id ?? raw.gonullu_id ?? raw.no ?? "").trim();
+  const name = String(raw.ad_soyad ?? raw.name ?? raw.isim ?? "").trim();
+  if (!id || !name) return null;
+  const phoneRaw = raw.telefon ?? raw.phone ?? "";
+  const phone =
+    typeof phoneRaw === "string" && phoneRaw.trim() ? phoneRaw.trim() : undefined;
+  const type = parseTip(raw.tip ?? raw.type ?? raw.kategori);
+  const gorev =
+    type === "gorevli" ? parseGorev(raw.gorev ?? raw.role ?? raw.task) : undefined;
+  const notesRaw = raw.notlar ?? raw.notes ?? raw.aciklama ?? "";
+  const notes =
+    typeof notesRaw === "string" && notesRaw.trim() ? notesRaw.trim() : undefined;
+  return { id, name, phone, type, gorev, notes };
+}
+
+function unwrapArray(data: unknown, key?: string): unknown[] {
+  let arr: unknown = data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const obj = data as Record<string, unknown>;
+    if (key && Array.isArray(obj[key])) arr = obj[key];
+    else if (Array.isArray(obj.data)) arr = obj.data;
+    else if (Array.isArray(obj.items)) arr = obj.items;
+    else if (Array.isArray(obj.result)) arr = obj.result;
+    else if (Array.isArray(obj.rows)) arr = obj.rows;
+    else if (Array.isArray(obj.gonulluler)) arr = obj.gonulluler;
+  }
+  if (!Array.isArray(arr)) arr = [arr];
+  return arr as unknown[];
+}
+
+// ── API helpers ─────────────────────────────────────────────────────────────
+
+type FetchResult = { items: Gonullu[]; ok: boolean; reason?: string };
+
+async function fetchGonulluler(): Promise<FetchResult> {
+  try {
+    const res = await fetch(`${PROXY_BASE}/gonulluler`, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`[gonulluler] API ${res.status} ${res.statusText}`);
+      return { items: [], ok: false, reason: `HTTP ${res.status}` };
     }
-    if (r === "Stant Sorumlusu") {
-      return demoCampaign.transparency.stantlar.map(
-        (s) => `Stant #${s.id} (${s.location})`,
-      );
-    }
-    return ["Genel", "Saha Ekibi", "İletişim"];
-  };
-
-  const assignmentOptions = useMemo(() => assignmentOptionsFor(role), [role]);
-  const editAssignmentOptions = useMemo(() => assignmentOptionsFor(editRole), [editRole]);
-
-  const handleAdd = () => {
-    if (!name.trim() || !phone.trim()) return;
-    const v: Volunteer = {
-      id: `V-${String(list.length + 1).padStart(2, "0")}`,
-      name: name.trim(),
-      phone: phone.trim(),
-      role,
-      assignedTo: assignedTo || assignmentOptions[0] || "Genel",
-      addedAt: new Date().toISOString().slice(0, 10),
+    const data: unknown = await res.json();
+    const arr = unwrapArray(data, "gonulluler");
+    const items = (arr as RawRow[])
+      .map(parseGonullu)
+      .filter((g): g is Gonullu => g !== null);
+    return { items, ok: true };
+  } catch (e) {
+    return {
+      items: [],
+      ok: false,
+      reason: e instanceof Error ? e.message : "network error",
     };
-    setList([v, ...list]);
-    setOpenAdd(false);
-    setName("");
-    setPhone("");
-    setRole("Kumbara Sorumlusu");
-    setAssignedTo("");
-  };
+  }
+}
 
-  const openEditModal = (v: Volunteer) => {
-    setOpenEdit(v);
-    setEditName(v.name);
-    setEditPhone(v.phone);
-    setEditRole(v.role);
-    setEditAssigned(v.assignedTo);
-  };
+type PostResult =
+  | { ok: true; data?: unknown }
+  | { ok: false; status: number; message: string; raw?: unknown };
 
-  const handleSaveEdit = () => {
-    if (!openEdit || !editName.trim() || !editPhone.trim()) return;
-    setList((prev) =>
-      prev.map((x) =>
-        x.id === openEdit.id
-          ? {
-              ...x,
-              name: editName.trim(),
-              phone: editPhone.trim(),
-              role: editRole,
-              assignedTo: editAssigned || editAssignmentOptions[0] || "Genel",
-            }
-          : x,
-      ),
-    );
-    setOpenEdit(null);
-  };
+function extractErrorMessage(raw: unknown, fallback: string): string {
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (raw && typeof raw === "object") {
+    const obj = raw as Record<string, unknown>;
+    for (const key of ["message", "error", "reason", "detail", "hint"] as const) {
+      const v = obj[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    const nested = obj.error;
+    if (nested && typeof nested === "object") {
+      const nestedMsg = (nested as Record<string, unknown>).message;
+      if (typeof nestedMsg === "string" && nestedMsg.trim())
+        return nestedMsg.trim();
+    }
+  }
+  return fallback;
+}
 
-  const handleRemove = (id: string) => {
-    if (!confirm("Bu gönüllüyü listeden kaldırmak istediğinize emin misiniz?")) return;
-    setList((prev) => prev.filter((v) => v.id !== id));
-    setManualSelected((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
+async function postJson(path: string, body: unknown): Promise<PostResult> {
+  try {
+    const res = await fetch(`${PROXY_BASE}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
     });
-  };
 
-  // Bulk recipient resolution
-  const recipients = useMemo(() => {
-    if (recipientGroup === "all") return list;
-    if (recipientGroup === "kumbara") return list.filter((v) => v.role === "Kumbara Sorumlusu");
-    if (recipientGroup === "stant") return list.filter((v) => v.role === "Stant Sorumlusu");
-    return list.filter((v) => manualSelected.has(v.id));
-  }, [recipientGroup, list, manualSelected]);
+    const contentType = res.headers.get("content-type") ?? "";
+    let raw: unknown = null;
+    try {
+      if (contentType.includes("application/json")) raw = await res.json();
+      else {
+        const text = await res.text();
+        raw = text || null;
+      }
+    } catch {
+      // ignore
+    }
 
-  // Auto-fill template
+    if (!res.ok) {
+      const fallback = `HTTP ${res.status} ${res.statusText || "Hata"}`.trim();
+      const message = extractErrorMessage(raw, fallback);
+      // eslint-disable-next-line no-console
+      console.error(`[postJson] ${path} failed:`, {
+        status: res.status,
+        body: raw,
+        sentBody: body,
+      });
+      return { ok: false, status: res.status, message, raw };
+    }
+    return { ok: true, data: raw };
+  } catch (e) {
+    return {
+      ok: false,
+      status: 0,
+      message: e instanceof Error ? e.message : "Ağ hatası",
+    };
+  }
+}
+
+// ── Mock fallback ───────────────────────────────────────────────────────────
+// API hata verirse mock data göster (ama API hata banner'ı da görünür).
+function mockFallback(): Gonullu[] {
+  return adminVolunteers.map((v): Gonullu => {
+    const role = v.role.toLocaleLowerCase("tr");
+    let type: GonulluTip = "genel";
+    let gorev: Gorev | undefined;
+    if (role.includes("kumbara")) {
+      type = "gorevli";
+      gorev = "Kumbara Sorumlusu";
+    } else if (role.includes("stant")) {
+      type = "gorevli";
+      gorev = "Stant Sorumlusu";
+    } else if (role.includes("sosyal")) {
+      type = "gorevli";
+      gorev = "Sosyal Medya";
+    } else if (role.includes("lojistik")) {
+      type = "gorevli";
+      gorev = "Lojistik";
+    }
+    return {
+      id: v.id,
+      name: v.name,
+      phone: v.phone,
+      type,
+      gorev,
+      notes: v.assignedTo && v.assignedTo !== "Genel" ? v.assignedTo : undefined,
+    };
+  });
+}
+
+// ── Telefon biçimi: 05XX XXX XX XX ───────────────────────────────────────────
+function formatPhoneLive(input: string): string {
+  // Sadece rakamları al
+  const digits = input.replace(/\D/g, "").slice(0, 11);
+  if (digits.length === 0) return "";
+  // 05XX XXX XX XX gruplaması
+  const parts: string[] = [];
+  if (digits.length >= 4) parts.push(digits.slice(0, 4));
+  else parts.push(digits);
+  if (digits.length > 4) parts.push(digits.slice(4, 7));
+  if (digits.length > 7) parts.push(digits.slice(7, 9));
+  if (digits.length > 9) parts.push(digits.slice(9, 11));
+  return parts.join(" ");
+}
+
+// ── Page component ──────────────────────────────────────────────────────────
+
+export default function GonullulerPage() {
+  const [items, setItems] = useState<Gonullu[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("tum");
+
+  // Add/Edit modal — null = kapalı, "new" = ekleme, Gonullu = düzenleme
+  const [editTarget, setEditTarget] = useState<Gonullu | "new" | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formType, setFormType] = useState<GonulluTip>("genel");
+  const [formGorev, setFormGorev] = useState<Gorev>("Kumbara Sorumlusu");
+  const [formNotes, setFormNotes] = useState("");
+  const [savingForm, setSavingForm] = useState(false);
+
+  // Delete confirm modal
+  const [deleteTarget, setDeleteTarget] = useState<Gonullu | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // ── Initial fetch ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const tpl = TEMPLATES.find((t) => t.key === templateKey);
-    if (tpl) setMessage(tpl.body);
-  }, [templateKey]);
+    let mounted = true;
+    (async () => {
+      const result = await fetchGonulluler();
+      if (!mounted) return;
+      if (result.ok) {
+        setItems(result.items);
+        setApiError(null);
+      } else {
+        setItems(mockFallback());
+        setApiError(result.reason ?? "API'ye ulaşılamadı");
+      }
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const toggleManual = (id: string) => {
-    setManualSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const refresh = async () => {
+    const fresh = await fetchGonulluler();
+    if (fresh.ok) {
+      setItems(fresh.items);
+      setApiError(null);
+    } else {
+      setApiError(fresh.reason ?? "API'ye ulaşılamadı");
+    }
   };
 
-  const handleSendBulk = () => {
-    if (recipients.length === 0) {
-      alert("En az bir alıcı seçilmelidir.");
-      return;
-    }
-    if (!message.trim()) {
-      alert("Mesaj metni boş olamaz.");
-      return;
-    }
-    if (
-      !confirm(
-        `${recipients.length} gönüllü için mesajlaşma uygulamasında ${recipients.length} ayrı sekme açılacak. Devam edilsin mi?`,
-      )
-    ) {
-      return;
-    }
-    recipients.forEach((v, idx) => {
-      const personalMessage = message.replaceAll("[Ad]", v.name.split(" ")[0] ?? v.name);
-      const phoneDigits = v.phone.replace(/\D/g, "");
-      const url = `https://wa.me/${phoneDigits}?text=${encodeURIComponent(personalMessage)}`;
-      // küçük gecikme — popup engelleyiciden kaçınmak için
-      setTimeout(() => {
-        window.open(url, `_msg_${idx}`);
-      }, idx * 250);
-    });
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const gorevliler = useMemo(
+    () => items.filter((g) => g.type === "gorevli"),
+    [items],
+  );
+  const visibleItems = tab === "gorevliler" ? gorevliler : items;
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const openAddModal = () => {
+    setErrorMsg(null);
+    setEditTarget("new");
+    setFormName("");
+    setFormPhone("");
+    setFormType("genel");
+    setFormGorev("Kumbara Sorumlusu");
+    setFormNotes("");
   };
+
+  const openEditModal = (g: Gonullu) => {
+    setErrorMsg(null);
+    setEditTarget(g);
+    setFormName(g.name);
+    setFormPhone(g.phone ?? "");
+    setFormType(g.type);
+    setFormGorev(g.gorev ?? "Kumbara Sorumlusu");
+    setFormNotes(g.notes ?? "");
+  };
+
+  const closeFormModal = () => {
+    if (savingForm) return;
+    setEditTarget(null);
+  };
+
+  const handleSaveForm = async () => {
+    if (!formName.trim()) {
+      setErrorMsg("Ad-soyad zorunludur.");
+      return;
+    }
+    setSavingForm(true);
+    setErrorMsg(null);
+    try {
+      const isNew = editTarget === "new";
+      const payload: Record<string, unknown> = {
+        ad_soyad: formName.trim(),
+        telefon: formPhone.trim() || null,
+        tip: formType,
+        gorev: formType === "gorevli" ? formGorev : null,
+        notlar: formNotes.trim() || null,
+      };
+      if (!isNew && editTarget) payload.id = editTarget.id;
+
+      const result = await postJson(
+        isNew ? "/gonullu-ekle" : "/gonullu-guncelle",
+        payload,
+      );
+      if (!result.ok) {
+        setErrorMsg(result.message);
+        return;
+      }
+
+      await refresh();
+      setEditTarget(null);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Kaydetme başarısız.");
+    } finally {
+      setSavingForm(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setErrorMsg(null);
+    try {
+      const result = await postJson("/gonullu-sil", { id: deleteTarget.id });
+      if (!result.ok) {
+        setErrorMsg(result.message);
+        return;
+      }
+      await refresh();
+      setDeleteTarget(null);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Silme başarısız.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <AdminLayout
       title="Gönüllüler"
-      subtitle={`${list.length} aktif gönüllü`}
+      subtitle={
+        loading
+          ? "Yükleniyor…"
+          : `${items.length} gönüllü — ${gorevliler.length} görevli`
+      }
       actions={
-        <Button variant="primary" size="sm" onClick={() => setOpenAdd(true)}>
-          <Plus className="w-4 h-4" />
-          Gönüllü Ekle
-        </Button>
+        tab !== "performans" ? (
+          <Button variant="primary" size="sm" onClick={openAddModal}>
+            <Plus className="w-4 h-4" />
+            Yeni Gönüllü
+          </Button>
+        ) : null
       }
     >
-      <PanelCard>
-        <div className="overflow-x-auto">
-          <table className="w-full text-body-sm">
-            <thead>
-              <tr className="bg-surface-container-low text-label-sm text-on-surface-variant uppercase tracking-wide">
-                <th className="text-left px-5 py-3 font-semibold">Ad Soyad</th>
-                <th className="text-left px-5 py-3 font-semibold">Telefon</th>
-                <th className="text-left px-5 py-3 font-semibold">Görev</th>
-                <th className="text-left px-5 py-3 font-semibold">Sorumlu Olduğu</th>
-                <th className="text-left px-5 py-3 font-semibold">Eklenme</th>
-                <th className="text-right px-5 py-3 font-semibold">İşlem</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((v, i) => (
-                <tr
-                  key={v.id}
-                  className={`border-t border-outline-variant hover:bg-surface-container-low transition ${i % 2 === 1 ? "bg-surface-container-low/40" : ""}`}
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-secondary text-on-secondary text-label-sm font-bold flex items-center justify-center shrink-0">
-                        {v.name.charAt(0)}
-                      </div>
-                      <span className="font-medium text-on-surface">{v.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-on-surface-variant tabular-nums">{v.phone}</td>
-                  <td className="px-5 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-fixed text-primary text-label-sm font-medium">
-                      {v.role}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-on-surface-variant">{v.assignedTo}</td>
-                  <td className="px-5 py-3 text-on-surface-variant tabular-nums">{v.addedAt}</td>
-                  <td className="px-5 py-3 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <button
-                        onClick={() => openEditModal(v)}
-                        className="p-1.5 rounded-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
-                        aria-label="Düzenle"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleRemove(v.id)}
-                        className="p-1.5 rounded-md text-on-surface-variant hover:bg-error-container hover:text-error"
-                        aria-label="Kaldır"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* API error banner */}
+      {apiError && !loading && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-body-sm text-amber-900 flex items-start gap-2">
+          <span className="font-bold shrink-0">⚠</span>
+          <div className="min-w-0">
+            <p className="font-semibold">
+              API'ye ulaşılamadı — mock veri gösteriliyor.
+            </p>
+            <p className="text-label-sm text-amber-800 mt-0.5 break-all">
+              {apiError}. n8n endpoint'ini ve CORS başlıklarını kontrol edin.
+            </p>
+          </div>
         </div>
-      </PanelCard>
+      )}
 
-      {/* Bulk message panel */}
-      <PanelCard
-        title="Toplu Mesaj Gönder"
-        description="Seçili gönüllülere mesajlaşma uygulaması üzerinden tek tıkla mesaj gönderin"
-        className="mt-6"
+      {/* Tabs */}
+      <div
+        role="tablist"
+        aria-label="Gönüllü sekmeleri"
+        className="flex gap-1 mb-4 border-b border-outline-variant overflow-x-auto -mx-1 px-1"
       >
-        <div className="grid lg:grid-cols-2 gap-0">
-          {/* Recipients column */}
-          <div className="px-5 py-4 lg:border-r border-outline-variant">
-            <h3 className="text-label-md font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" /> Alıcı Seçimi
-            </h3>
+        <button
+          role="tab"
+          aria-selected={tab === "tum"}
+          onClick={() => setTab("tum")}
+          className={`px-4 py-2.5 text-label-md font-semibold whitespace-nowrap transition border-b-2 -mb-px min-h-[44px] inline-flex items-center gap-1.5 ${
+            tab === "tum"
+              ? "border-secondary text-secondary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Tüm Gönüllüler
+          <span
+            className={`ml-1 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-bold ${
+              tab === "tum"
+                ? "bg-secondary-container text-secondary"
+                : "bg-surface-container text-on-surface-variant"
+            }`}
+          >
+            {items.length}
+          </span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "gorevliler"}
+          onClick={() => setTab("gorevliler")}
+          className={`px-4 py-2.5 text-label-md font-semibold whitespace-nowrap transition border-b-2 -mb-px min-h-[44px] inline-flex items-center gap-1.5 ${
+            tab === "gorevliler"
+              ? "border-secondary text-secondary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          <BadgeCheck className="w-4 h-4" />
+          Görevliler
+          <span
+            className={`ml-1 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-bold ${
+              tab === "gorevliler"
+                ? "bg-secondary-container text-secondary"
+                : "bg-surface-container text-on-surface-variant"
+            }`}
+          >
+            {gorevliler.length}
+          </span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "performans"}
+          onClick={() => setTab("performans")}
+          className={`px-4 py-2.5 text-label-md font-semibold whitespace-nowrap transition border-b-2 -mb-px min-h-[44px] inline-flex items-center gap-1.5 ${
+            tab === "performans"
+              ? "border-secondary text-secondary"
+              : "border-transparent text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          Performans
+        </button>
+      </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { key: "all" as RecipientGroup, label: "Tüm gönüllüler" },
-                { key: "kumbara" as RecipientGroup, label: "Kumbara sorumluları" },
-                { key: "stant" as RecipientGroup, label: "Stant sorumluları" },
-                { key: "manual" as RecipientGroup, label: "Elle seçim" },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => setRecipientGroup(opt.key)}
-                  className={cn(
-                    "px-3 py-2 rounded-lg border text-label-md font-medium text-left transition",
-                    recipientGroup === opt.key
-                      ? "border-secondary bg-secondary-container/30 text-on-secondary-container"
-                      : "border-outline-variant text-on-surface-variant hover:bg-surface-container-low",
-                  )}
+      {/* ── PERFORMANS TAB ───────────────────────────────────────────────── */}
+      {tab === "performans" && (
+        <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-12 text-center">
+          <Sparkles className="w-12 h-12 mx-auto mb-3 text-on-surface-variant/50" />
+          <p className="text-headline-sm font-semibold text-on-surface mb-1">
+            Yakında
+          </p>
+          <p className="text-body-md text-on-surface-variant max-w-md mx-auto">
+            Gönüllü performans göstergeleri (toplanan tutar, açılış sayısı,
+            stant kapanışı vb.) yakında bu sekmede görünecek.
+          </p>
+        </div>
+      )}
+
+      {/* ── LIST/GOREVLILER TAB ──────────────────────────────────────────── */}
+      {tab !== "performans" && (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden"
                 >
-                  {opt.label}
-                </button>
+                  <div className="h-[180px] animate-pulse bg-surface-container-high/40" />
+                </div>
               ))}
             </div>
-
-            {recipientGroup === "manual" && (
-              <div className="mt-3 max-h-56 overflow-y-auto rounded-lg border border-outline-variant divide-y divide-outline-variant bg-surface-container-low">
-                {list.map((v) => {
-                  const checked = manualSelected.has(v.id);
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => toggleManual(v.id)}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-surface-container transition"
-                    >
-                      {checked ? (
-                        <CheckSquare className="w-4 h-4 text-secondary shrink-0" />
-                      ) : (
-                        <Square className="w-4 h-4 text-on-surface-variant shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-label-md text-on-surface truncate">{v.name}</p>
-                        <p className="text-label-sm text-on-surface-variant truncate">
-                          {v.role} • {v.phone}
+          ) : visibleItems.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-10 text-center">
+              <Users className="w-10 h-10 mx-auto mb-3 text-on-surface-variant/60" />
+              <p className="text-body-md text-on-surface-variant">
+                {tab === "gorevliler"
+                  ? "Görevli gönüllü yok. Bir gönüllü ekleyip 'Görevli' işaretleyebilirsiniz."
+                  : "Gönüllü kaydı yok. Yeni bir gönüllü ekleyebilirsiniz."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visibleItems.map((g) => (
+                <article
+                  key={g.id}
+                  className="rounded-xl border bg-surface-container-lowest border-outline-variant hover:border-secondary hover:shadow-[0_4px_12px_rgba(0,24,53,0.08)] overflow-hidden transition flex flex-col"
+                >
+                  <div className="px-5 pt-4 pb-3 border-b border-outline-variant flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                          g.type === "gorevli"
+                            ? "bg-secondary-container/40 text-secondary"
+                            : "bg-surface-container-high text-on-surface-variant"
+                        }`}
+                      >
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-body-md font-semibold text-on-surface break-words">
+                          {g.name}
+                        </p>
+                        <p className="text-label-sm text-on-surface-variant">
+                          #{g.id}
                         </p>
                       </div>
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-label-sm font-medium border ${
+                        g.type === "gorevli"
+                          ? "border-secondary/30 bg-secondary-container/30 text-secondary"
+                          : "border-outline-variant bg-surface-container-low text-on-surface-variant"
+                      }`}
+                    >
+                      {g.type === "gorevli" ? (
+                        <>
+                          <BadgeCheck className="w-3 h-3" />
+                          Görevli
+                        </>
+                      ) : (
+                        "Genel"
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="px-5 py-4 space-y-2 text-body-sm flex-1">
+                    {g.phone && (
+                      <div className="flex items-start gap-2 text-on-surface-variant">
+                        <Phone className="w-4 h-4 mt-0.5 shrink-0" />
+                        <a
+                          href={`tel:${g.phone.replace(/\s+/g, "")}`}
+                          className="text-on-surface hover:text-secondary tabular-nums break-all"
+                        >
+                          {g.phone}
+                        </a>
+                      </div>
+                    )}
+                    {g.gorev && (
+                      <div className="flex items-start gap-2 text-on-surface-variant">
+                        <ClipboardList className="w-4 h-4 mt-0.5 shrink-0" />
+                        <span className="text-on-surface">{g.gorev}</span>
+                      </div>
+                    )}
+                    {g.notes && (
+                      <div className="pt-2 mt-2 border-t border-outline-variant">
+                        <p className="text-label-sm text-on-surface-variant mb-0.5">
+                          Notlar
+                        </p>
+                        <p className="text-body-sm text-on-surface break-words whitespace-pre-line">
+                          {g.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-5 pb-4 pt-1 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => openEditModal(g)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-label-md text-on-surface hover:bg-surface-container-low transition min-h-[40px]"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Düzenle
                     </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-4 px-3 py-2.5 rounded-lg bg-primary-fixed text-on-primary-fixed border border-primary-fixed-dim/40">
-              <p className="text-label-md font-semibold">
-                {recipients.length} kişiye gönderilecek
-              </p>
-              <p className="text-label-sm text-on-primary-fixed-variant mt-0.5">
-                {recipients.length === 0
-                  ? "Henüz alıcı seçilmedi."
-                  : recipients.slice(0, 4).map((r) => r.name).join(", ") +
-                    (recipients.length > 4 ? ` ve ${recipients.length - 4} kişi daha` : "")}
-              </p>
+                    <button
+                      onClick={() => setDeleteTarget(g)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 font-medium text-label-md transition min-h-[40px]"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Sil
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
-          </div>
+          )}
+        </>
+      )}
 
-          {/* Message column */}
-          <div className="px-5 py-4 border-t lg:border-t-0 border-outline-variant">
-            <h3 className="text-label-md font-semibold text-on-surface mb-3 flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" /> Mesaj
-            </h3>
+      {/* ── ADD/EDIT MODAL ───────────────────────────────────────────────── */}
+      <Modal
+        open={editTarget !== null}
+        onClose={closeFormModal}
+        title={editTarget === "new" ? "Yeni Gönüllü" : "Gönüllü Düzenle"}
+        description={
+          editTarget === "new"
+            ? "Yeni bir gönüllü kaydı ekleyin"
+            : "Mevcut gönüllü bilgilerini güncelleyin"
+        }
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeFormModal}
+              disabled={savingForm}
+            >
+              İptal
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveForm}
+              disabled={savingForm || !formName.trim()}
+            >
+              {savingForm ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Kaydediliyor…
+                </>
+              ) : editTarget === "new" ? (
+                "Ekle"
+              ) : (
+                "Kaydet"
+              )}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {errorMsg && editTarget !== null && !deleteTarget && (
+            <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-body-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
 
-            <FormField label="Hazır şablon">
+          <FormField label="Ad-soyad" required>
+            <input
+              className={inputClass}
+              placeholder="Örn: Ahmet Yıldız"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              disabled={savingForm}
+              autoFocus
+            />
+          </FormField>
+
+          <FormField label="Telefon" hint="Opsiyonel — 05XX XXX XX XX">
+            <input
+              type="tel"
+              inputMode="tel"
+              className={inputClass}
+              placeholder="05XX XXX XX XX"
+              value={formPhone}
+              onChange={(e) => setFormPhone(formatPhoneLive(e.target.value))}
+              disabled={savingForm}
+            />
+          </FormField>
+
+          <FormField label="Tip" required>
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition text-body-sm ${
+                  formType === "genel"
+                    ? "border-secondary bg-secondary-container/30 text-secondary font-semibold"
+                    : "border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-secondary/40"
+                } ${savingForm ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="gonullu-tip"
+                  value="genel"
+                  checked={formType === "genel"}
+                  onChange={() => setFormType("genel")}
+                  className="shrink-0"
+                />
+                <span>Genel Gönüllü</span>
+              </label>
+              <label
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition text-body-sm ${
+                  formType === "gorevli"
+                    ? "border-secondary bg-secondary-container/30 text-secondary font-semibold"
+                    : "border-outline-variant bg-surface-container-low text-on-surface-variant hover:border-secondary/40"
+                } ${savingForm ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="gonullu-tip"
+                  value="gorevli"
+                  checked={formType === "gorevli"}
+                  onChange={() => setFormType("gorevli")}
+                  className="shrink-0"
+                />
+                <span>Görevli Gönüllü</span>
+              </label>
+            </div>
+          </FormField>
+
+          {formType === "gorevli" && (
+            <FormField label="Görev" required>
               <select
                 className={inputClass}
-                value={templateKey}
-                onChange={(e) => setTemplateKey(e.target.value)}
+                value={formGorev}
+                onChange={(e) => setFormGorev(e.target.value as Gorev)}
+                disabled={savingForm}
               >
-                {TEMPLATES.map((t) => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
+                {GOREV_OPTIONS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
                   </option>
                 ))}
               </select>
             </FormField>
+          )}
 
-            <div className="mt-3">
-              <FormField
-                label="Mesaj metni"
-                hint="`[Ad]` yer tutucusu her gönüllünün adıyla otomatik değiştirilir."
-              >
-                <textarea
-                  rows={6}
-                  className={inputClass}
-                  placeholder="Mesajınızı buraya yazın…"
-                  value={message}
-                  onChange={(e) => {
-                    setMessage(e.target.value);
-                    if (templateKey !== "custom") setTemplateKey("custom");
-                  }}
-                />
-              </FormField>
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <Button variant="primary" size="md" onClick={handleSendBulk}>
-                <Send className="w-4 h-4" />
-                Mesajlaşma Uygulamasıyla Gönder
-              </Button>
-            </div>
-          </div>
-        </div>
-      </PanelCard>
-
-      {/* Add modal */}
-      <Modal
-        open={openAdd}
-        onClose={() => setOpenAdd(false)}
-        title="Yeni Gönüllü"
-        description="Sahada görev alacak gönüllüyü ekleyin"
-        footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setOpenAdd(false)}>
-              İptal
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleAdd}>
-              Ekle
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <FormField label="Ad Soyad" required>
-            <input
-              className={inputClass}
-              placeholder="Ad ve soyad"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+          <FormField label="Notlar" hint="Opsiyonel">
+            <textarea
+              className={`${inputClass} min-h-[80px] resize-y`}
+              placeholder="Ek notlar..."
+              value={formNotes}
+              onChange={(e) => setFormNotes(e.target.value)}
+              disabled={savingForm}
+              rows={3}
             />
-          </FormField>
-          <FormField label="Telefon" required>
-            <input
-              className={inputClass}
-              placeholder="+90 5xx xxx xx xx"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Görev" required>
-            <select
-              className={inputClass}
-              value={role}
-              onChange={(e) => {
-                setRole(e.target.value as Volunteer["role"]);
-                setAssignedTo("");
-              }}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Sorumlu Olduğu Birim">
-            <select
-              className={inputClass}
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-            >
-              {assignmentOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
           </FormField>
         </div>
       </Modal>
 
-      {/* Edit modal */}
+      {/* ── DELETE CONFIRM MODAL ─────────────────────────────────────────── */}
       <Modal
-        open={openEdit !== null}
-        onClose={() => setOpenEdit(null)}
-        title={openEdit ? `Düzenle — ${openEdit.name}` : ""}
-        description="Gönüllü bilgilerini güncelleyin"
+        open={deleteTarget !== null}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        title="Gönüllüyü Sil"
+        description="Bu işlem geri alınamaz"
         footer={
           <>
-            <Button variant="ghost" size="sm" onClick={() => setOpenEdit(null)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteTarget(null)}
+              disabled={deleting}
+            >
               İptal
             </Button>
-            <Button variant="primary" size="sm" onClick={handleSaveEdit}>
-              Kaydet
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Siliniyor…
+                </>
+              ) : (
+                "Sil"
+              )}
             </Button>
           </>
         }
       >
-        <div className="space-y-4">
-          <FormField label="Ad Soyad" required>
-            <input
-              className={inputClass}
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Telefon" required>
-            <input
-              className={inputClass}
-              value={editPhone}
-              onChange={(e) => setEditPhone(e.target.value)}
-            />
-          </FormField>
-          <FormField label="Görev" required>
-            <select
-              className={inputClass}
-              value={editRole}
-              onChange={(e) => {
-                setEditRole(e.target.value as Volunteer["role"]);
-                setEditAssigned("");
-              }}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Sorumlu Olduğu Birim">
-            <select
-              className={inputClass}
-              value={editAssigned}
-              onChange={(e) => setEditAssigned(e.target.value)}
-            >
-              {editAssignmentOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </FormField>
+        <div className="space-y-3">
+          {errorMsg && deleteTarget && (
+            <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-body-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
+          <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+            <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+            <p className="text-body-sm text-amber-900">
+              <strong>{deleteTarget?.name}</strong> gönüllüsünü silmek
+              istediğinize emin misiniz?
+            </p>
+          </div>
         </div>
       </Modal>
     </AdminLayout>
