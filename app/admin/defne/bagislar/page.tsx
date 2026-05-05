@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Eye, Search } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
@@ -12,9 +12,155 @@ import {
   formatCurrency,
   inputClass,
 } from "@/components/admin/AdminUI";
-import { adminDonations, type AdminDonation } from "@/lib/admin-mock-data";
+import {
+  adminDonations,
+  type AdminDonation,
+  type DonationStatus,
+} from "@/lib/admin-mock-data";
 
 const PAGE_SIZE = 10;
+const PROXY_BASE = "/api/kampanya/demo-defne";
+
+// ── Parsing ───────────────────────────────────────────────────────────────
+
+type RawRow = Record<string, unknown>;
+type Currency = AdminDonation["currency"];
+
+function parseCurrency(raw: unknown): Currency {
+  if (typeof raw === "string") {
+    const s = raw.trim().toUpperCase();
+    if (s === "USD" || s === "EUR" || s === "TRY") return s;
+    if (s === "TL") return "TRY";
+  }
+  return "TRY";
+}
+
+function parseStatus(raw: unknown): DonationStatus {
+  if (typeof raw === "string") {
+    const s = raw.trim().toLocaleLowerCase("tr-TR");
+    if (
+      s === "bekliyor" ||
+      s === "pending" ||
+      s === "onay bekliyor" ||
+      s === "beklemede"
+    ) {
+      return "Bekliyor";
+    }
+  }
+  return "Onaylandı";
+}
+
+/** Backend `kaynak` değerini görünür etikete çevirir. */
+function buildSourceLabel(raw: RawRow): string {
+  const kaynakRaw = String(raw.kaynak ?? raw.source ?? raw.tip ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR");
+
+  const kumbaraNo = String(
+    raw.kumbara_no ?? raw.kumbaraNo ?? raw.kumbara_id ?? "",
+  ).trim();
+  const stantNo = String(
+    raw.stant_no ?? raw.stantNo ?? raw.stant_id ?? "",
+  ).trim();
+
+  if (kaynakRaw === "kumbara") {
+    return kumbaraNo ? `Kumbara ${kumbaraNo}` : "Kumbara";
+  }
+  if (kaynakRaw === "stant") {
+    return stantNo ? `Stant ${stantNo}` : "Stant";
+  }
+  if (kaynakRaw === "havale" || kaynakRaw === "banka" || kaynakRaw === "banka_havalesi") {
+    return "Banka Havalesi";
+  }
+  if (kaynakRaw === "kart" || kaynakRaw === "kredi_karti" || kaynakRaw === "kredi kartı") {
+    return "Kredi Kartı";
+  }
+
+  // Bilinmeyen değer → ham kaynak (büyük harfle başlat) ya da source alanını olduğu gibi kullan
+  const fallback = String(raw.source ?? raw.kaynak ?? "").trim();
+  if (fallback) {
+    return fallback.charAt(0).toLocaleUpperCase("tr-TR") + fallback.slice(1);
+  }
+  return "Diğer";
+}
+
+function parseDonation(raw: RawRow): AdminDonation | null {
+  const id = String(
+    raw.id ?? raw.bagis_id ?? raw.bagisId ?? raw.no ?? "",
+  ).trim();
+  const dateRaw = String(
+    raw.tarih ??
+      raw.date ??
+      raw.created_at ??
+      raw.createdAt ??
+      raw.olusturma ??
+      "",
+  ).trim();
+  if (!id || !dateRaw) return null;
+
+  // ISO `YYYY-MM-DD HH:mm` veya `YYYY-MM-DD` biçimini koru
+  let date = dateRaw;
+  const isoMatch = dateRaw.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  if (isoMatch) {
+    date = isoMatch[2] ? `${isoMatch[1]} ${isoMatch[2]}` : isoMatch[1];
+  }
+
+  const donorName = String(
+    raw.bagisci ??
+      raw.bagisci_adi ??
+      raw.donor_name ??
+      raw.donorName ??
+      raw.isim ??
+      "İsimsiz Bağışçı",
+  ).trim() || "İsimsiz Bağışçı";
+
+  const amount = Number(raw.tutar ?? raw.amount ?? 0) || 0;
+  const currency = parseCurrency(raw.para_birimi ?? raw.currency);
+  const status = parseStatus(raw.durum ?? raw.status);
+  const source = buildSourceLabel(raw);
+
+  return { id, date, donorName, source, amount, currency, status };
+}
+
+function unwrapArray(data: unknown): unknown[] {
+  let arr: unknown = data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.bagislar)) arr = obj.bagislar;
+    else if (Array.isArray(obj.data)) arr = obj.data;
+    else if (Array.isArray(obj.items)) arr = obj.items;
+    else if (Array.isArray(obj.result)) arr = obj.result;
+    else if (Array.isArray(obj.rows)) arr = obj.rows;
+  }
+  if (!Array.isArray(arr)) arr = [arr];
+  return arr as unknown[];
+}
+
+type FetchResult = { items: AdminDonation[]; ok: boolean; reason?: string };
+
+async function fetchBagislar(): Promise<FetchResult> {
+  try {
+    const res = await fetch(`${PROXY_BASE}/bagislar`, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      return { items: [], ok: false, reason: `HTTP ${res.status}` };
+    }
+    const data: unknown = await res.json();
+    const arr = unwrapArray(data);
+    const items = (arr as RawRow[])
+      .map(parseDonation)
+      .filter((d): d is AdminDonation => d !== null);
+    return { items, ok: true };
+  } catch (e) {
+    return {
+      items: [],
+      ok: false,
+      reason: e instanceof Error ? e.message : "network error",
+    };
+  }
+}
 
 type QuickRange = "bugun" | "hafta" | "ay" | "tum" | "";
 
@@ -34,6 +180,10 @@ const startOfWeek = (d: Date) => {
 };
 
 export default function DonationsPage() {
+  const [items, setItems] = useState<AdminDonation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [quickRange, setQuickRange] = useState<QuickRange>("tum");
@@ -42,6 +192,25 @@ export default function DonationsPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [detail, setDetail] = useState<AdminDonation | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const result = await fetchBagislar();
+      if (!mounted) return;
+      if (result.ok) {
+        setItems(result.items);
+        setApiError(null);
+      } else {
+        setItems(adminDonations);
+        setApiError(result.reason ?? "API'ye bağlanılamadı");
+      }
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const applyQuickRange = (k: QuickRange) => {
     const today = new Date();
@@ -64,7 +233,7 @@ export default function DonationsPage() {
   };
 
   const filtered = useMemo(() => {
-    return adminDonations.filter((d) => {
+    return items.filter((d) => {
       if (startDate && d.date.slice(0, 10) < startDate) return false;
       if (endDate && d.date.slice(0, 10) > endDate) return false;
       if (source && !d.source.toLowerCase().includes(source.toLowerCase())) return false;
@@ -77,7 +246,7 @@ export default function DonationsPage() {
       }
       return true;
     });
-  }, [startDate, endDate, source, currency, query]);
+  }, [items, startDate, endDate, source, currency, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -86,7 +255,11 @@ export default function DonationsPage() {
   return (
     <AdminLayout
       title="Bağışlar"
-      subtitle="Tüm bağış kayıtları, kaynaklar ve onay durumları"
+      subtitle={
+        loading
+          ? "Yükleniyor…"
+          : "Tüm bağış kayıtları, kaynaklar ve onay durumları"
+      }
       actions={
         <Button
           variant="primary"
@@ -98,6 +271,20 @@ export default function DonationsPage() {
         </Button>
       }
     >
+      {apiError && !loading && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-body-sm text-amber-900 flex items-start gap-2">
+          <span className="font-bold shrink-0">⚠</span>
+          <div className="min-w-0">
+            <p className="font-semibold">
+              API'ye bağlanılamadı — mock veri gösteriliyor.
+            </p>
+            <p className="text-label-sm text-amber-800 mt-0.5 break-all">
+              {apiError}. n8n endpoint'ini ve CORS başlıklarını kontrol edin.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <PanelCard title="Filtreler" description="Bağışları daraltmak için filtreleri kullanın" className="mb-4">
         <div className="px-5 pt-4 pb-1 flex flex-wrap gap-2">
@@ -215,7 +402,13 @@ export default function DonationsPage() {
               </tr>
             </thead>
             <tbody>
-              {pageRows.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center text-on-surface-variant py-10">
+                    Yükleniyor…
+                  </td>
+                </tr>
+              ) : pageRows.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center text-on-surface-variant py-10">
                     Bu filtrelere uyan bağış bulunamadı.
