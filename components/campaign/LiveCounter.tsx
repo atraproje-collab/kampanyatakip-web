@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { CalendarClock, RefreshCw, Users } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
@@ -23,25 +23,21 @@ function CounterSkeleton({ isDark }: { isDark: boolean }) {
     : "bg-surface-container-high animate-pulse rounded-md";
   return (
     <div aria-busy="true" aria-label="Yükleniyor…">
-      {/* "Toplanan" label */}
       <div className={`h-3 w-16 ${p} mb-3`} />
-      {/* Big number row */}
       <div className="flex items-baseline gap-2 mt-1">
         <div className={`h-12 w-44 ${p}`} />
         <div className={`h-4 w-9 ${p}`} />
       </div>
-      {/* TRY row */}
       <div className={`h-4 w-36 ${p} mt-2`} />
-      {/* Progress bar */}
-      <div className={`h-3 w-full rounded-full ${p} mt-5`} style={{ borderRadius: "9999px" }} />
-      {/* Goal row */}
+      <div
+        className={`h-3 w-full rounded-full ${p} mt-5`}
+        style={{ borderRadius: "9999px" }}
+      />
       <div className="mt-2 flex justify-between">
         <div className={`h-3 w-24 ${p}`} />
         <div className={`h-3 w-28 ${p}`} />
       </div>
-      {/* Rate disclosure */}
       <div className={`h-3 w-48 ${p} mt-3`} />
-      {/* Stat cards */}
       <div className="mt-5 grid grid-cols-2 gap-3">
         <div className={`h-[72px] rounded-xl ${p}`} style={{ borderRadius: "0.75rem" }} />
         <div className={`h-[72px] rounded-xl ${p}`} style={{ borderRadius: "0.75rem" }} />
@@ -50,66 +46,37 @@ function CounterSkeleton({ isDark }: { isDark: boolean }) {
   );
 }
 
-// ── Counter ───────────────────────────────────────────────────────────────────
+// ── Counter ──────────────────────────────────────────────────────────────────
 
 export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
-  const { raisedTry, donorCount, campaign, statsReady } = useCampaign();
+  const { donations, raisedTry, raisedUsd, donorCount, campaign, statsReady } =
+    useCampaign();
   const rate = mockExchangeRate;
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const [animated, setAnimated] = useState(0);
-  const prevRaisedRef = useRef(0);
-  const [hasStarted, setHasStarted] = useState(false);
 
-  // Initial count-up: only starts after statsReady AND inView
+  // Debug: yardımcı log — context'ten gelen değerleri ve kuru göster.
   useEffect(() => {
-    if (!inView || hasStarted || !statsReady) return;
-    setHasStarted(true);
-    const duration = 2000;
-    const start = performance.now();
-    const to = Math.max(0, raisedTry);
-    prevRaisedRef.current = to;
-
-    let rafId = 0;
-    const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      setAnimated(Math.max(0, Math.round(to * easeOutQuart(progress))));
-      if (progress < 1) rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [inView, hasStarted, raisedTry, statsReady]);
-
-  // Smooth updates on API refreshes
-  useEffect(() => {
-    if (!hasStarted) return;
-    if (raisedTry === prevRaisedRef.current) return;
-    const from = Math.max(0, prevRaisedRef.current);
-    const to = Math.max(0, raisedTry);
-    prevRaisedRef.current = to;
-    const duration = 900;
-    const start = performance.now();
-    let rafId = 0;
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      setAnimated(
-        Math.max(0, Math.round(from + (to - from) * easeOutCubic(progress))),
-      );
-      if (progress < 1) rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [raisedTry, hasStarted]);
+    if (!statsReady) return;
+    // eslint-disable-next-line no-console
+    console.log("[LiveCounter] data", {
+      donationsCount: donations.length,
+      sampleDonations: donations.slice(0, 3).map((d) => ({
+        id: d.id,
+        amount: d.amount,
+        currency: d.currency,
+        date: d.date,
+      })),
+      raisedTry: Math.round(raisedTry),
+      raisedUsd: Math.round(raisedUsd),
+      usd_try: rate.usd_try,
+      goalUsd: campaign.goalUsd,
+      goalTry: Math.round(campaign.goalUsd * rate.usd_try),
+    });
+  }, [statsReady, donations, raisedTry, raisedUsd, rate.usd_try, campaign.goalUsd]);
 
   const isDark = variant === "dark";
 
-  // Show skeleton while waiting for the first API response
   if (!statsReady) {
     return (
       <div ref={ref}>
@@ -120,15 +87,12 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
 
   // Guard against 0 exchange rate (should never happen with fallback 45.15)
   const safeUsdTry = rate.usd_try > 0 ? rate.usd_try : 45.15;
-  const animatedUsd = animated / safeUsdTry;
-  const goalTry = campaign.goalUsd * safeUsdTry;
+  const goalUsd = campaign.goalUsd;
+  const goalTry = goalUsd * safeUsdTry;
   const pct = Math.min((raisedTry / Math.max(1, goalTry)) * 100, 100);
 
   return (
-    <div
-      ref={ref}
-      className={isDark ? "text-white" : "text-on-surface"}
-    >
+    <div ref={ref} className={isDark ? "text-white" : "text-on-surface"}>
       {/* Primary — TRY raised */}
       <div>
         <p
@@ -144,7 +108,7 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
               isDark ? "text-white" : "text-primary-container"
             }`}
           >
-            ₺{formatTRY(animated)}
+            ₺{formatTRY(Math.round(raisedTry))}
           </span>
           <span
             className={`text-[14px] md:text-[16px] font-semibold ${
@@ -155,14 +119,14 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
           </span>
         </div>
 
-        {/* Secondary — USD equivalent (only when animated > 0) */}
-        {animated > 0 && (
+        {/* Secondary — USD equivalent */}
+        {raisedTry > 0 && (
           <div
             className={`mt-2 flex items-center flex-wrap gap-x-2 text-[13px] md:text-[14px] tabular-nums ${
               isDark ? "text-white/75" : "text-on-surface-variant"
             }`}
           >
-            <span>≈ ${formatUSD(Math.round(animatedUsd))} USD</span>
+            <span>≈ ${formatUSD(Math.round(raisedUsd))} USD</span>
             <span
               className={`text-[11px] font-medium ${
                 isDark ? "text-white/45" : "text-on-surface-variant/70"
@@ -188,23 +152,21 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
         />
       </div>
 
-      {/* Goal row */}
+      {/* Goal row — Hedef: $ primary, ≈ ₺ secondary */}
       <div className="mt-2 flex items-center justify-between text-[12px] md:text-[13px] font-semibold flex-wrap gap-1">
         <span className={isDark ? "text-secondary-container" : "text-secondary"}>
           %{pct.toFixed(1)} tamamlandı
         </span>
         <span
-          className={
-            isDark ? "text-white/70 text-right" : "text-on-surface-variant"
-          }
+          className={isDark ? "text-white/70 text-right" : "text-on-surface-variant"}
         >
-          Hedef: ₺{formatTRY(goalTry)}
+          Hedef: ${formatUSD(goalUsd)}
           <span
             className={`ml-2 font-normal text-[11px] ${
               isDark ? "text-white/50" : "text-on-surface-variant/80"
             }`}
           >
-            ≈ ${formatUSD(campaign.goalUsd)}
+            ≈ ₺{formatTRY(goalTry)}
           </span>
         </span>
       </div>
@@ -217,8 +179,7 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
       >
         <RefreshCw size={11} />
         <span>
-          Döviz kuru günlük güncellenir · Son: {rate.last_updated} ·{" "}
-          {rate.source}
+          Döviz kuru günlük güncellenir · Son: {rate.last_updated} · {rate.source}
         </span>
       </div>
 

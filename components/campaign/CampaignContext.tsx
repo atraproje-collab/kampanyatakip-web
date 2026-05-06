@@ -124,14 +124,20 @@ export function CampaignProvider({
       const failures: string[] = [];
 
       if (donationsRes.status === "fulfilled" && donationsRes.value) {
-        // Sort newest first by date string (ISO-ish, lexicographic works).
         const sorted = [...donationsRes.value].sort((a, b) =>
           a.date < b.date ? 1 : -1,
         );
         setDonations(sorted);
         gotAny = true;
+        // eslint-disable-next-line no-console
+        console.log("[CampaignContext] /bagislar →", {
+          count: sorted.length,
+          sample: sorted.slice(0, 3),
+        });
       } else {
         failures.push("bağışlar");
+        // eslint-disable-next-line no-console
+        console.warn("[CampaignContext] /bagislar başarısız", donationsRes);
       }
 
       if (kumbaralarRes.status === "fulfilled" && kumbaralarRes.value) {
