@@ -126,10 +126,6 @@ export default function AdminLoginPage() {
             <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting}>
               {submitting ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
-
-            <div className="rounded-lg bg-surface-container-low px-3 py-2.5 text-label-sm text-on-surface-variant text-center">
-              Demo: <span className="font-semibold">defne</span> / <span className="font-semibold">demo2026</span>
-            </div>
           </form>
         </div>
 
