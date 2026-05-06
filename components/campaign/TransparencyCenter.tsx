@@ -133,22 +133,22 @@ export function TransparencyCenter() {
   const stats = [
     {
       label: "Toplam Gelir",
-      value: `$${formatUSD(Math.round(raisedUsd))}`,
-      sub: `≈ ₺${formatTRY(raisedTry)}`,
+      value: `₺${formatTRY(raisedTry)}`,
+      sub: `≈ $${formatUSD(Math.round(raisedUsd))}`,
       icon: TrendingUp,
       tone: "secondary" as const,
     },
     {
       label: "Toplam Gider",
-      value: `$${formatUSD(Math.round(totalExpensesUsd))}`,
-      sub: `≈ ₺${formatTRY(totalExpensesTry)}`,
+      value: `₺${formatTRY(totalExpensesTry)}`,
+      sub: `≈ $${formatUSD(Math.round(totalExpensesUsd))}`,
       icon: TrendingDown,
       tone: "neutral" as const,
     },
     {
       label: "Net Kalan",
-      value: `$${formatUSD(Math.round(netRemainingUsd))}`,
-      sub: `≈ ₺${formatTRY(netRemainingTry)}`,
+      value: `₺${formatTRY(netRemainingTry)}`,
+      sub: `≈ $${formatUSD(Math.round(netRemainingUsd))}`,
       icon: Wallet,
       tone: "primary" as const,
     },

@@ -53,7 +53,7 @@ function CounterSkeleton({ isDark }: { isDark: boolean }) {
 // ── Counter ───────────────────────────────────────────────────────────────────
 
 export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
-  const { raisedUsd, donorCount, campaign, statsReady } = useCampaign();
+  const { raisedTry, donorCount, campaign, statsReady } = useCampaign();
   const rate = mockExchangeRate;
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -67,7 +67,7 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     setHasStarted(true);
     const duration = 2000;
     const start = performance.now();
-    const to = Math.max(0, raisedUsd);   // guard: never negative
+    const to = Math.max(0, raisedTry);
     prevRaisedRef.current = to;
 
     let rafId = 0;
@@ -81,14 +81,14 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [inView, hasStarted, raisedUsd, statsReady]);
+  }, [inView, hasStarted, raisedTry, statsReady]);
 
-  // Smooth updates for live ticker / API refreshes
+  // Smooth updates on API refreshes
   useEffect(() => {
     if (!hasStarted) return;
-    if (raisedUsd === prevRaisedRef.current) return;
-    const from = Math.max(0, prevRaisedRef.current);  // guard: never negative
-    const to   = Math.max(0, raisedUsd);              // guard: never negative
+    if (raisedTry === prevRaisedRef.current) return;
+    const from = Math.max(0, prevRaisedRef.current);
+    const to = Math.max(0, raisedTry);
     prevRaisedRef.current = to;
     const duration = 900;
     const start = performance.now();
@@ -98,12 +98,14 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      setAnimated(Math.max(0, Math.round(from + (to - from) * easeOutCubic(progress))));
+      setAnimated(
+        Math.max(0, Math.round(from + (to - from) * easeOutCubic(progress))),
+      );
       if (progress < 1) rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [raisedUsd, hasStarted]);
+  }, [raisedTry, hasStarted]);
 
   const isDark = variant === "dark";
 
@@ -116,18 +118,18 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
     );
   }
 
-  const pct = Math.min((raisedUsd / campaign.goalUsd) * 100, 100);
   // Guard against 0 exchange rate (should never happen with fallback 45.15)
   const safeUsdTry = rate.usd_try > 0 ? rate.usd_try : 45.15;
-  const animatedTry = animated * safeUsdTry;
+  const animatedUsd = animated / safeUsdTry;
   const goalTry = campaign.goalUsd * safeUsdTry;
+  const pct = Math.min((raisedTry / Math.max(1, goalTry)) * 100, 100);
 
   return (
     <div
       ref={ref}
       className={isDark ? "text-white" : "text-on-surface"}
     >
-      {/* Primary — USD raised */}
+      {/* Primary — TRY raised */}
       <div>
         <p
           className={`text-[11px] md:text-[12px] font-bold uppercase tracking-[0.14em] ${
@@ -142,25 +144,25 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
               isDark ? "text-white" : "text-primary-container"
             }`}
           >
-            ${formatUSD(animated)}
+            ₺{formatTRY(animated)}
           </span>
           <span
             className={`text-[14px] md:text-[16px] font-semibold ${
               isDark ? "text-white/70" : "text-on-surface-variant"
             }`}
           >
-            USD
+            TL
           </span>
         </div>
 
-        {/* Secondary — TRY equivalent (only when animated > 0) */}
+        {/* Secondary — USD equivalent (only when animated > 0) */}
         {animated > 0 && (
           <div
             className={`mt-2 flex items-center flex-wrap gap-x-2 text-[13px] md:text-[14px] tabular-nums ${
               isDark ? "text-white/75" : "text-on-surface-variant"
             }`}
           >
-            <span>≈ ₺{formatTRY(animatedTry)}</span>
+            <span>≈ ${formatUSD(Math.round(animatedUsd))} USD</span>
             <span
               className={`text-[11px] font-medium ${
                 isDark ? "text-white/45" : "text-on-surface-variant/70"
@@ -196,13 +198,13 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
             isDark ? "text-white/70 text-right" : "text-on-surface-variant"
           }
         >
-          Hedef: ${formatUSD(campaign.goalUsd)}
+          Hedef: ₺{formatTRY(goalTry)}
           <span
             className={`ml-2 font-normal text-[11px] ${
               isDark ? "text-white/50" : "text-on-surface-variant/80"
             }`}
           >
-            ≈ ₺{formatTRY(goalTry)}
+            ≈ ${formatUSD(campaign.goalUsd)}
           </span>
         </span>
       </div>
