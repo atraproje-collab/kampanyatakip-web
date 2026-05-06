@@ -3,11 +3,12 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, EyeOff, Filter } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import type { RecentDonor } from "@/lib/mock-campaign-data";
+import type { Donation } from "@/lib/api";
 import { formatTRY, formatUSD, toTRY } from "@/lib/exchange-rate";
+import { formatRelativeTime, parseDonationDate } from "@/lib/donation-format";
 import { cn } from "@/lib/utils";
 
-function formatDonation(d: RecentDonor): string {
+function formatDonation(d: Donation): string {
   if (d.currency === "USD") return `$${formatUSD(d.amount)}`;
   if (d.currency === "EUR") return `€${formatTRY(d.amount)}`;
   return `₺${formatTRY(d.amount)}`;
@@ -31,48 +32,35 @@ function Initials({ name }: { name: string }) {
   );
 }
 
-function parseTimeOrder(donor: RecentDonor, idx: number, total: number): number {
-  // If a timestamp exists use it (fresh toasts), otherwise rely on initial order (newer first).
-  if (donor.timestamp) return donor.timestamp;
-  return Date.now() - idx * 60_000;
-}
-
-function donorIsWithin(time: string, range: RangeKey): boolean {
+function withinRange(dateStr: string, range: RangeKey, now: Date): boolean {
   if (range === "all") return true;
-  const lower = time.toLocaleLowerCase("tr");
-  if (range === "24h") {
-    // 24 saat içinde: "az önce / dakika / saat" metinleri
-    return /az önce|dakika|saat/.test(lower);
-  }
-  if (range === "7d") {
-    // 7 gün içinde: + gün (2 gün önce vs) dahil
-    return /az önce|dakika|saat|gün/.test(lower);
-  }
+  const d = parseDonationDate(dateStr);
+  if (!d) return false;
+  const diffMs = now.getTime() - d.getTime();
+  if (diffMs < 0) return true;
+  const hours = diffMs / 3_600_000;
+  if (range === "24h") return hours <= 24;
+  if (range === "7d") return hours <= 24 * 7;
   return true;
 }
 
 export function DonorsList() {
-  const { recentDonors } = useCampaign();
+  const { donations, statsReady } = useCampaign();
   const [range, setRange] = useState<RangeKey>("all");
   const [sortKey, setSortKey] = useState<SortKey>("recent");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    const base = recentDonors.filter((d) => donorIsWithin(d.time, range));
+    const now = new Date();
+    const base = donations.filter((d) => withinRange(d.date, range, now));
     const sorted = [...base];
     if (sortKey === "amount") {
-      sorted.sort(
-        (a, b) => toTRY(b.amount, b.currency) - toTRY(a.amount, a.currency),
-      );
+      sorted.sort((a, b) => toTRY(b.amount, b.currency) - toTRY(a.amount, a.currency));
     } else {
-      sorted.sort(
-        (a, b) =>
-          parseTimeOrder(b, recentDonors.indexOf(b), recentDonors.length) -
-          parseTimeOrder(a, recentDonors.indexOf(a), recentDonors.length),
-      );
+      sorted.sort((a, b) => (a.date < b.date ? 1 : -1));
     }
     return sorted;
-  }, [recentDonors, range, sortKey]);
+  }, [donations, range, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -147,7 +135,21 @@ export function DonorsList() {
       {/* List */}
       <div className="rounded-2xl border border-outline-variant bg-white overflow-hidden">
         <ul className="divide-y divide-outline-variant">
-          {pageItems.length === 0 ? (
+          {!statsReady ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <li
+                key={i}
+                className="px-5 py-4 flex items-center gap-4 animate-pulse"
+              >
+                <div className="w-10 h-10 rounded-full bg-surface-container shrink-0" />
+                <div className="flex-1">
+                  <div className="h-3.5 w-32 rounded bg-surface-container" />
+                  <div className="mt-1.5 h-3 w-44 rounded bg-surface-container" />
+                </div>
+                <div className="h-4 w-20 rounded bg-surface-container" />
+              </li>
+            ))
+          ) : pageItems.length === 0 ? (
             <li className="px-5 py-10 text-center text-[14px] text-on-surface-variant">
               Seçili aralıkta bağış bulunamadı.
             </li>
@@ -157,13 +159,13 @@ export function DonorsList() {
                 key={donor.id}
                 className="px-4 md:px-5 py-4 flex items-center gap-4 hover:bg-surface-container-low/50 transition-colors"
               >
-                <Initials name={donor.name} />
+                <Initials name={donor.donorName} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold text-primary-container truncate">
-                    {donor.name}
+                    {donor.donorName}
                   </p>
                   <p className="text-[12px] text-on-surface-variant truncate">
-                    {donor.method}
+                    {donor.source} · {donor.date}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
@@ -171,7 +173,7 @@ export function DonorsList() {
                     {formatDonation(donor)}
                   </p>
                   <p className="text-[11px] text-on-surface-variant">
-                    {donor.time}
+                    {formatRelativeTime(donor.date)}
                   </p>
                 </div>
               </li>
