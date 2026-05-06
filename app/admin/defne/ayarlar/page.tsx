@@ -468,13 +468,6 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-          <div className="px-5 pb-4 flex items-start gap-2 text-label-sm text-on-surface-variant">
-            <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <span>
-              Demo modunda şifre değişikliği kalıcı değildir. Eski şifre olarak{" "}
-              <span className="font-semibold text-on-surface">demo2026</span> kullanın.
-            </span>
-          </div>
         </PanelCard>
       </div>
     </AdminLayout>
