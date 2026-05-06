@@ -469,26 +469,32 @@ function ChartView({
   const max = Math.max(1, ...chart.map((d) => d.amountTry));
   const total = chart.reduce((s, d) => s + d.amountTry, 0);
   return (
-    <div className="px-5 py-6">
-      <div className="flex items-end justify-between gap-2 md:gap-3 h-44">
+    <div className="px-5 pt-10 pb-6">
+      <div className="grid grid-cols-7 gap-2 md:gap-3">
         {chart.map((d) => {
-          const heightPct = (d.amountTry / max) * 100;
+          // Veri varsa max'a göre yüzde, veri yoksa 2px (min-h) ile küçük çizgi.
+          const hasValue = d.amountTry > 0;
+          const heightPct = hasValue ? (d.amountTry / max) * 100 : 0;
           return (
-            <div
-              key={d.date}
-              className="flex-1 flex flex-col items-center gap-2 group"
-            >
-              <div className="w-full flex items-end justify-center h-full">
+            <div key={d.date} className="flex flex-col items-center group">
+              <div className="relative w-full h-44 flex items-end justify-center">
                 <div
-                  className="w-full max-w-[42px] rounded-t-md bg-gradient-to-t from-secondary to-secondary-container transition-all group-hover:from-on-secondary-container relative"
-                  style={{ height: `${heightPct}%` }}
+                  className={cn(
+                    "w-full max-w-[42px] rounded-t-md transition-colors relative",
+                    hasValue
+                      ? "bg-secondary group-hover:bg-on-secondary-container min-h-[6px]"
+                      : "bg-outline-variant min-h-[2px]",
+                  )}
+                  style={{ height: hasValue ? `${heightPct}%` : "2px" }}
                 >
-                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-label-sm font-semibold text-on-surface tabular-nums opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
-                    ₺{formatNumber(d.amountTry)}
-                  </span>
+                  {hasValue && (
+                    <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-label-sm font-semibold text-on-surface tabular-nums whitespace-nowrap">
+                      ₺{formatNumber(d.amountTry)}
+                    </span>
+                  )}
                 </div>
               </div>
-              <span className="text-label-sm text-on-surface-variant">
+              <span className="mt-2 text-label-sm text-on-surface-variant">
                 {d.label}
               </span>
             </div>
