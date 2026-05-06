@@ -17,6 +17,7 @@ import {
   type AdminDonation,
   type DonationStatus,
 } from "@/lib/admin-mock-data";
+import { formatDonorName } from "@/lib/donation-format";
 
 const PAGE_SIZE = 10;
 const PROXY_BASE = "/api/kampanya/demo-defne";
@@ -84,23 +85,6 @@ function buildSourceLabel(raw: RawRow): string {
   return "Diğer";
 }
 
-/**
- * Bağışçı adını maskeler: "ONUR GÜZEL" → "O*** G****"
- * Her kelimenin ilk harfi korunur, kalan harfler yıldıza dönüşür.
- */
-function maskDonorName(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((word) => {
-      if (word.length <= 1) return word;
-      const first = word.charAt(0);
-      const stars = "*".repeat(word.length - 1);
-      return first + stars;
-    })
-    .join(" ");
-}
-
 function parseDonation(raw: RawRow): AdminDonation | null {
   const id = String(
     raw.id ?? raw.bagis_id ?? raw.bagisId ?? raw.no ?? "",
@@ -138,19 +122,7 @@ function parseDonation(raw: RawRow): AdminDonation | null {
   const currency = parseCurrency(raw.para_birimi ?? raw.currency);
   const status = parseStatus(raw.durum ?? raw.status);
   const source = buildSourceLabel(raw);
-
-  // Kumbara/Stant kayıtları zaten anonim — maskeleme uygulanmaz, isim varsa olduğu gibi gösterilir
-  const isAnonymousSource =
-    source.startsWith("Kumbara") || source.startsWith("Stant");
-
-  let donorName: string;
-  if (!rawName) {
-    donorName = "İsimsiz Bağışçı";
-  } else if (isAnonymousSource) {
-    donorName = rawName;
-  } else {
-    donorName = maskDonorName(rawName);
-  }
+  const donorName = formatDonorName(rawName, source);
 
   return { id, date, donorName, source, amount, currency, status };
 }
