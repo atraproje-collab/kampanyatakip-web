@@ -2,22 +2,26 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
-  DONATION_AMOUNTS_USD,
-  DONATION_METHODS,
-  DONATION_NAMES,
   type CampaignData,
   type CurrencyCode,
   type RecentDonor,
 } from "@/lib/mock-campaign-data";
-import { fetchStats, fetchRecentDonors } from "@/lib/api";
+import {
+  fetchDonations,
+  fetchKumbaralar,
+  fetchStantlar,
+  donationToRecentDonor,
+  type Donation,
+  type KumbaraRow,
+  type StantRow,
+} from "@/lib/api";
+import { mockExchangeRate, toTRY, toUSD } from "@/lib/exchange-rate";
 import {
   applyCampaignSettings,
   loadCampaignSettings,
@@ -36,24 +40,29 @@ type Toast = {
 
 type ContextValue = {
   campaign: CampaignData;
-  /** Total raised in campaign's primary currency (USD for Defne demo). */
+  /** Total raised converted to USD using current FX rate. */
   raisedUsd: number;
+  /** Total raised converted to TRY using current FX rate. */
+  raisedTry: number;
+  /** Number of donation records. */
   donorCount: number;
+  /** Donations sorted newest first; full list. */
+  donations: Donation[];
+  /** Top 10 recent donors (legacy shape for existing components). */
   recentDonors: RecentDonor[];
+  kumbaralar: KumbaraRow[];
+  stantlar: StantRow[];
   toasts: Toast[];
   dismissToast: (id: number) => void;
   /** true once at least one successful API response has been received */
   apiConnected: boolean;
-  /** true after the first API call completes (success OR failure) — safe to render numbers */
+  /** true after the first sync completes (success OR failure) — safe to render numbers */
   statsReady: boolean;
+  /** Last fetch error message (null when healthy) */
+  apiError: string | null;
 };
 
 const CampaignContext = createContext<ContextValue | null>(null);
-
-const randomBetween = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
 export function CampaignProvider({
   campaign: campaignProp,
@@ -86,136 +95,102 @@ export function CampaignProvider({
     };
   }, [campaignProp]);
 
-  const [raisedUsd, setRaisedUsd] = useState(campaignProp.raisedUsd);
-  const [donorCount, setDonorCount] = useState(campaignProp.donorCount);
-  const [recentDonors, setRecentDonors] = useState<RecentDonor[]>(
-    campaignProp.recentDonors,
-  );
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [kumbaralar, setKumbaralar] = useState<KumbaraRow[]>([]);
+  const [stantlar, setStantlar] = useState<StantRow[]>([]);
   const [apiConnected, setApiConnected] = useState(false);
-  /** Becomes true after the first syncFromApi completes, regardless of outcome. */
   const [statsReady, setStatsReady] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  // Use large random starting ID for ticker-generated donors to avoid
-  // collisions with real database IDs from the API.
-  const nextIdRef = useRef(Date.now());
+  // Toasts kept in state for forward compat. With pure-API mode, we no longer
+  // generate fake ticker toasts; future enhancement may diff polling results
+  // and surface genuinely new donations.
+  const [toasts] = useState<Toast[]>([]);
+  const dismissToast = (_id: number) => {};
 
-  const dismissToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  // ── API polling ─────────────────────────────────────────────────────────────
+  // ── Polling ───────────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
 
-    const syncFromApi = async () => {
-      const [statsResult, recentResult] = await Promise.allSettled([
-        fetchStats(),
-        fetchRecentDonors(),
+    const sync = async () => {
+      const [donationsRes, kumbaralarRes, stantlarRes] = await Promise.allSettled([
+        fetchDonations(),
+        fetchKumbaralar(),
+        fetchStantlar(),
       ]);
-
       if (!mounted) return;
 
-      // Stats: only move counters forward (never backwards due to ticker)
-      if (statsResult.status === "fulfilled" && statsResult.value) {
-        const s = statsResult.value;
-        setRaisedUsd((prev) => Math.max(prev, s.raisedUsd));
-        setDonorCount((prev) => Math.max(prev, s.donorCount));
-        setApiConnected(true);
+      let gotAny = false;
+      const failures: string[] = [];
+
+      if (donationsRes.status === "fulfilled" && donationsRes.value) {
+        // Sort newest first by date string (ISO-ish, lexicographic works).
+        const sorted = [...donationsRes.value].sort((a, b) =>
+          a.date < b.date ? 1 : -1,
+        );
+        setDonations(sorted);
+        gotAny = true;
+      } else {
+        failures.push("bağışlar");
       }
 
-      // Recent donors: replace list with real API data
-      if (
-        recentResult.status === "fulfilled" &&
-        recentResult.value &&
-        recentResult.value.length > 0
-      ) {
-        setRecentDonors(recentResult.value.slice(0, 40));
-        setApiConnected(true);
+      if (kumbaralarRes.status === "fulfilled" && kumbaralarRes.value) {
+        setKumbaralar(kumbaralarRes.value);
+        gotAny = true;
+      } else {
+        failures.push("kumbaralar");
       }
 
-      // Always mark ready after first fetch — success or failure.
-      // LiveCounter waits for this before rendering numbers.
+      if (stantlarRes.status === "fulfilled" && stantlarRes.value) {
+        setStantlar(stantlarRes.value);
+        gotAny = true;
+      } else {
+        failures.push("stantlar");
+      }
+
+      setApiConnected(gotAny);
+      setApiError(
+        failures.length === 0 ? null : `Veri yüklenemedi: ${failures.join(", ")}`,
+      );
       setStatsReady(true);
     };
 
-    // Initial fetch
-    syncFromApi();
-
-    // Recurring poll every 30 s
-    const interval = setInterval(syncFromApi, POLL_INTERVAL_MS);
-
+    sync();
+    const interval = setInterval(sync, POLL_INTERVAL_MS);
     return () => {
       mounted = false;
       clearInterval(interval);
     };
   }, []);
 
-  // ── Live ticker (mock donations for UX engagement) ───────────────────────────
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-
-    const scheduleNext = () => {
-      const wait = randomBetween(15_000, 30_000);
-      timer = setTimeout(() => {
-        const amount = pick(DONATION_AMOUNTS_USD);
-        const name = pick(DONATION_NAMES);
-        const method = pick(DONATION_METHODS);
-        const id = nextIdRef.current++;
-
-        const donor: RecentDonor = {
-          id,
-          name,
-          amount,
-          currency: "USD",
-          method,
-          time: "az önce",
-          timestamp: Date.now(),
-          isFresh: true,
-        };
-
-        setRaisedUsd((r) => r + amount);
-        setDonorCount((c) => c + 1);
-        setRecentDonors((list) => [donor, ...list].slice(0, 40));
-        setToasts((list) => [
-          ...list,
-          { id, name, amount, currency: "USD" },
-        ]);
-
-        // Auto-dismiss toast
-        setTimeout(() => {
-          setToasts((list) => list.filter((t) => t.id !== id));
-        }, 4500);
-
-        // Clear isFresh flag
-        setTimeout(() => {
-          setRecentDonors((list) =>
-            list.map((d) => (d.id === id ? { ...d, isFresh: false } : d)),
-          );
-        }, 2500);
-
-        scheduleNext();
-      }, wait);
-    };
-
-    scheduleNext();
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, []);
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const rate = mockExchangeRate;
+  const raisedTry = donations.reduce(
+    (sum, d) => sum + toTRY(d.amount, d.currency, rate),
+    0,
+  );
+  const raisedUsd = toUSD(raisedTry, "TRY", rate);
+  const donorCount = donations.length;
+  const recentDonors: RecentDonor[] = donations
+    .slice(0, 40)
+    .map((d, i) => donationToRecentDonor(d, i));
 
   return (
     <CampaignContext.Provider
       value={{
         campaign,
         raisedUsd,
+        raisedTry,
         donorCount,
+        donations,
         recentDonors,
+        kumbaralar,
+        stantlar,
         toasts,
         dismissToast,
         apiConnected,
         statsReady,
+        apiError,
       }}
     >
       {children}

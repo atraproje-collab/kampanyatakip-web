@@ -1,235 +1,240 @@
 /**
  * lib/api.ts
- * API helpers for the demo-defne campaign (n8n → PostgreSQL webhooks).
- * Every function returns null on network / parse errors — callers fall back to mock data.
+ * Public campaign page API helpers.
+ * All requests go through the same-origin proxy /api/kampanya/[slug]/*
+ * which forwards to the n8n webhook server-side (avoids CORS).
  */
 
-import type { CurrencyCode, IncomeRow, ExpenseRow, RecentDonor } from "./mock-campaign-data";
+import type { CurrencyCode, ExpenseRow, RecentDonor } from "./mock-campaign-data";
+import { formatDonorName, parseDonationDate, formatRelativeTime } from "./donation-format";
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const BASE = "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya/demo-defne";
-/** Exchange rate used for TRY → USD conversion when the API returns TRY totals. */
+// Default exchange rate fallback. The real rate comes from lib/exchange-rate.ts
+// (mockExchangeRate). When the TCMB sync workflow lands this becomes dynamic.
 export const USD_TRY = 45.15;
 
-// ── Name masking ─────────────────────────────────────────────────────────────
-
-/**
- * Privacy-safe donor name masking.
- *
- * Rules:
- * - "BASRİ KAHRAMAN" → "BA**** KA*****"
- * - "Ahmet Yılmaz"   → "AH*** YI*****"
- * - Single word      → "AH***"
- * - "Bilinmiyor"     → "İsimsiz Bağışçı"
- * - "İsimsiz Bağışçı"→ unchanged
- * - null / empty     → "İsimsiz Bağışçı"
- */
-export function maskName(raw: string | null | undefined): string {
-  if (!raw) return "İsimsiz Bağışçı";
-  const trimmed = raw.trim();
-  if (!trimmed) return "İsimsiz Bağışçı";
-
-  const ANON_INPUTS = [
-    "bilinmiyor", "unknown", "anonim", "anonymous", "isimsiz",
-    "isimsiz bagisci", "isimsiz bağışçı",
-  ];
-  if (ANON_INPUTS.includes(trimmed.toLocaleLowerCase("tr"))) {
-    return "İsimsiz Bağışçı";
-  }
-
-  const parts = trimmed.split(/\s+/);
-  return parts
-    .map((part) => {
-      if (part.length <= 2) return part.toLocaleUpperCase("tr");
-      return (
-        part.slice(0, 2).toLocaleUpperCase("tr") +
-        "*".repeat(part.length - 2)
-      );
-    })
-    .join(" ");
-}
-
-// ── Relative time ─────────────────────────────────────────────────────────────
-
-export function formatRelativeTime(iso: string | null | undefined): string {
-  if (!iso) return "az önce";
-  try {
-    const diffMs = Date.now() - new Date(iso).getTime();
-    if (diffMs < 0) return "az önce";
-    const minutes = Math.floor(diffMs / 60_000);
-    if (minutes < 1) return "az önce";
-    if (minutes < 60) return `${minutes} dakika önce`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} saat önce`;
-    const days = Math.floor(hours / 24);
-    return `${days} gün önce`;
-  } catch {
-    return "az önce";
-  }
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export interface CampaignStats {
-  raisedUsd: number;
-  donorCount: number;
-  daysLeft?: number;
-  goalUsd?: number;
-  /** USD/TRY rate as returned by the API (usd_try field), fallback 45.15 */
-  usdTry: number;
-}
+const PROXY_BASE = "/api/kampanya/demo-defne";
 
 // ── Generic fetch helper ──────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetch(`${PROXY_BASE}${path}`, {
       cache: "no-store",
       headers: { Accept: "application/json" },
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as T;
-    return data;
+    return (await res.json()) as T;
   } catch {
     return null;
   }
 }
 
-// ── Currency helper ──────────────────────────────────────────────────────────
+function unwrapArray(data: unknown): unknown[] {
+  let arr: unknown = data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    const obj = data as Record<string, unknown>;
+    if (Array.isArray(obj.data)) arr = obj.data;
+    else if (Array.isArray(obj.items)) arr = obj.items;
+    else if (Array.isArray(obj.result)) arr = obj.result;
+    else if (Array.isArray(obj.rows)) arr = obj.rows;
+    else if (Array.isArray(obj.bagislar)) arr = obj.bagislar;
+    else if (Array.isArray(obj.kumbaralar)) arr = obj.kumbaralar;
+    else if (Array.isArray(obj.stantlar)) arr = obj.stantlar;
+    else if (Array.isArray(obj.giderler)) arr = obj.giderler;
+  }
+  if (!Array.isArray(arr)) arr = [arr];
+  return arr as unknown[];
+}
 
 function parseCurrency(raw: unknown): CurrencyCode {
   const str = String(raw ?? "TRY").toUpperCase().trim();
   if (str === "USD" || str === "EUR" || str === "TRY") return str as CurrencyCode;
+  if (str === "TL") return "TRY";
   return "TRY";
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Source label (admin panel ile aynı mantık) ───────────────────────────────
 
-type RawStats = Record<string, unknown>;
+function buildSourceLabel(raw: Record<string, unknown>): string {
+  const kaynakRaw = String(raw.kaynak ?? raw.source ?? raw.tip ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR");
+  const kumbaraNo = String(raw.kumbara_no ?? raw.kumbaraNo ?? "").trim();
+  const stantNo = String(raw.stant_no ?? raw.stantNo ?? "").trim();
+  if (kaynakRaw === "kumbara") return kumbaraNo ? `Kumbara ${kumbaraNo}` : "Kumbara";
+  if (kaynakRaw === "stant") return stantNo ? `Stant ${stantNo}` : "Stant";
+  if (kaynakRaw === "havale" || kaynakRaw === "banka" || kaynakRaw === "banka_havalesi") {
+    return "Banka Havalesi";
+  }
+  if (
+    kaynakRaw === "kart" ||
+    kaynakRaw === "kredi_karti" ||
+    kaynakRaw === "kredi kartı"
+  ) {
+    return "Kredi Kartı";
+  }
+  const fallback = String(raw.source ?? raw.kaynak ?? "").trim();
+  if (fallback) return fallback.charAt(0).toLocaleUpperCase("tr-TR") + fallback.slice(1);
+  return "Diğer";
+}
+
+// ── Donations ────────────────────────────────────────────────────────────────
+
+export type Donation = {
+  id: string;
+  /** "YYYY-MM-DD HH:mm" or "YYYY-MM-DD" */
+  date: string;
+  donorName: string;
+  source: string;
+  amount: number;
+  currency: CurrencyCode;
+};
+
+function parseDonation(raw: Record<string, unknown>): Donation | null {
+  const id = String(raw.id ?? raw.bagis_id ?? raw.bagisId ?? raw.no ?? "").trim();
+  const dateRaw = String(
+    raw.tarih ?? raw.date ?? raw.created_at ?? raw.createdAt ?? raw.olusturma ?? "",
+  ).trim();
+  if (!id || !dateRaw) return null;
+
+  let date = dateRaw;
+  const isoMatch = dateRaw.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?/);
+  if (isoMatch) date = isoMatch[2] ? `${isoMatch[1]} ${isoMatch[2]}` : isoMatch[1];
+
+  const rawName = String(
+    raw.bagisci_ad ??
+      raw.bagisciAd ??
+      raw.bagisci ??
+      raw.bagisci_adi ??
+      raw.bagisciAdi ??
+      raw.donor_name ??
+      raw.donorName ??
+      raw.isim ??
+      "",
+  ).trim();
+
+  const amount = Number(raw.tutar ?? raw.amount ?? 0) || 0;
+  const currency = parseCurrency(raw.para_birimi ?? raw.currency);
+  const source = buildSourceLabel(raw);
+  const donorName = formatDonorName(rawName, source);
+
+  return { id, date, donorName, source, amount, currency };
+}
+
+export async function fetchDonations(): Promise<Donation[] | null> {
+  const raw = await apiFetch<unknown>("/bagislar");
+  if (raw === null) return null;
+  const arr = unwrapArray(raw) as Record<string, unknown>[];
+  return arr.map(parseDonation).filter((d): d is Donation => d !== null);
+}
 
 /**
- * Parses API stats response.
- * Handles:
- *  - { raised_usd, donor_count }
- *  - { total_try, total_usd, donor_count }   — converts TRY to USD using live usd_try rate
- *  - Array wrapping: [{ ... }]
+ * Convert a Donation to a RecentDonor for legacy components.
+ * `idx` is used as a stable numeric id derived from the original string id.
  */
-function parseStats(raw: unknown): CampaignStats | null {
-  if (!raw) return null;
-  const obj: RawStats = Array.isArray(raw)
-    ? (raw[0] as RawStats)
-    : (raw as RawStats);
-  if (!obj || typeof obj !== "object") return null;
-
-  // Exchange rate from API; fallback to constant if missing / zero
-  const usdTry = parseFloat(String(obj.usd_try ?? obj.usdTry ?? 0)) || USD_TRY;
-
-  // Direct USD total (preferred)
-  const directUsd = Number(
-    obj.raised_usd ?? obj.raisedUsd ?? obj.total_raised_usd ?? obj.total_usd ?? 0,
-  );
-
-  // TRY + optional extra USD components
-  const totalTry = Number(
-    obj.total_try ?? obj.raised_try ?? obj.total_amount_try ?? obj.toplam_tl ?? 0,
-  );
-  const extraUsd = Number(
-    obj.usd_donations ?? obj.usd_amount ?? obj.total_usd_donations ?? 0,
-  );
-
-  let raisedUsd = directUsd;
-  if (!raisedUsd && (totalTry > 0 || extraUsd > 0)) {
-    raisedUsd = extraUsd + totalTry / usdTry;
-  }
-  if (!raisedUsd || raisedUsd <= 0) return null;
-
-  const donorCount = Number(
-    obj.donor_count ?? obj.donorCount ?? obj.total_donors ?? obj.bagisci_sayisi ?? obj.count ?? 0,
-  );
-  const daysLeft = Number(obj.days_left ?? obj.daysLeft ?? obj.kalan_gun ?? 0) || undefined;
-  const goalUsd = Number(obj.goal_usd ?? obj.goalUsd ?? obj.hedef_usd ?? 0) || undefined;
-
-  return { raisedUsd, donorCount, daysLeft, goalUsd, usdTry };
-}
-
-export async function fetchStats(): Promise<CampaignStats | null> {
-  const raw = await apiFetch<unknown>("/stats");
-  if (!raw) return null;
-  return parseStats(raw);
-}
-
-// ── Recent donors ─────────────────────────────────────────────────────────────
-
-type RawDonor = Record<string, unknown>;
-
-function parseDonor(raw: RawDonor, index: number): RecentDonor {
-  const id = Number(raw.id ?? raw.bagis_id ?? raw.donation_id ?? index + 1_000_000);
-  const rawName = String(
-    raw.donor_name ?? raw.name ?? raw.isim ?? raw.bagisci ?? raw.bagisci_adi ?? "",
-  );
-  const name = maskName(rawName);
-  const amount = Number(raw.amount ?? raw.tutar ?? raw.miktar ?? 0);
-  const currency = parseCurrency(raw.currency ?? raw.doviz ?? raw.para_birimi ?? "TRY");
-  const method = String(
-    raw.method ?? raw.payment_method ?? raw.odeme_yontemi ?? raw.kaynak ?? "Banka Havalesi",
-  );
-  const isoTime = String(
-    raw.created_at ?? raw.timestamp ?? raw.tarih ?? raw.olusturma_tarihi ?? "",
-  );
-  const time = formatRelativeTime(isoTime);
-
-  return { id, name, amount, currency, method, time, isFresh: false };
-}
-
-export async function fetchRecentDonors(): Promise<RecentDonor[] | null> {
-  const raw = await apiFetch<unknown>("/recent");
-  if (!raw) return null;
-  const arr = Array.isArray(raw) ? raw : [raw];
-  if (arr.length === 0) return null;
-  try {
-    return (arr as RawDonor[]).map((r, i) => parseDonor(r, i));
-  } catch {
-    return null;
-  }
-}
-
-// ── Income rows (Bağışlar) ────────────────────────────────────────────────────
-
-type RawIncome = Record<string, unknown>;
-
-function parseIncomeRow(raw: RawIncome): IncomeRow {
-  const currency = parseCurrency(raw.currency ?? raw.doviz ?? raw.para_birimi ?? "TRY");
+export function donationToRecentDonor(d: Donation, idx: number): RecentDonor {
+  const ts = parseDonationDate(d.date)?.getTime();
   return {
-    date: String(raw.date ?? raw.tarih ?? ""),
-    source: String(raw.source ?? raw.kaynak ?? raw.baslik ?? raw.aciklama_kisa ?? ""),
-    amount: Number(raw.amount ?? raw.tutar ?? raw.miktar ?? 0),
-    currency,
-    details: String(raw.details ?? raw.detay ?? raw.aciklama ?? raw.notlar ?? ""),
+    id: hashStringToInt(d.id) || idx + 1,
+    name: d.donorName,
+    amount: d.amount,
+    currency: d.currency,
+    method: d.source,
+    time: formatRelativeTime(d.date),
+    timestamp: ts,
+    isFresh: false,
   };
 }
 
-export async function fetchIncome(): Promise<IncomeRow[] | null> {
-  const raw = await apiFetch<unknown>("/bagislar");
-  if (!raw) return null;
-  const arr = Array.isArray(raw) ? raw : [raw];
-  if (arr.length === 0) return null;
-  try {
-    return (arr as RawIncome[]).map(parseIncomeRow).filter((r) => r.amount > 0);
-  } catch {
-    return null;
+function hashStringToInt(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
   }
+  return Math.abs(h);
 }
 
-// ── Expense rows (Giderler) ───────────────────────────────────────────────────
+// ── Kumbara ──────────────────────────────────────────────────────────────────
 
-type RawExpense = Record<string, unknown>;
+export type KumbaraRow = {
+  id: string;
+  location: string;
+  responsible: string;
+  total: number;
+  lastOpened: string;
+  status: "aktif" | "kapatildi";
+};
 
-function parseExpenseRow(raw: RawExpense): ExpenseRow {
+function parseKumbara(raw: Record<string, unknown>): KumbaraRow | null {
+  const id = String(raw.kumbara_no ?? raw.id ?? raw.no ?? "").trim();
+  if (!id) return null;
+  const location = String(raw.konum ?? raw.location ?? raw.lokasyon ?? "").trim();
+  const responsible = String(raw.sorumlu ?? raw.responsible ?? "").trim();
+  const total = Number(raw.toplam ?? raw.total ?? 0) || 0;
+  const lastOpened = String(
+    raw.son_acilis ?? raw.lastOpened ?? raw.son_acilis_tarihi ?? "—",
+  );
+  const statusStr = String(raw.durum ?? raw.status ?? "aktif")
+    .toLocaleLowerCase("tr-TR")
+    .trim();
+  const status: KumbaraRow["status"] =
+    statusStr === "kapatildi" || statusStr === "kapatıldı" || statusStr === "closed"
+      ? "kapatildi"
+      : "aktif";
+  return { id, location, responsible, total, lastOpened, status };
+}
+
+export async function fetchKumbaralar(): Promise<KumbaraRow[] | null> {
+  const raw = await apiFetch<unknown>("/kumbaralar");
+  if (raw === null) return null;
+  const arr = unwrapArray(raw) as Record<string, unknown>[];
+  return arr.map(parseKumbara).filter((k): k is KumbaraRow => k !== null);
+}
+
+// ── Stant ────────────────────────────────────────────────────────────────────
+
+export type StantRow = {
+  id: string;
+  location: string;
+  responsible: string;
+  total: number;
+  lastClose: string;
+  status: "aktif" | "kapatildi";
+};
+
+function parseStant(raw: Record<string, unknown>): StantRow | null {
+  const id = String(raw.stant_no ?? raw.id ?? raw.no ?? "").trim();
+  if (!id) return null;
+  const location = String(raw.konum ?? raw.location ?? raw.lokasyon ?? "").trim();
+  const responsible = String(raw.sorumlu ?? raw.responsible ?? "").trim();
+  const total = Number(raw.toplam ?? raw.total ?? 0) || 0;
+  const lastClose = String(
+    raw.son_kapanis ?? raw.lastClose ?? raw.son_kapanis_tarihi ?? "—",
+  );
+  const statusStr = String(raw.durum ?? raw.status ?? "aktif")
+    .toLocaleLowerCase("tr-TR")
+    .trim();
+  const status: StantRow["status"] =
+    statusStr === "kapatildi" || statusStr === "kapatıldı" || statusStr === "closed"
+      ? "kapatildi"
+      : "aktif";
+  return { id, location, responsible, total, lastClose, status };
+}
+
+export async function fetchStantlar(): Promise<StantRow[] | null> {
+  const raw = await apiFetch<unknown>("/stantlar");
+  if (raw === null) return null;
+  const arr = unwrapArray(raw) as Record<string, unknown>[];
+  return arr.map(parseStant).filter((s): s is StantRow => s !== null);
+}
+
+// ── Expenses ─────────────────────────────────────────────────────────────────
+
+function parseExpense(raw: Record<string, unknown>): ExpenseRow {
   return {
-    date: String(raw.date ?? raw.tarih ?? ""),
+    date: String(raw.date ?? raw.tarih ?? "").slice(0, 10),
     category: String(raw.category ?? raw.kategori ?? raw.tur ?? ""),
-    amount: Number(raw.amount ?? raw.tutar ?? raw.miktar ?? 0),
+    amount: Number(raw.amount ?? raw.tutar ?? raw.miktar ?? 0) || 0,
     document: String(raw.document ?? raw.belge ?? raw.dosya ?? "#"),
     description: String(raw.description ?? raw.aciklama ?? raw.detay ?? ""),
     vendor: String(raw.vendor ?? raw.satici ?? raw.tedarikci ?? raw.kurum ?? ""),
@@ -237,13 +242,11 @@ function parseExpenseRow(raw: RawExpense): ExpenseRow {
 }
 
 export async function fetchExpenses(): Promise<ExpenseRow[] | null> {
-  const raw = await apiFetch<unknown>("/giderler");
-  if (!raw) return null;
-  const arr = Array.isArray(raw) ? raw : [raw];
-  if (arr.length === 0) return null;
-  try {
-    return (arr as RawExpense[]).map(parseExpenseRow).filter((r) => r.amount > 0);
-  } catch {
-    return null;
-  }
+  const raw = await apiFetch<unknown>("/giderler-listesi");
+  if (raw === null) return null;
+  const arr = unwrapArray(raw) as Record<string, unknown>[];
+  return arr.map(parseExpense).filter((e) => e.amount > 0);
 }
+
+// Re-exports for any legacy imports
+export { formatRelativeTime } from "./donation-format";

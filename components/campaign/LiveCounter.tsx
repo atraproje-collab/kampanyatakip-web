@@ -9,6 +9,7 @@ import {
   formatUSD,
   mockExchangeRate,
 } from "@/lib/exchange-rate";
+import { formatRemaining } from "@/lib/campaign-settings";
 
 interface LiveCounterProps {
   variant?: "light" | "dark";
@@ -283,7 +284,9 @@ export function LiveCounter({ variant = "dark" }: LiveCounterProps) {
                 isDark ? "text-white" : "text-primary-container"
               }`}
             >
-              {campaign.daysLeft} gün
+              {campaign.endDate
+                ? formatRemaining(campaign.endDate)
+                : `${campaign.daysLeft} gün`}
             </p>
           </div>
         </div>

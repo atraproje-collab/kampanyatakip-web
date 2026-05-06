@@ -17,14 +17,14 @@ import {
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
 import { DocumentsSection } from "@/components/campaign/DocumentsSection";
-import type { CurrencyCode, IncomeRow, ExpenseRow } from "@/lib/mock-campaign-data";
+import type { CurrencyCode, ExpenseRow } from "@/lib/mock-campaign-data";
 import {
   formatTRY,
   formatUSD,
   mockExchangeRate,
   toTRY,
 } from "@/lib/exchange-rate";
-import { fetchIncome, fetchExpenses } from "@/lib/api";
+import { fetchExpenses } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -84,39 +84,35 @@ function StatusBadge({ status }: { status: DataStatus }) {
 }
 
 export function TransparencyCenter() {
-  const { campaign, raisedUsd } = useCampaign();
+  const { donations, raisedUsd, raisedTry } = useCampaign();
   const rate = mockExchangeRate;
 
-  // Local state for API-driven lists (initialized from mock data as fallback)
-  const [incomeRows, setIncomeRows] = useState<IncomeRow[]>(campaign.transparency.income);
-  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>(campaign.transparency.expenses);
+  // Income rows derived from real donations.
+  const incomeRows = donations.map((d) => ({
+    date: d.date.slice(0, 10),
+    source: d.source,
+    amount: d.amount,
+    currency: d.currency,
+    details: d.donorName,
+  }));
+
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [status, setStatus] = useState<DataStatus>("loading");
   const [tab, setTab] = useState<Tab>("income");
 
-  // ── API polling ─────────────────────────────────────────────────────────────
+  // ── Expenses polling (donations come from context) ──────────────────────────
   useEffect(() => {
     let mounted = true;
 
     const syncData = async () => {
-      const [incomeResult, expenseResult] = await Promise.allSettled([
-        fetchIncome(),
-        fetchExpenses(),
-      ]);
-
+      const result = await fetchExpenses();
       if (!mounted) return;
-
-      let gotAnyData = false;
-
-      if (incomeResult.status === "fulfilled" && incomeResult.value && incomeResult.value.length > 0) {
-        setIncomeRows(incomeResult.value);
-        gotAnyData = true;
+      if (result) {
+        setExpenseRows(result);
+        setStatus("live");
+      } else {
+        setStatus("mock");
       }
-      if (expenseResult.status === "fulfilled" && expenseResult.value && expenseResult.value.length > 0) {
-        setExpenseRows(expenseResult.value);
-        gotAnyData = true;
-      }
-
-      setStatus(gotAnyData ? "live" : "mock");
     };
 
     syncData();
@@ -127,12 +123,11 @@ export function TransparencyCenter() {
     };
   }, []);
 
-  // Totals — campaign counter (raisedUsd from context) is source of truth for revenue.
-  const raisedTry = raisedUsd * rate.usd_try;
+  // Totals
   const totalExpensesTry = expenseRows.reduce((s, e) => s + e.amount, 0);
   const totalExpensesUsd = totalExpensesTry / rate.usd_try;
   const netRemainingUsd = raisedUsd - totalExpensesUsd;
-  const netRemainingTry = netRemainingUsd * rate.usd_try;
+  const netRemainingTry = raisedTry - totalExpensesTry;
   const expenseRatio = raisedUsd > 0 ? (totalExpensesUsd / raisedUsd) * 100 : 0;
 
   const stats = [
@@ -359,6 +354,11 @@ export function TransparencyCenter() {
         </div>
       )}
 
+      {/* Expenses category breakdown */}
+      {tab === "expenses" && expenseRows.length > 0 && (
+        <ExpenseCategoryBreakdown rows={expenseRows} />
+      )}
+
       {/* Expenses table */}
       {tab === "expenses" && (
         <div className="rounded-2xl border border-outline-variant bg-white overflow-hidden">
@@ -457,5 +457,52 @@ function ImmutableBadge() {
       <ShieldCheck size={11} strokeWidth={2.5} />
       Değişmez
     </span>
+  );
+}
+
+function ExpenseCategoryBreakdown({ rows }: { rows: ExpenseRow[] }) {
+  const totals = new Map<string, number>();
+  for (const r of rows) {
+    const key = (r.category || "Diğer").trim() || "Diğer";
+    totals.set(key, (totals.get(key) ?? 0) + r.amount);
+  }
+  const grandTotal = Array.from(totals.values()).reduce((s, v) => s + v, 0);
+  if (grandTotal <= 0) return null;
+  const entries = Array.from(totals.entries()).sort((a, b) => b[1] - a[1]);
+  const max = entries[0]?.[1] ?? 1;
+
+  return (
+    <div className="rounded-2xl border border-outline-variant bg-white p-5 md:p-6">
+      <h3 className="text-[14px] font-bold uppercase tracking-[0.12em] text-on-surface-variant mb-4">
+        Kategori Dağılımı
+      </h3>
+      <ul className="space-y-3">
+        {entries.map(([category, amount]) => {
+          const widthPct = (amount / max) * 100;
+          const sharePct = (amount / grandTotal) * 100;
+          return (
+            <li key={category} className="text-[13px]">
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="font-semibold text-primary-container truncate">
+                  {category}
+                </span>
+                <span className="tabular-nums text-on-surface-variant whitespace-nowrap">
+                  ₺{formatTRY(amount)}
+                  <span className="ml-2 text-[11.5px] text-secondary font-semibold">
+                    %{sharePct.toFixed(1)}
+                  </span>
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-secondary to-primary-container"
+                  style={{ width: `${widthPct}%` }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

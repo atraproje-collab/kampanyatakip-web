@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CampaignProvider } from "@/components/campaign/CampaignContext";
+import { ApiErrorBanner } from "@/components/campaign/ApiErrorBanner";
 import { DemoBanner } from "@/components/campaign/DemoBanner";
 import { CampaignHero } from "@/components/campaign/CampaignHero";
 import { CampaignTabs } from "@/components/campaign/CampaignTabs";
@@ -45,6 +46,7 @@ export default function CampaignDemoPage() {
     <CampaignProvider campaign={demoCampaign}>
       <div className="min-h-screen flex flex-col bg-surface">
         <DemoBanner />
+        <ApiErrorBanner />
 
         <CampaignHero />
 
