@@ -61,10 +61,6 @@ export default function SettingsPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [formErr, setFormErr] = useState<string | null>(null);
 
-  // ── Debug — POST/GET ham yanıtları (sayfada görüntülenecek) ────────────────
-  const [debugPostResponse, setDebugPostResponse] = useState<unknown>(null);
-  const [debugGetResponse, setDebugGetResponse] = useState<unknown>(null);
-
   // Ayarları proxy üzerinden çek; mount'ta ve save sonrası kullanılır.
   const loadAyarlar = async () => {
     const result = await fetchCampaignSettings();
@@ -160,11 +156,8 @@ export default function SettingsPage() {
     }
 
     setSaving(true);
-    setDebugPostResponse(null);
-    setDebugGetResponse(null);
 
     const result = await saveCampaignSettings(campaignForm);
-    setDebugPostResponse(result.raw ?? { error: result.error ?? null });
 
     if (!result.ok) {
       setSaving(false);
@@ -178,7 +171,6 @@ export default function SettingsPage() {
     // Eventual consistency için kısa bir bekleme + GET refetch.
     await new Promise((r) => setTimeout(r, 800));
     const reloaded = await loadAyarlar();
-    setDebugGetResponse(reloaded.raw ?? { error: reloaded.error ?? null });
     const finalSettings = reloaded.ok ? reloaded.settings : result.settings;
 
     notifyCampaignSettingsChanged(finalSettings);
@@ -571,43 +563,6 @@ export default function SettingsPage() {
             </div>
           )}
         </PanelCard>
-
-        {/* Debug paneli — geçici, teşhis için */}
-        {Boolean(debugPostResponse || debugGetResponse) && (
-          <PanelCard
-            title="Debug — API Yanıtları"
-            description="Sorun teşhisi için ham JSON yanıtları (geçici, sorun çözülünce kaldırılacak)"
-            className="lg:col-span-2"
-          >
-            <div className="px-5 py-4 space-y-4">
-              <div>
-                <h4 className="text-label-md font-bold text-on-surface mb-1.5">
-                  POST /ayarlar yanıtı
-                </h4>
-                <pre className="bg-surface-container-low border border-outline-variant rounded-lg p-3 text-label-sm text-on-surface overflow-x-auto whitespace-pre-wrap break-all">
-                  {debugPostResponse
-                    ? JSON.stringify(debugPostResponse, null, 2)
-                    : "(henüz yok)"}
-                </pre>
-              </div>
-              <div>
-                <h4 className="text-label-md font-bold text-on-surface mb-1.5">
-                  GET /ayarlar yanıtı (refetch — kayıttan ~800 ms sonra)
-                </h4>
-                <pre className="bg-surface-container-low border border-outline-variant rounded-lg p-3 text-label-sm text-on-surface overflow-x-auto whitespace-pre-wrap break-all">
-                  {debugGetResponse
-                    ? JSON.stringify(debugGetResponse, null, 2)
-                    : "(henüz yok)"}
-                </pre>
-              </div>
-              <p className="text-label-sm text-on-surface-variant">
-                Bu paneli ekran görüntüsü olarak paylaşırsan sorunu hızla
-                lokalize ederiz. F12 → Console sekmesinde de aynı bilgiler
-                <code className="mx-1">[ayarlar]</code> prefix'iyle yazılır.
-              </p>
-            </div>
-          </PanelCard>
-        )}
       </div>
     </AdminLayout>
   );
