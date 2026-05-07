@@ -54,7 +54,7 @@ const NAV: NavItem[] = [
     ],
   },
   { href: "/admin/defne/ai-asistan", label: "AI Asistan", shortLabel: "AI", icon: Bot },
-  { href: "/admin/defne/canli-yayin", label: "Canlı Yayın", shortLabel: "Yayın", icon: Radio },
+  { href: "/admin/defne/canli-yayin", label: "TikTok Geliri", shortLabel: "TikTok", icon: Radio },
   { href: "/admin/defne/raporlar", label: "Raporlar", shortLabel: "Rapor", icon: FileBarChart },
   { href: "/admin/defne/ayarlar", label: "Ayarlar", shortLabel: "Ayar", icon: Settings },
 ];
