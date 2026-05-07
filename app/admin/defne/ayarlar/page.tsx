@@ -61,7 +61,15 @@ export default function SettingsPage() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [formErr, setFormErr] = useState<string | null>(null);
 
-  // İlk yükleme — proxy üzerinden ayarları çek.
+  // Ayarları proxy üzerinden çek; mount'ta ve save sonrası kullanılır.
+  const loadAyarlar = async () => {
+    const result = await fetchCampaignSettings();
+    setCampaignForm(result.settings);
+    setLoadError(result.ok ? null : result.error ?? "API'ye bağlanılamadı");
+    return result;
+  };
+
+  // İlk yükleme.
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -149,16 +157,22 @@ export default function SettingsPage() {
 
     setSaving(true);
     const result = await saveCampaignSettings(campaignForm);
-    setSaving(false);
 
     if (!result.ok) {
+      setSaving(false);
       setSaveError(result.error ?? "Kayıt sırasında hata oluştu");
       return;
     }
 
-    // Server'dan dönen güncel kayıt
+    // Server'dan dönen güncel kayıt — anlık state güncellemesi
     setCampaignForm(result.settings);
-    notifyCampaignSettingsChanged(result.settings);
+
+    // Eventual consistency için GET ile yeniden çek (DB'den taze veri)
+    const reloaded = await loadAyarlar();
+    const finalSettings = reloaded.ok ? reloaded.settings : result.settings;
+
+    notifyCampaignSettingsChanged(finalSettings);
+    setSaving(false);
 
     const now = new Date().toLocaleTimeString("tr-TR", {
       hour: "2-digit",
