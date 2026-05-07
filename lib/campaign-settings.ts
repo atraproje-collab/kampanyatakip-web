@@ -128,9 +128,17 @@ export function settingsToApiPayload(s: CampaignSettings) {
  */
 export async function fetchCampaignSettings(
   slug: string = DEFAULT_SLUG,
-): Promise<{ ok: boolean; settings: CampaignSettings; error?: string }> {
+): Promise<{
+  ok: boolean;
+  settings: CampaignSettings;
+  raw?: unknown;
+  error?: string;
+}> {
+  const url = `/api/kampanya/${slug}/ayarlar?t=${Date.now()}`;
+  // eslint-disable-next-line no-console
+  console.log("[ayarlar] GET →", url);
   try {
-    const res = await fetch(`/api/kampanya/${slug}/ayarlar?t=${Date.now()}`, {
+    const res = await fetch(url, {
       cache: "no-store",
       headers: {
         Accept: "application/json",
@@ -138,6 +146,8 @@ export async function fetchCampaignSettings(
         Pragma: "no-cache",
       },
     });
+    // eslint-disable-next-line no-console
+    console.log("[ayarlar] GET status:", res.status, res.statusText);
     if (!res.ok) {
       return {
         ok: false,
@@ -146,8 +156,15 @@ export async function fetchCampaignSettings(
       };
     }
     const data: unknown = await res.json();
-    return { ok: true, settings: apiToSettings(data) };
+    // eslint-disable-next-line no-console
+    console.log("[ayarlar] GET response body:", data);
+    const parsed = apiToSettings(data);
+    // eslint-disable-next-line no-console
+    console.log("[ayarlar] GET parsed settings:", parsed);
+    return { ok: true, settings: parsed, raw: data };
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[ayarlar] GET error:", e);
     return {
       ok: false,
       settings: defaultCampaignSettings,
@@ -163,9 +180,20 @@ export async function fetchCampaignSettings(
 export async function saveCampaignSettings(
   settings: CampaignSettings,
   slug: string = DEFAULT_SLUG,
-): Promise<{ ok: boolean; settings: CampaignSettings; error?: string }> {
+): Promise<{
+  ok: boolean;
+  settings: CampaignSettings;
+  raw?: unknown;
+  error?: string;
+}> {
+  const url = `/api/kampanya/${slug}/ayarlar?t=${Date.now()}`;
+  const payload = settingsToApiPayload(settings);
+  // eslint-disable-next-line no-console
+  console.log("[ayarlar] POST →", url);
+  // eslint-disable-next-line no-console
+  console.log("[ayarlar] POST payload:", payload);
   try {
-    const res = await fetch(`/api/kampanya/${slug}/ayarlar?t=${Date.now()}`, {
+    const res = await fetch(url, {
       method: "POST",
       cache: "no-store",
       headers: {
@@ -174,27 +202,46 @@ export async function saveCampaignSettings(
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       },
-      body: JSON.stringify(settingsToApiPayload(settings)),
+      body: JSON.stringify(payload),
     });
+    // eslint-disable-next-line no-console
+    console.log("[ayarlar] POST status:", res.status, res.statusText);
     if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      // eslint-disable-next-line no-console
+      console.error("[ayarlar] POST error body:", errBody);
       return {
         ok: false,
         settings,
-        error: `HTTP ${res.status}`,
+        error: `HTTP ${res.status}${errBody ? ` — ${errBody.slice(0, 200)}` : ""}`,
       };
     }
     const data: unknown = await res.json().catch(() => null);
+    // eslint-disable-next-line no-console
+    console.log("[ayarlar] POST response body:", data);
+
     // Sunucu { success: true, data: {...} } veya direkt updated row dönebilir.
     let returned = settings;
     if (data && typeof data === "object") {
       const obj = data as Record<string, unknown>;
-      const payload = obj.data ?? obj.row ?? obj;
-      const parsed = apiToSettings(payload);
-      // En azından title parse edilmişse server'dan dönen veriyi kullan.
-      if (parsed.title) returned = parsed;
+      const payloadOut = (obj.data ?? obj.row ?? obj) as unknown;
+      const parsed = apiToSettings(payloadOut);
+      // eslint-disable-next-line no-console
+      console.log("[ayarlar] POST parsed settings:", parsed);
+
+      // Sadece response gerçekten snake_case alan içeriyorsa kullan.
+      // Aksi halde defaults'a düşmüş olur — kullanıcının yazdığı değerleri kaybetmemek için
+      // gönderdiğimiz settings'i koruruz.
+      const looksLikeRow =
+        payloadOut && typeof payloadOut === "object" &&
+        ("kampanya_adi" in (payloadOut as object) ||
+          "hedef_tutar" in (payloadOut as object));
+      if (looksLikeRow) returned = parsed;
     }
-    return { ok: true, settings: returned };
+    return { ok: true, settings: returned, raw: data };
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[ayarlar] POST error:", e);
     return {
       ok: false,
       settings,
