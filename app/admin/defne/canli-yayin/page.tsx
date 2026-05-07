@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
+  Camera,
   CheckCircle2,
-  ExternalLink,
   Loader2,
   Plus,
   Radio,
@@ -33,6 +33,28 @@ import {
 } from "@/lib/canli-yayin";
 import { cn } from "@/lib/utils";
 
+// ── Cloudinary (kumbaralar/page.tsx ile aynı pattern) ────────────────────────
+
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dqyr5h96s/image/upload";
+const CLOUDINARY_PRESET = "kampanyatakip";
+
+async function uploadToCloudinary(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", CLOUDINARY_PRESET);
+  const res = await fetch(CLOUDINARY_URL, { method: "POST", body: fd });
+  if (!res.ok) {
+    throw new Error(`Cloudinary yükleme başarısız (${res.status})`);
+  }
+  const data = (await res.json()) as { secure_url?: string };
+  if (!data.secure_url) {
+    throw new Error("Cloudinary yanıtı geçersiz (secure_url yok)");
+  }
+  return data.secure_url;
+}
+
+// ── ─────────────────────────────────────────────────────────────────────────
+
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const emptyForm = (): TikTokIncomeInput => ({
@@ -46,7 +68,7 @@ const emptyForm = (): TikTokIncomeInput => ({
 
 type Toast = { kind: "ok" | "err"; text: string };
 
-function validate(form: TikTokIncomeInput): string | null {
+function validateBaseFields(form: TikTokIncomeInput): string | null {
   if (!form.tarih) return "Tarih gerekli.";
   if (!Number.isFinite(form.yayin_suresi_dk) || form.yayin_suresi_dk <= 0) {
     return "Yayın süresi 0'dan büyük olmalı.";
@@ -67,6 +89,9 @@ export default function TikTokIncomePage() {
 
   const [openAdd, setOpenAdd] = useState(false);
   const [form, setForm] = useState<TikTokIncomeInput>(emptyForm());
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState<TikTokIncome | null>(null);
@@ -120,19 +145,78 @@ export default function TikTokIncomePage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const resetScreenshot = () => {
+    if (screenshotPreview) URL.revokeObjectURL(screenshotPreview);
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+  };
+
   const openNew = () => {
     setForm(emptyForm());
+    resetScreenshot();
     setOpenAdd(true);
   };
 
-  const submitAdd = async () => {
-    const err = validate(form);
-    if (err) {
-      showToast({ kind: "err", text: err });
+  const closeAddModal = () => {
+    setOpenAdd(false);
+    setForm(emptyForm());
+    resetScreenshot();
+  };
+
+  const handleScreenshotChange = (file: File | null) => {
+    if (screenshotPreview) URL.revokeObjectURL(screenshotPreview);
+    if (!file) {
+      setScreenshotFile(null);
+      setScreenshotPreview(null);
       return;
     }
+    setScreenshotFile(file);
+    setScreenshotPreview(URL.createObjectURL(file));
+  };
+
+  // Cleanup obj URL on unmount
+  useEffect(
+    () => () => {
+      if (screenshotPreview) URL.revokeObjectURL(screenshotPreview);
+    },
+    [screenshotPreview],
+  );
+
+  const submitAdd = async () => {
+    const baseErr = validateBaseFields(form);
+    if (baseErr) {
+      showToast({ kind: "err", text: baseErr });
+      return;
+    }
+    if (!screenshotFile) {
+      showToast({ kind: "err", text: "Ekran görüntüsü zorunludur." });
+      return;
+    }
+
+    // 1) Cloudinary upload
+    setUploading(true);
+    let uploadedUrl: string;
+    try {
+      uploadedUrl = await uploadToCloudinary(screenshotFile);
+    } catch (e) {
+      setUploading(false);
+      showToast({
+        kind: "err",
+        text:
+          e instanceof Error
+            ? `Görsel yüklenemedi: ${e.message}`
+            : "Görsel yüklenemedi, tekrar deneyin",
+      });
+      return;
+    }
+    setUploading(false);
+
+    // 2) n8n endpoint POST
     setSaving(true);
-    const r = await createTikTokIncome(form);
+    const r = await createTikTokIncome({
+      ...form,
+      ekran_goruntusu_url: uploadedUrl,
+    });
     if (!r.ok) {
       setSaving(false);
       showToast({
@@ -144,8 +228,7 @@ export default function TikTokIncomePage() {
     await new Promise((res) => setTimeout(res, 800));
     await refresh();
     setSaving(false);
-    setOpenAdd(false);
-    setForm(emptyForm());
+    closeAddModal();
     showToast({ kind: "ok", text: "Yayın kaydedildi" });
   };
 
@@ -322,7 +405,7 @@ export default function TikTokIncomePage() {
       {/* Add modal */}
       <Modal
         open={openAdd}
-        onClose={() => !saving && setOpenAdd(false)}
+        onClose={() => !saving && !uploading && closeAddModal()}
         title="Yeni TikTok Yayını"
         size="lg"
         footer={
@@ -330,8 +413,8 @@ export default function TikTokIncomePage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setOpenAdd(false)}
-              disabled={saving}
+              onClick={closeAddModal}
+              disabled={saving || uploading}
             >
               İptal
             </Button>
@@ -339,9 +422,14 @@ export default function TikTokIncomePage() {
               variant="primary"
               size="sm"
               onClick={submitAdd}
-              disabled={saving}
+              disabled={saving || uploading || !screenshotFile}
             >
-              {saving ? (
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Yükleniyor…
+                </>
+              ) : saving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Kaydediliyor…
@@ -417,18 +505,56 @@ export default function TikTokIncomePage() {
             </FormField>
           </div>
           <FormField
-            label="Ekran Görüntüsü URL"
-            hint="Opsiyonel — yayın kazanç ekranının URL'si"
+            label="Ekran Görüntüsü"
+            required
+            hint="TikTok kazanç ekranının fotoğrafı (zorunlu)"
           >
-            <input
-              type="url"
-              className={inputClass}
-              placeholder="https://..."
-              value={form.ekran_goruntusu_url}
-              onChange={(e) =>
-                setField("ekran_goruntusu_url", e.target.value)
-              }
-            />
+            {screenshotPreview ? (
+              <div className="flex items-start gap-3">
+                <div className="relative shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-outline-variant bg-surface-container-low">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={screenshotPreview}
+                    alt="Ekran görüntüsü önizleme"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-label-sm text-on-surface truncate">
+                    {screenshotFile?.name}
+                  </p>
+                  {screenshotFile && (
+                    <p className="text-label-sm text-on-surface-variant mt-0.5">
+                      {(screenshotFile.size / 1024).toFixed(0)} KB
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleScreenshotChange(null)}
+                    disabled={uploading || saving}
+                    className="mt-2 inline-flex items-center gap-1 text-label-sm text-rose-700 hover:text-rose-800 disabled:opacity-50"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Kaldır
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center gap-2 px-4 py-6 rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low hover:border-secondary hover:bg-secondary-container/20 cursor-pointer transition text-on-surface-variant">
+                <Camera className="w-5 h-5" />
+                <span className="text-body-sm">
+                  Ekran görüntüsü seç (zorunlu)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) =>
+                    handleScreenshotChange(e.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
+            )}
           </FormField>
           <FormField label="Notlar" hint="Opsiyonel">
             <textarea
@@ -500,24 +626,48 @@ export default function TikTokIncomePage() {
         open={detail !== null}
         onClose={() => setDetail(null)}
         title={detail ? `Yayın Detayı — ${detail.tarih}` : ""}
-        size="md"
+        size="lg"
+        footer={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDetail(null)}
+          >
+            Kapat
+          </Button>
+        }
       >
         {detail && (
-          <div className="space-y-3 text-body-sm">
-            <DetailRow
-              label="Süre"
-              value={`${detail.yayin_suresi_dk} dakika`}
-            />
-            <DetailRow
-              label="Elmas / Coin"
-              value={detail.elmas_coin.toLocaleString("tr-TR")}
-            />
-            <DetailRow
-              label="TL Karşılığı"
-              value={formatCurrency(detail.tl_karsiligi, "TRY")}
-            />
-            <div className="pt-2 border-t border-outline-variant">
-              <p className="text-label-sm text-on-surface-variant mb-1">
+          <div className="space-y-4 text-body-sm">
+            <div className="space-y-1.5">
+              <DetailRow label="Tarih" value={detail.tarih || "—"} />
+              <DetailRow
+                label="Yayın Süresi"
+                value={`${detail.yayin_suresi_dk} dakika`}
+              />
+              <DetailRow
+                label="Elmas / Coin"
+                value={detail.elmas_coin.toLocaleString("tr-TR")}
+              />
+              <DetailRow
+                label="TL Karşılığı"
+                value={formatCurrency(detail.tl_karsiligi, "TRY")}
+              />
+            </div>
+
+            {detail.notlar && (
+              <div className="pt-3 border-t border-outline-variant">
+                <p className="text-label-sm font-semibold text-on-surface-variant mb-1.5">
+                  Notlar
+                </p>
+                <p className="text-on-surface whitespace-pre-wrap">
+                  {detail.notlar}
+                </p>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-outline-variant">
+              <p className="text-label-sm font-semibold text-on-surface-variant mb-2">
                 Ekran Görüntüsü
               </p>
               {detail.ekran_goruntusu_url ? (
@@ -525,22 +675,23 @@ export default function TikTokIncomePage() {
                   href={detail.ekran_goruntusu_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-secondary hover:text-on-secondary-container break-all"
+                  className="block rounded-lg overflow-hidden border border-outline-variant bg-surface-container-low hover:border-secondary transition group"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                  {detail.ekran_goruntusu_url}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={detail.ekran_goruntusu_url}
+                    alt="TikTok yayın kazanç ekranı"
+                    className="w-full max-h-[480px] object-contain bg-black/5 group-hover:opacity-95 transition"
+                  />
+                  <div className="px-3 py-2 text-label-sm text-on-surface-variant group-hover:text-secondary">
+                    Tam boyut için tıklayın →
+                  </div>
                 </a>
               ) : (
-                <p className="text-on-surface-variant">—</p>
+                <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low px-4 py-6 text-center text-on-surface-variant text-label-md">
+                  Ekran görüntüsü mevcut değil
+                </div>
               )}
-            </div>
-            <div className="pt-2 border-t border-outline-variant">
-              <p className="text-label-sm text-on-surface-variant mb-1">
-                Notlar
-              </p>
-              <p className="text-on-surface whitespace-pre-wrap">
-                {detail.notlar || "—"}
-              </p>
             </div>
           </div>
         )}
