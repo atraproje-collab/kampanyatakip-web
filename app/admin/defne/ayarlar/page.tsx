@@ -257,7 +257,7 @@ export default function SettingsPage() {
                         type="number"
                         min={0}
                         step={1}
-                        className={`${inputClass} pl-9 pr-8`}
+                        className={cn(inputClass, "pl-9 pr-8")}
                         value={
                           Number.isFinite(campaignForm.goalAmount)
                             ? campaignForm.goalAmount
@@ -270,7 +270,7 @@ export default function SettingsPage() {
                       />
                     </div>
                     <select
-                      className={`${inputClass} w-24 shrink-0`}
+                      className={cn(inputClass, "w-24 shrink-0")}
                       value={campaignForm.goalCurrency}
                       onChange={(e) =>
                         updateField(
