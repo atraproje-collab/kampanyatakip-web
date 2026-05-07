@@ -1,8 +1,11 @@
 /**
  * lib/canli-yayin.ts
- * TikTok yayın geliri için CRUD helper'ları (proxy üzerinden).
+ * TikTok yayın geliri için CRUD helper'ları.
+ * Doğrudan n8n endpoint'ine gider (proxy yok). CORS sorunu çıkarsa
+ * proxy'ye geri dönmek gerekebilir.
  */
 
+const N8N_BASE = "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya";
 const DEFAULT_SLUG = "demo-defne";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -89,7 +92,7 @@ export async function fetchTikTokIncome(
 ): Promise<{ ok: boolean; items: TikTokIncome[]; error?: string }> {
   try {
     const res = await fetch(
-      `/api/kampanya/${slug}/canli-yayin-gelirleri?t=${Date.now()}`,
+      `${N8N_BASE}/${slug}/canli-yayin-gelirleri?t=${Date.now()}`,
       { cache: "no-store", headers: NO_CACHE_HEADERS },
     );
     if (!res.ok) {
@@ -116,7 +119,7 @@ async function postJson(
   slug: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(`/api/kampanya/${slug}/${endpoint}?t=${Date.now()}`, {
+    const res = await fetch(`${N8N_BASE}/${slug}/${endpoint}`, {
       method: "POST",
       cache: "no-store",
       headers: POST_HEADERS,
@@ -128,6 +131,17 @@ async function postJson(
         ok: false,
         error: `HTTP ${res.status}${errBody ? ` — ${errBody.slice(0, 200)}` : ""}`,
       };
+    }
+    // n8n yanıt formatı: { success: true, data: {...} } — body'i kontrol et.
+    const data: unknown = await res.json().catch(() => null);
+    if (data && typeof data === "object") {
+      const obj = data as Record<string, unknown>;
+      if (obj.success === false) {
+        return {
+          ok: false,
+          error: String(obj.message ?? obj.error ?? "Sunucu hatası"),
+        };
+      }
     }
     return { ok: true };
   } catch (e) {
