@@ -209,7 +209,6 @@ export function BankAccountsPanel() {
     <PanelCard
       title="Banka Hesapları"
       description="Kampanya bağış hesaplarını ekleyin, düzenleyin veya silin"
-      className="lg:col-span-2"
     >
       {/* Toast / banners */}
       {toast && (
@@ -435,7 +434,7 @@ function BankAccountForm({
         <Landmark className="w-4 h-4 text-secondary" />
         {isNew ? "Yeni Banka Hesabı" : "Banka Hesabını Düzenle"}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
         <FormField label="Banka Adı" required>
           <input
             className={inputClass}
