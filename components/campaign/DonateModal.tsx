@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   ChevronDown,
@@ -20,6 +21,7 @@ import {
 import { useCampaign } from "@/components/campaign/CampaignContext";
 import { formatTRY } from "@/lib/mock-campaign-data";
 import { mockExchangeRate, toUSD, formatUSD } from "@/lib/exchange-rate";
+import { fetchBankAccounts, type BankAccount } from "@/lib/banka-hesaplari";
 import { cn } from "@/lib/utils";
 
 interface DonateModalProps {
@@ -33,6 +35,12 @@ const CURRENCY_SYMBOL: Record<"TRY" | "USD" | "EUR", string> = {
   TRY: "₺",
   USD: "$",
   EUR: "€",
+};
+
+const CURRENCY_LABEL: Record<"TRY" | "USD" | "EUR", string> = {
+  TRY: "Türk Lirası (TL)",
+  USD: "Amerikan Doları (USD)",
+  EUR: "Euro (EUR)",
 };
 
 const CURRENCY_TONE: Record<
@@ -90,7 +98,29 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
   const { campaign } = useCampaign();
   const [amount, setAmount] = useState<number>(500);
   const [ibanOpen, setIbanOpen] = useState(false);
-  const [copiedIban, setCopiedIban] = useState<number | null>(null);
+  const [copiedIban, setCopiedIban] = useState<string | null>(null);
+
+  // Banka hesapları — admin paneliyle aynı API'den (no-store + cache busting)
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountsError, setAccountsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let mounted = true;
+    setAccountsLoading(true);
+    setAccountsError(null);
+    (async () => {
+      const r = await fetchBankAccounts();
+      if (!mounted) return;
+      setAccounts(r.items);
+      setAccountsError(r.ok ? null : r.error ?? "API'ye bağlanılamadı");
+      setAccountsLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -106,11 +136,16 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
     };
   }, [isOpen, onClose]);
 
-  const handleCopyIban = async (index: number, iban: string) => {
+  const handleCopyIban = async (id: string, iban: string) => {
     await navigator.clipboard.writeText(iban.replace(/\s/g, ""));
-    setCopiedIban(index);
+    setCopiedIban(id);
     setTimeout(() => setCopiedIban(null), 2000);
   };
+
+  const accountHolder =
+    accounts[0]?.hesap_sahibi?.trim() ||
+    campaign.bankAccounts[0]?.accountName ||
+    "Defne Yardım Fonu";
 
   return (
     <AnimatePresence>
@@ -294,111 +329,148 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       className="overflow-hidden"
                     >
                       <p className="text-[12px] text-on-surface-variant mb-3">
-                        Tüm hesaplar{" "}
-                        <strong className="text-primary-container">
-                          Ziraat Bankası
-                        </strong>
-                        &apos;ndadır. İhtiyacınıza uygun döviz cinsini seçin.
+                        İhtiyacınıza uygun döviz cinsini seçin ve banka
+                        uygulamanızdan havale yapın.
                       </p>
 
-                      <ul className="space-y-2">
-                        {campaign.bankAccounts.map((acc, i) => {
-                          const isCopied = copiedIban === i;
-                          const tone = CURRENCY_TONE[acc.currency];
-                          const symbol = CURRENCY_SYMBOL[acc.currency];
-                          return (
+                      {accountsLoading ? (
+                        <ul className="space-y-2">
+                          {Array.from({ length: 3 }).map((_, i) => (
                             <li
                               key={i}
-                              className={cn(
-                                "rounded-lg border bg-white overflow-hidden",
-                                tone.border,
-                              )}
+                              className="rounded-lg border border-outline-variant bg-white p-3 sm:p-4 flex gap-3 animate-pulse"
                             >
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4">
-                                <div
-                                  className={cn(
-                                    "inline-flex h-12 w-12 items-center justify-center rounded-lg shrink-0 font-bold text-[22px]",
-                                    tone.badge,
-                                  )}
-                                  aria-hidden
-                                >
-                                  {symbol}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p
+                              <div className="h-12 w-12 rounded-lg bg-surface-container shrink-0" />
+                              <div className="flex-1 space-y-2">
+                                <div className="h-3 w-32 rounded bg-surface-container" />
+                                <div className="h-3 w-20 rounded bg-surface-container" />
+                                <div className="h-3 w-full rounded bg-surface-container" />
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : accounts.length === 0 ? (
+                        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-900 flex items-start gap-2">
+                          <AlertTriangle
+                            size={14}
+                            className="shrink-0 mt-0.5"
+                          />
+                          <div>
+                            <p className="font-semibold">
+                              {accountsError
+                                ? "Banka hesapları yüklenemedi."
+                                : "Tanımlı banka hesabı bulunamadı."}
+                            </p>
+                            {accountsError && (
+                              <p className="mt-0.5 break-all">{accountsError}</p>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <ul className="space-y-2">
+                          {accounts.map((acc) => {
+                            const isCopied = copiedIban === acc.id;
+                            const tone = CURRENCY_TONE[acc.para_birimi];
+                            const symbol = CURRENCY_SYMBOL[acc.para_birimi];
+                            const label = CURRENCY_LABEL[acc.para_birimi];
+                            return (
+                              <li
+                                key={acc.id}
+                                className={cn(
+                                  "rounded-lg border bg-white overflow-hidden",
+                                  tone.border,
+                                )}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4">
+                                  <div
                                     className={cn(
-                                      "text-[13.5px] font-semibold",
-                                      tone.label,
+                                      "inline-flex h-12 w-12 items-center justify-center rounded-lg shrink-0 font-bold text-[22px]",
+                                      tone.badge,
+                                    )}
+                                    aria-hidden
+                                  >
+                                    {symbol}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p
+                                      className={cn(
+                                        "text-[13.5px] font-semibold",
+                                        tone.label,
+                                      )}
+                                    >
+                                      {label}
+                                    </p>
+                                    <p className="text-[11.5px] text-on-surface-variant">
+                                      {acc.banka_adi || "—"}
+                                    </p>
+                                    <p className="mt-1 text-[12px] text-on-surface font-mono break-all">
+                                      {acc.iban}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleCopyIban(acc.id, acc.iban)
+                                    }
+                                    className={cn(
+                                      "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-semibold transition-colors w-full sm:w-auto",
+                                      isCopied
+                                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                                        : "bg-surface-container-low text-primary-container border border-outline-variant hover:border-secondary hover:text-secondary",
                                     )}
                                   >
-                                    {acc.currencyLabel}
-                                  </p>
-                                  <p className="text-[11.5px] text-on-surface-variant">
-                                    {acc.bank}
-                                  </p>
-                                  <p className="mt-1 text-[12px] text-on-surface font-mono break-all">
-                                    {acc.iban}
-                                  </p>
+                                    {isCopied ? (
+                                      <>
+                                        <Check size={13} strokeWidth={2.5} />
+                                        Kopyalandı
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy size={13} />
+                                        IBAN Kopyala
+                                      </>
+                                    )}
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyIban(i, acc.iban)}
-                                  className={cn(
-                                    "shrink-0 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-semibold transition-colors w-full sm:w-auto",
-                                    isCopied
-                                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
-                                      : "bg-surface-container-low text-primary-container border border-outline-variant hover:border-secondary hover:text-secondary",
-                                  )}
-                                >
-                                  {isCopied ? (
-                                    <>
-                                      <Check size={13} strokeWidth={2.5} />
-                                      Kopyalandı
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Copy size={13} />
-                                      IBAN Kopyala
-                                    </>
-                                  )}
-                                </button>
-                              </div>
 
-                              {acc.currency !== "TRY" && (
-                                <div
-                                  className={cn(
-                                    "px-4 py-2 border-t text-[11.5px] font-mono text-on-surface-variant flex items-center gap-2 flex-wrap",
-                                    tone.footerBorder,
-                                    tone.footerBg,
-                                  )}
-                                >
-                                  <span className="font-sans font-semibold text-on-surface-variant">
-                                    SWIFT/BIC:
-                                  </span>
-                                  <span className="text-primary-container font-semibold">
-                                    {acc.swift}
-                                  </span>
-                                  <span className="font-sans text-on-surface-variant/80">
-                                    · Yurtdışından transfer için gerekli
-                                  </span>
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
+                                {acc.para_birimi !== "TRY" && acc.swift_bic && (
+                                  <div
+                                    className={cn(
+                                      "px-4 py-2 border-t text-[11.5px] font-mono text-on-surface-variant flex items-center gap-2 flex-wrap",
+                                      tone.footerBorder,
+                                      tone.footerBg,
+                                    )}
+                                  >
+                                    <span className="font-sans font-semibold text-on-surface-variant">
+                                      SWIFT/BIC:
+                                    </span>
+                                    <span className="text-primary-container font-semibold">
+                                      {acc.swift_bic}
+                                    </span>
+                                    <span className="font-sans text-on-surface-variant/80">
+                                      · Yurtdışından transfer için gerekli
+                                    </span>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
 
-                      <p className="mt-3 text-[12px] text-on-surface-variant">
-                        Hesap sahibi:{" "}
-                        <strong className="text-primary-container">
-                          {campaign.bankAccounts[0].accountName}
-                        </strong>
-                        . Bağış açıklamasına{" "}
-                        <strong className="text-primary-container">
-                          &ldquo;Defne SMA&rdquo;
-                        </strong>{" "}
-                        yazınız.
-                      </p>
+                      {!accountsLoading && accounts.length > 0 && (
+                        <p className="mt-3 text-[12px] text-on-surface-variant">
+                          Hesap sahibi:{" "}
+                          <strong className="text-primary-container">
+                            {accountHolder}
+                          </strong>
+                          . Bağış açıklamasına{" "}
+                          <strong className="text-primary-container">
+                            &ldquo;Defne SMA&rdquo;
+                          </strong>{" "}
+                          yazınız.
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
