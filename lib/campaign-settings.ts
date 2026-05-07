@@ -130,9 +130,13 @@ export async function fetchCampaignSettings(
   slug: string = DEFAULT_SLUG,
 ): Promise<{ ok: boolean; settings: CampaignSettings; error?: string }> {
   try {
-    const res = await fetch(`/api/kampanya/${slug}/ayarlar`, {
+    const res = await fetch(`/api/kampanya/${slug}/ayarlar?t=${Date.now()}`, {
       cache: "no-store",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
     });
     if (!res.ok) {
       return {
@@ -161,12 +165,14 @@ export async function saveCampaignSettings(
   slug: string = DEFAULT_SLUG,
 ): Promise<{ ok: boolean; settings: CampaignSettings; error?: string }> {
   try {
-    const res = await fetch(`/api/kampanya/${slug}/ayarlar`, {
+    const res = await fetch(`/api/kampanya/${slug}/ayarlar?t=${Date.now()}`, {
       method: "POST",
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
       },
       body: JSON.stringify(settingsToApiPayload(settings)),
     });
