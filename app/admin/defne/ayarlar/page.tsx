@@ -10,7 +10,6 @@ import {
   EyeOff,
   FileCheck,
   Hash,
-  Landmark,
   Lock,
   Save,
   Target,
@@ -19,8 +18,8 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { FormField, PanelCard, inputClass } from "@/components/admin/AdminUI";
+import { BankAccountsPanel } from "@/components/admin/BankAccountsPanel";
 import { notificationSettings } from "@/lib/admin-mock-data";
-import { demoCampaign } from "@/lib/mock-campaign-data";
 import {
   computeDaysLeft,
   defaultCampaignSettings,
@@ -422,36 +421,7 @@ export default function SettingsPage() {
         </PanelCard>
 
         {/* Bank accounts */}
-        <PanelCard
-          title="Banka Hesapları"
-          description="IBAN listesi — değişiklik için destek talep edin"
-        >
-          <div className="divide-y divide-outline-variant">
-            {demoCampaign.bankAccounts.map((b) => (
-              <div key={b.iban} className="px-5 py-3 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary-fixed text-primary flex items-center justify-center shrink-0">
-                  <Landmark className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-label-md font-semibold text-on-surface">
-                      {b.bank} • {b.currency}
-                    </p>
-                    <span className="text-label-sm text-on-surface-variant">
-                      {b.swift}
-                    </span>
-                  </div>
-                  <p className="text-label-sm text-on-surface-variant">
-                    {b.accountName}
-                  </p>
-                  <p className="text-body-sm font-mono text-on-surface mt-0.5 break-all">
-                    {b.iban}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </PanelCard>
+        <BankAccountsPanel />
 
         {/* Notifications */}
         <PanelCard
