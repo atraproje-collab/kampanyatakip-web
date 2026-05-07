@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   Bell,
   Calendar,
+  CheckCircle2,
   Eye,
   EyeOff,
   FileCheck,
@@ -11,7 +13,6 @@ import {
   Landmark,
   Lock,
   Save,
-  Sparkles,
   Target,
   Type,
 } from "lucide-react";
@@ -21,12 +22,11 @@ import { FormField, PanelCard, inputClass } from "@/components/admin/AdminUI";
 import { notificationSettings } from "@/lib/admin-mock-data";
 import { demoCampaign } from "@/lib/mock-campaign-data";
 import {
-  CAMPAIGN_SETTINGS_EVENT,
   computeDaysLeft,
   defaultCampaignSettings,
+  fetchCampaignSettings,
   formatRemaining,
   formatTrDate,
-  loadCampaignSettings,
   notifyCampaignSettingsChanged,
   saveCampaignSettings,
   type CampaignSettings,
@@ -41,21 +41,39 @@ const CURRENCY_SYMBOL: Record<CampaignSettings["goalCurrency"], string> = {
 
 export default function SettingsPage() {
   const [notif, setNotif] = useState(notificationSettings);
+
+  // Şifre — auth sistemi gelene kadar localStorage / mock akışta.
   const [oldPwd, setOldPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
-  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  // Kampanya formu durumu
   const [campaignForm, setCampaignForm] = useState<CampaignSettings>(
     defaultCampaignSettings,
   );
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
   const [formErr, setFormErr] = useState<string | null>(null);
 
-  // localStorage'tan yükle (yalnızca client'ta)
+  // İlk yükleme — proxy üzerinden ayarları çek.
   useEffect(() => {
-    setCampaignForm(loadCampaignSettings());
+    let mounted = true;
+    (async () => {
+      const result = await fetchCampaignSettings();
+      if (!mounted) return;
+      setCampaignForm(result.settings);
+      setLoadError(result.ok ? null : result.error ?? "API'ye bağlanılamadı");
+      setLoading(false);
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const updateField = <K extends keyof CampaignSettings>(
@@ -64,6 +82,8 @@ export default function SettingsPage() {
   ) => {
     setCampaignForm((prev) => ({ ...prev, [key]: value }));
     setFormErr(null);
+    setSavedAt(null);
+    setSaveError(null);
   };
 
   const remainingText = useMemo(
@@ -97,8 +117,9 @@ export default function SettingsPage() {
     return null;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setPwdMsg(null);
+    setSaveError(null);
 
     const campaignErr = validateCampaignForm();
     if (campaignErr) {
@@ -106,6 +127,7 @@ export default function SettingsPage() {
       return;
     }
 
+    // Şifre değişikliği — mock akış (auth sistemi gelene kadar).
     if (oldPwd || newPwd || confirmPwd) {
       if (oldPwd !== "demo2026") {
         setPwdMsg({ kind: "err", text: "Eski şifre hatalı." });
@@ -125,8 +147,18 @@ export default function SettingsPage() {
       setConfirmPwd("");
     }
 
-    saveCampaignSettings(campaignForm);
-    notifyCampaignSettingsChanged(campaignForm);
+    setSaving(true);
+    const result = await saveCampaignSettings(campaignForm);
+    setSaving(false);
+
+    if (!result.ok) {
+      setSaveError(result.error ?? "Kayıt sırasında hata oluştu");
+      return;
+    }
+
+    // Server'dan dönen güncel kayıt
+    setCampaignForm(result.settings);
+    notifyCampaignSettingsChanged(result.settings);
 
     const now = new Date().toLocaleTimeString("tr-TR", {
       hour: "2-digit",
@@ -135,31 +167,52 @@ export default function SettingsPage() {
     setSavedAt(now);
   };
 
-  // Diğer sekmelerden gelen güncellemeleri yansıt
-  useEffect(() => {
-    const onChange = () => setCampaignForm(loadCampaignSettings());
-    window.addEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  }, []);
-
   return (
     <AdminLayout
       title="Ayarlar"
       subtitle="Kampanya bilgileri, hesap ayarları ve bildirim tercihleri"
       actions={
-        <Button variant="primary" size="sm" onClick={handleSave}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSave}
+          disabled={loading || saving}
+        >
           <Save className="w-4 h-4" />
-          Değişiklikleri Kaydet
+          {saving ? "Kaydediliyor…" : "Değişiklikleri Kaydet"}
         </Button>
       }
     >
       {savedAt && (
-        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-body-sm text-emerald-800">
-          Değişiklikler kaydedildi — {savedAt}
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-body-sm text-emerald-800 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          Ayarlar kaydedildi — {savedAt}
+        </div>
+      )}
+
+      {loadError && !loading && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-body-sm text-amber-900 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="font-semibold">
+              Ayarlar yüklenemedi — varsayılan değerler gösteriliyor.
+            </p>
+            <p className="text-label-sm text-amber-800 mt-0.5 break-all">
+              {loadError}. Form kaydedildiğinde yeni değerler API'ye yazılır.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="mb-4 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-body-sm text-rose-900 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="font-semibold">Kayıt başarısız</p>
+            <p className="text-label-sm text-rose-800 mt-0.5 break-all">
+              {saveError}
+            </p>
+          </div>
         </div>
       )}
 
@@ -170,168 +223,178 @@ export default function SettingsPage() {
           description="Kampanyanın temel bilgilerini buradan düzenleyin"
           className="lg:col-span-2"
         >
-          <div className="px-5 py-4 space-y-4">
-            {formErr && (
-              <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-body-sm text-red-700">
-                {formErr}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="Kampanya Adı" required>
-                <div className="relative">
-                  <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                  <input
-                    className={`${inputClass} pl-9`}
-                    value={campaignForm.title}
-                    onChange={(e) => updateField("title", e.target.value)}
-                    placeholder="Örn: Minik Defne'ye Umut Ol"
-                  />
+          {loading ? (
+            <CampaignFormSkeleton />
+          ) : (
+            <div className="px-5 py-4 space-y-4">
+              {formErr && (
+                <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-body-sm text-red-700">
+                  {formErr}
                 </div>
-              </FormField>
+              )}
 
-              <FormField label="Hedef Tutar" required>
-                <div className="flex gap-2">
-                  <div className="relative flex-1 min-w-0">
-                    <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-label-sm font-semibold text-on-surface-variant pointer-events-none">
-                      {CURRENCY_SYMBOL[campaignForm.goalCurrency]}
-                    </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField label="Kampanya Adı" required>
+                  <div className="relative">
+                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
                     <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      className={`${inputClass} pl-9 pr-8`}
-                      value={Number.isFinite(campaignForm.goalAmount) ? campaignForm.goalAmount : ""}
-                      onChange={(e) =>
-                        updateField("goalAmount", Number(e.target.value) || 0)
-                      }
-                      placeholder="2100000"
+                      className={`${inputClass} pl-9`}
+                      value={campaignForm.title}
+                      onChange={(e) => updateField("title", e.target.value)}
+                      placeholder="Örn: Minik Defne'ye Umut Ol"
                     />
                   </div>
-                  <select
-                    className={`${inputClass} w-24 shrink-0`}
-                    value={campaignForm.goalCurrency}
-                    onChange={(e) =>
-                      updateField(
-                        "goalCurrency",
-                        e.target.value as CampaignSettings["goalCurrency"],
-                      )
-                    }
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="TRY">TRY</option>
-                  </select>
-                </div>
-              </FormField>
+                </FormField>
 
-              <FormField
-                label="Başlangıç Tarihi"
-                required
-                hint={
-                  campaignForm.startDate
-                    ? formatTrDate(campaignForm.startDate)
-                    : undefined
-                }
-              >
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                  <input
-                    type="date"
-                    className={`${inputClass} pl-9`}
-                    value={campaignForm.startDate}
-                    onChange={(e) => updateField("startDate", e.target.value)}
-                  />
-                </div>
-              </FormField>
+                <FormField label="Hedef Tutar" required>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1 min-w-0">
+                      <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-label-sm font-semibold text-on-surface-variant pointer-events-none">
+                        {CURRENCY_SYMBOL[campaignForm.goalCurrency]}
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        className={`${inputClass} pl-9 pr-8`}
+                        value={
+                          Number.isFinite(campaignForm.goalAmount)
+                            ? campaignForm.goalAmount
+                            : ""
+                        }
+                        onChange={(e) =>
+                          updateField("goalAmount", Number(e.target.value) || 0)
+                        }
+                        placeholder="2100000"
+                      />
+                    </div>
+                    <select
+                      className={`${inputClass} w-24 shrink-0`}
+                      value={campaignForm.goalCurrency}
+                      onChange={(e) =>
+                        updateField(
+                          "goalCurrency",
+                          e.target.value as CampaignSettings["goalCurrency"],
+                        )
+                      }
+                    >
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="TRY">TRY</option>
+                    </select>
+                  </div>
+                </FormField>
 
-              <FormField
-                label="Bitiş Tarihi"
-                required
-                hint={
-                  campaignForm.endDate
-                    ? formatTrDate(campaignForm.endDate)
-                    : undefined
-                }
-              >
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                  <input
-                    type="date"
-                    className={`${inputClass} pl-9`}
-                    value={campaignForm.endDate}
-                    min={campaignForm.startDate || undefined}
-                    onChange={(e) => updateField("endDate", e.target.value)}
-                  />
-                </div>
-              </FormField>
-
-              <FormField label="Kalan Süre" hint="Bitiş tarihinden otomatik hesaplanır">
-                <div
-                  className={cn(
-                    "h-10 px-3 rounded-lg border flex items-center text-body-sm font-semibold tabular-nums",
-                    remainingExpired
-                      ? "border-rose-300 bg-rose-50 text-rose-700"
-                      : "border-outline-variant bg-surface-container-low text-on-surface",
-                  )}
-                  aria-live="polite"
+                <FormField
+                  label="Başlangıç Tarihi"
+                  required
+                  hint={
+                    campaignForm.startDate
+                      ? formatTrDate(campaignForm.startDate)
+                      : undefined
+                  }
                 >
-                  {remainingText}
-                </div>
-              </FormField>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                    <input
+                      type="date"
+                      className={`${inputClass} pl-9`}
+                      value={campaignForm.startDate}
+                      onChange={(e) => updateField("startDate", e.target.value)}
+                    />
+                  </div>
+                </FormField>
 
-              <FormField
-                label="Onay Tarihi"
-                required
-                hint={
-                  campaignForm.approvalDate
-                    ? formatTrDate(campaignForm.approvalDate)
-                    : undefined
-                }
-              >
-                <div className="relative">
-                  <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                <FormField
+                  label="Bitiş Tarihi"
+                  required
+                  hint={
+                    campaignForm.endDate
+                      ? formatTrDate(campaignForm.endDate)
+                      : undefined
+                  }
+                >
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                    <input
+                      type="date"
+                      className={`${inputClass} pl-9`}
+                      value={campaignForm.endDate}
+                      min={campaignForm.startDate || undefined}
+                      onChange={(e) => updateField("endDate", e.target.value)}
+                    />
+                  </div>
+                </FormField>
+
+                <FormField
+                  label="Kalan Süre"
+                  hint="Bitiş tarihinden otomatik hesaplanır"
+                >
+                  <div
+                    className={cn(
+                      "h-10 px-3 rounded-lg border flex items-center text-body-sm font-semibold tabular-nums",
+                      remainingExpired
+                        ? "border-rose-300 bg-rose-50 text-rose-700"
+                        : "border-outline-variant bg-surface-container-low text-on-surface",
+                    )}
+                    aria-live="polite"
+                  >
+                    {remainingText}
+                  </div>
+                </FormField>
+
+                <FormField
+                  label="Onay Tarihi"
+                  required
+                  hint={
+                    campaignForm.approvalDate
+                      ? formatTrDate(campaignForm.approvalDate)
+                      : undefined
+                  }
+                >
+                  <div className="relative">
+                    <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                    <input
+                      type="date"
+                      className={`${inputClass} pl-9`}
+                      value={campaignForm.approvalDate}
+                      onChange={(e) =>
+                        updateField("approvalDate", e.target.value)
+                      }
+                    />
+                  </div>
+                </FormField>
+
+                <FormField
+                  label="Valilik Onay Numarası"
+                  required
+                  hint="Format: 2026/4521"
+                >
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                    <input
+                      className={`${inputClass} pl-9`}
+                      value={campaignForm.decisionNumber}
+                      onChange={(e) =>
+                        updateField("decisionNumber", e.target.value)
+                      }
+                      placeholder="2026/4521"
+                    />
+                  </div>
+                </FormField>
+
+                <FormField label="Onay Veren Kurum" required>
                   <input
-                    type="date"
-                    className={`${inputClass} pl-9`}
-                    value={campaignForm.approvalDate}
-                    onChange={(e) => updateField("approvalDate", e.target.value)}
+                    className={inputClass}
+                    value={campaignForm.authority}
+                    onChange={(e) => updateField("authority", e.target.value)}
+                    placeholder="İstanbul Valiliği"
                   />
-                </div>
-              </FormField>
-
-              <FormField label="Valilik Onay Numarası" required hint="Format: 2026/4521">
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                  <input
-                    className={`${inputClass} pl-9`}
-                    value={campaignForm.decisionNumber}
-                    onChange={(e) => updateField("decisionNumber", e.target.value)}
-                    placeholder="2026/4521"
-                  />
-                </div>
-              </FormField>
-
-              <FormField label="Onay Veren Kurum" required>
-                <input
-                  className={inputClass}
-                  value={campaignForm.authority}
-                  onChange={(e) => updateField("authority", e.target.value)}
-                  placeholder="İstanbul Valiliği"
-                />
-              </FormField>
+                </FormField>
+              </div>
             </div>
-
-            <p className="text-label-sm text-on-surface-variant flex items-start gap-2 pt-1">
-              <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>
-                Demo modunda değişiklikler tarayıcınızda saklanır ve aynı
-                tarayıcıdaki kampanya sayfasına anında yansır. n8n bağlantısı
-                tamamlandığında bu form sunucuya gönderilecek.
-              </span>
-            </p>
-          </div>
+          )}
         </PanelCard>
 
         {/* Bank accounts */}
@@ -350,9 +413,13 @@ export default function SettingsPage() {
                     <p className="text-label-md font-semibold text-on-surface">
                       {b.bank} • {b.currency}
                     </p>
-                    <span className="text-label-sm text-on-surface-variant">{b.swift}</span>
+                    <span className="text-label-sm text-on-surface-variant">
+                      {b.swift}
+                    </span>
                   </div>
-                  <p className="text-label-sm text-on-surface-variant">{b.accountName}</p>
+                  <p className="text-label-sm text-on-surface-variant">
+                    {b.accountName}
+                  </p>
                   <p className="text-body-sm font-mono text-on-surface mt-0.5 break-all">
                     {b.iban}
                   </p>
@@ -369,7 +436,10 @@ export default function SettingsPage() {
         >
           <ul className="divide-y divide-outline-variant">
             {notif.map((n) => (
-              <li key={n.id} className="px-5 py-3 flex items-center justify-between gap-3">
+              <li
+                key={n.id}
+                className="px-5 py-3 flex items-center justify-between gap-3"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-secondary-container/40 text-secondary flex items-center justify-center shrink-0">
                     <Bell className="w-4 h-4" />
@@ -397,7 +467,7 @@ export default function SettingsPage() {
           </ul>
         </PanelCard>
 
-        {/* Password change */}
+        {/* Password change — auth sistemi gelene kadar mock */}
         <PanelCard
           title="Şifre Değiştir"
           description="Hesap güvenliği için şifrenizi düzenli aralıklarla yenileyin"
@@ -420,7 +490,11 @@ export default function SettingsPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                   aria-label="Göster/gizle"
                 >
-                  {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showOld ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </FormField>
@@ -440,7 +514,11 @@ export default function SettingsPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                   aria-label="Göster/gizle"
                 >
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showNew ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </FormField>
@@ -471,5 +549,18 @@ export default function SettingsPage() {
         </PanelCard>
       </div>
     </AdminLayout>
+  );
+}
+
+function CampaignFormSkeleton() {
+  return (
+    <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i}>
+          <div className="h-3 w-28 rounded bg-surface-container mb-2" />
+          <div className="h-10 w-full rounded-lg bg-surface-container" />
+        </div>
+      ))}
+    </div>
   );
 }

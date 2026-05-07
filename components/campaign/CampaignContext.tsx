@@ -24,7 +24,7 @@ import {
 import { mockExchangeRate, toTRY, toUSD } from "@/lib/exchange-rate";
 import {
   applyCampaignSettings,
-  loadCampaignSettings,
+  fetchCampaignSettings,
   CAMPAIGN_SETTINGS_EVENT,
   type CampaignSettings,
 } from "@/lib/campaign-settings";
@@ -71,27 +71,34 @@ export function CampaignProvider({
   campaign: CampaignData;
   children: ReactNode;
 }) {
-  // Server render starts with the static prop; on the client we merge any
-  // saved admin settings (localStorage) so /kampanya/demo and admin panel
-  // stay in sync within the same browser.
+  // Server render starts with the static prop; on the client we fetch
+  // canonical settings from the API and merge them in. Cross-tab admin
+  // saves are reflected immediately via CAMPAIGN_SETTINGS_EVENT.
   const [campaign, setCampaign] = useState<CampaignData>(campaignProp);
 
   useEffect(() => {
-    setCampaign(applyCampaignSettings(campaignProp, loadCampaignSettings()));
+    let mounted = true;
+
+    const refreshFromApi = async () => {
+      const result = await fetchCampaignSettings();
+      if (!mounted || !result.ok) return;
+      setCampaign(applyCampaignSettings(campaignProp, result.settings));
+    };
+
+    refreshFromApi();
+
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent<CampaignSettings>).detail;
       if (detail) {
         setCampaign(applyCampaignSettings(campaignProp, detail));
+      } else {
+        refreshFromApi();
       }
     };
-    const onStorage = () => {
-      setCampaign(applyCampaignSettings(campaignProp, loadCampaignSettings()));
-    };
     window.addEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
-    window.addEventListener("storage", onStorage);
     return () => {
+      mounted = false;
       window.removeEventListener(CAMPAIGN_SETTINGS_EVENT, onChange);
-      window.removeEventListener("storage", onStorage);
     };
   }, [campaignProp]);
 
