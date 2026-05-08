@@ -5,7 +5,7 @@ export const SOCIAL_MEDIA = {
   facebook: "https://www.facebook.com/profile.php?id=61589243289036",
   instagram: "https://www.instagram.com/sma.dmd.kampanyatakip/",
   youtube: "https://www.youtube.com/@Kampanya-Takip",
-  tiktok: null as string | null,
+  tiktok: "https://www.tiktok.com/@kampanya.takip",
   twitter: null as string | null,
 } as const;
 
@@ -13,7 +13,7 @@ export const SOCIAL_MEDIA_HANDLES = {
   facebook: "Kampanya Takip",
   instagram: "@sma.dmd.kampanyatakip",
   youtube: "@Kampanya-Takip",
-  tiktok: null as string | null,
+  tiktok: "@kampanya.takip",
   twitter: null as string | null,
 } as const;
 

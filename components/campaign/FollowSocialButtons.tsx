@@ -66,14 +66,19 @@ export function FollowSocialButtons({
         >
           <SocialIcon platform="youtube" size={20} />
         </a>
-        <span
-          aria-disabled="true"
-          title="Yakında"
-          role="button"
-          className={cn(baseBtn, disabledClass)}
+        <a
+          href={SOCIAL_MEDIA.tiktok!}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`TikTok'ta takip et — ${SOCIAL_MEDIA_HANDLES.tiktok}`}
+          title={`${SOCIAL_MEDIA_HANDLES.tiktok} · TikTok`}
+          className={cn(
+            baseBtn,
+            "border-black bg-black text-white hover:bg-neutral-800 hover:border-neutral-800 hover:-translate-y-0.5 hover:shadow-md",
+          )}
         >
           <Music2 size={18} />
-        </span>
+        </a>
         <span
           aria-disabled="true"
           title="Yakında"
