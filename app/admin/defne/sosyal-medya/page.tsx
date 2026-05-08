@@ -73,8 +73,12 @@ export default function SocialMediaPage() {
       );
       return;
     }
-    setComingSoonToast(`${label} bağlantısı yakında aktif olacak`);
-    window.setTimeout(() => setComingSoonToast(null), 2600);
+    const message =
+      platform === "twitter"
+        ? `${label} bağlantısı yakında — ek modül olarak gelecek`
+        : `${label} bağlantısı yakında aktif olacak`;
+    setComingSoonToast(message);
+    window.setTimeout(() => setComingSoonToast(null), 2800);
   };
 
   const [planDate, setPlanDate] = useState(new Date().toISOString().slice(0, 10));

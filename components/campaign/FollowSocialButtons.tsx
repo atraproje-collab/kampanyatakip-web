@@ -53,14 +53,19 @@ export function FollowSocialButtons({
         >
           <SocialIcon platform="instagram" size={20} />
         </a>
-        <span
-          aria-disabled="true"
-          title="Yakında"
-          role="button"
-          className={cn(baseBtn, disabledClass)}
+        <a
+          href={SOCIAL_MEDIA.youtube!}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`YouTube'da abone ol — ${SOCIAL_MEDIA_HANDLES.youtube}`}
+          title={`${SOCIAL_MEDIA_HANDLES.youtube} · YouTube`}
+          className={cn(
+            baseBtn,
+            "border-[#FF0000] bg-[#FF0000] text-white hover:bg-[#d90000] hover:border-[#d90000] hover:-translate-y-0.5 hover:shadow-md",
+          )}
         >
           <SocialIcon platform="youtube" size={20} />
-        </span>
+        </a>
         <span
           aria-disabled="true"
           title="Yakında"
@@ -68,6 +73,14 @@ export function FollowSocialButtons({
           className={cn(baseBtn, disabledClass)}
         >
           <Music2 size={18} />
+        </span>
+        <span
+          aria-disabled="true"
+          title="Yakında"
+          role="button"
+          className={cn(baseBtn, disabledClass)}
+        >
+          <SocialIcon platform="twitter" size={18} />
         </span>
       </div>
     </div>
