@@ -173,7 +173,17 @@ export const socialAccounts: SocialAccount[] = [
     url: SOCIAL_MEDIA.youtube!,
     pageName: SOCIAL_MEDIA_HANDLES.youtube!,
   },
-  { platform: "tiktok", label: "TikTok", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  {
+    platform: "tiktok",
+    label: "TikTok",
+    handle: SOCIAL_MEDIA_HANDLES.tiktok!,
+    connected: true,
+    followers: 0,
+    postsThisMonth: 0,
+    lastPost: "—",
+    url: SOCIAL_MEDIA.tiktok!,
+    pageName: SOCIAL_MEDIA_HANDLES.tiktok!,
+  },
   { platform: "twitter", label: "X / Twitter", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
 ];
 

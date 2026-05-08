@@ -75,10 +75,10 @@ export default function SocialMediaPage() {
     }
     const message =
       platform === "twitter"
-        ? `${label} bağlantısı yakında — ek modül olarak gelecek`
+        ? `${label} yakında — ek modül (4.200 ₺ / ay)`
         : `${label} bağlantısı yakında aktif olacak`;
     setComingSoonToast(message);
-    window.setTimeout(() => setComingSoonToast(null), 2800);
+    window.setTimeout(() => setComingSoonToast(null), 3200);
   };
 
   const [planDate, setPlanDate] = useState(new Date().toISOString().slice(0, 10));
