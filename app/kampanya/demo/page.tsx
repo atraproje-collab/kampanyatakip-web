@@ -7,6 +7,7 @@ import { CampaignTabs } from "@/components/campaign/CampaignTabs";
 import { RecentDonorsFeed } from "@/components/campaign/RecentDonorsFeed";
 import { DonationToast } from "@/components/campaign/DonationToast";
 import { TrustPanel } from "@/components/campaign/TrustPanel";
+import { FollowSocialButtons } from "@/components/campaign/FollowSocialButtons";
 import { SystemAttribution } from "@/components/campaign/SystemAttribution";
 import { demoCampaign } from "@/lib/mock-campaign-data";
 
@@ -84,6 +85,13 @@ export default function CampaignDemoPage() {
               approvalNumber={demoCampaign.provinceApproval.decisionNumber}
               approvalDate={demoCampaign.provinceApproval.approvalDate}
             />
+          </div>
+        </section>
+
+        {/* Follow on social media */}
+        <section className="border-t border-outline-variant bg-surface-container-lowest py-10 md:py-12">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
+            <FollowSocialButtons />
           </div>
         </section>
 

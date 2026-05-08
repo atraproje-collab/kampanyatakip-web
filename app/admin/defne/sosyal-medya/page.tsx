@@ -6,6 +6,7 @@ import {
   Camera,
   CheckCircle2,
   Clock,
+  ExternalLink,
   Globe,
   Hash,
   Inbox,
@@ -63,7 +64,7 @@ export default function SocialMediaPage() {
   const [planDate, setPlanDate] = useState(new Date().toISOString().slice(0, 10));
   const [planTime, setPlanTime] = useState("10:00");
   const [planContent, setPlanContent] = useState("");
-  const [planPlatforms, setPlanPlatforms] = useState<Set<SocialPlatform>>(new Set(["instagram"]));
+  const [planPlatforms, setPlanPlatforms] = useState<Set<SocialPlatform>>(new Set(["facebook"]));
 
   const togglePlatform = (p: SocialPlatform) => {
     setPlanPlatforms((prev) => {
@@ -87,7 +88,7 @@ export default function SocialMediaPage() {
     setPosts([post, ...posts]);
     setOpenPlan(false);
     setPlanContent("");
-    setPlanPlatforms(new Set(["instagram"]));
+    setPlanPlatforms(new Set(["facebook"]));
   };
 
   const toggleConnection = (platform: SocialPlatform) => {
@@ -132,7 +133,7 @@ export default function SocialMediaPage() {
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 text-white/70 text-label-sm font-semibold">
-                      <Unplug className="w-3 h-3" /> Bağlı Değil
+                      <Unplug className="w-3 h-3" /> Yakında
                     </span>
                   )}
                 </div>
@@ -145,18 +146,30 @@ export default function SocialMediaPage() {
                 <Row label="Son paylaşım" value={a.lastPost} />
               </div>
               <div className="px-4 pb-4 pt-1 grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => toggleConnection(a.platform)}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-label-md transition",
-                    a.connected
-                      ? "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
-                      : "border-secondary bg-secondary text-on-secondary hover:bg-on-secondary-container",
-                  )}
-                >
-                  <PlugZap className="w-3.5 h-3.5" />
-                  {a.connected ? "Bağlantıyı Kes" : "Bağlan"}
-                </button>
+                {a.connected && a.url ? (
+                  <a
+                    href={a.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-on-surface-variant text-label-md hover:bg-surface-container-low transition"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Sayfayı Görüntüle
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => toggleConnection(a.platform)}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-label-md transition",
+                      a.connected
+                        ? "border-outline-variant text-on-surface-variant hover:bg-surface-container-low"
+                        : "border-secondary bg-secondary text-on-secondary hover:bg-on-secondary-container",
+                    )}
+                  >
+                    <PlugZap className="w-3.5 h-3.5" />
+                    {a.connected ? "Bağlantıyı Kes" : "Bağlan"}
+                  </button>
+                )}
                 <button
                   onClick={() => setOpenDetail(a)}
                   className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-on-primary text-label-md hover:bg-primary-container transition"
@@ -349,10 +362,40 @@ export default function SocialMediaPage() {
       >
         {openDetail && (
           <div className="space-y-3 text-body-sm">
-            <DetailRow label="Bağlantı" value={openDetail.connected ? "Bağlı" : "Bağlı Değil"} />
+            <DetailRow
+              label="Bağlantı"
+              value={openDetail.connected ? "Bağlı" : "Bağlantı Yok / Yakında"}
+            />
+            {openDetail.connected && openDetail.pageName && (
+              <DetailRow label="Sayfa adı" value={openDetail.pageName} />
+            )}
+            {openDetail.connected && openDetail.url && (
+              <div className="flex items-start justify-between gap-3 py-2 border-b border-outline-variant">
+                <span className="text-on-surface-variant">URL</span>
+                <a
+                  href={openDetail.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary-container hover:underline text-right break-all"
+                >
+                  {openDetail.url}
+                </a>
+              </div>
+            )}
             <DetailRow label="Takipçi" value={openDetail.followers.toLocaleString("tr-TR")} />
             <DetailRow label="Bu ay paylaşım" value={`${openDetail.postsThisMonth} adet`} />
             <DetailRow label="Son paylaşım" value={openDetail.lastPost} />
+            {openDetail.connected && openDetail.url && (
+              <a
+                href={openDetail.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-on-primary px-4 py-2.5 text-label-md font-semibold hover:bg-primary-container transition"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Sayfayı Görüntüle
+              </a>
+            )}
             <div className="pt-3 mt-3 border-t border-outline-variant text-label-sm text-on-surface-variant">
               Paylaşım istatistikleri her gece 03:00'te güncellenir.
             </div>
