@@ -162,7 +162,17 @@ export const socialAccounts: SocialAccount[] = [
     url: SOCIAL_MEDIA.instagram!,
     pageName: SOCIAL_MEDIA_HANDLES.instagram!,
   },
-  { platform: "youtube", label: "YouTube", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  {
+    platform: "youtube",
+    label: "YouTube",
+    handle: SOCIAL_MEDIA_HANDLES.youtube!,
+    connected: true,
+    followers: 0,
+    postsThisMonth: 0,
+    lastPost: "—",
+    url: SOCIAL_MEDIA.youtube!,
+    pageName: SOCIAL_MEDIA_HANDLES.youtube!,
+  },
   { platform: "tiktok", label: "TikTok", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
   { platform: "twitter", label: "X / Twitter", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
 ];

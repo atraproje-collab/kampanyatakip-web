@@ -21,6 +21,10 @@ export const SOCIAL_LINKS: Record<"facebook" | "instagram" | "youtube" | "tiktok
     name: SOCIAL_MEDIA_HANDLES.instagram,
     connected: true,
   },
-  youtube: { url: null, name: null, connected: false },
+  youtube: {
+    url: SOCIAL_MEDIA.youtube,
+    name: SOCIAL_MEDIA_HANDLES.youtube,
+    connected: true,
+  },
   tiktok: { url: null, name: null, connected: false },
 };
