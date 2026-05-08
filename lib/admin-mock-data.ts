@@ -1,5 +1,5 @@
 import { demoCampaign } from "./mock-campaign-data";
-import { FACEBOOK_URL, FACEBOOK_PAGE_NAME } from "./social-links";
+import { SOCIAL_MEDIA, SOCIAL_MEDIA_HANDLES } from "./social-media";
 
 export type DonationStatus = "Onaylandı" | "Bekliyor";
 
@@ -143,15 +143,25 @@ export const socialAccounts: SocialAccount[] = [
   {
     platform: "facebook",
     label: "Facebook",
-    handle: FACEBOOK_PAGE_NAME,
+    handle: SOCIAL_MEDIA_HANDLES.facebook,
     connected: true,
     followers: 0,
     postsThisMonth: 0,
     lastPost: "—",
-    url: FACEBOOK_URL,
-    pageName: FACEBOOK_PAGE_NAME,
+    url: SOCIAL_MEDIA.facebook,
+    pageName: SOCIAL_MEDIA_HANDLES.facebook,
   },
-  { platform: "instagram", label: "Instagram", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  {
+    platform: "instagram",
+    label: "Instagram",
+    handle: SOCIAL_MEDIA_HANDLES.instagram!,
+    connected: true,
+    followers: 0,
+    postsThisMonth: 0,
+    lastPost: "—",
+    url: SOCIAL_MEDIA.instagram!,
+    pageName: SOCIAL_MEDIA_HANDLES.instagram!,
+  },
   { platform: "youtube", label: "YouTube", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
   { platform: "tiktok", label: "TikTok", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
   { platform: "twitter", label: "X / Twitter", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },

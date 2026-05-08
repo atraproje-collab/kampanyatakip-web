@@ -60,6 +60,22 @@ export default function SocialMediaPage() {
   const [posts, setPosts] = useState<ScheduledPost[]>(initialPosts);
   const [openPlan, setOpenPlan] = useState(false);
   const [openDetail, setOpenDetail] = useState<SocialAccount | null>(null);
+  const [comingSoonToast, setComingSoonToast] = useState<string | null>(null);
+
+  const handleConnect = (platform: SocialPlatform, label: string) => {
+    const acc = accounts.find((a) => a.platform === platform);
+    if (acc?.connected) {
+      // Disconnect-only path for already connected accounts
+      setAccounts((prev) =>
+        prev.map((a) =>
+          a.platform === platform ? { ...a, connected: false } : a,
+        ),
+      );
+      return;
+    }
+    setComingSoonToast(`${label} bağlantısı yakında aktif olacak`);
+    window.setTimeout(() => setComingSoonToast(null), 2600);
+  };
 
   const [planDate, setPlanDate] = useState(new Date().toISOString().slice(0, 10));
   const [planTime, setPlanTime] = useState("10:00");
@@ -89,14 +105,6 @@ export default function SocialMediaPage() {
     setOpenPlan(false);
     setPlanContent("");
     setPlanPlatforms(new Set(["facebook"]));
-  };
-
-  const toggleConnection = (platform: SocialPlatform) => {
-    setAccounts((prev) =>
-      prev.map((a) =>
-        a.platform === platform ? { ...a, connected: !a.connected } : a,
-      ),
-    );
   };
 
   const totalFollowers = useMemo(
@@ -154,11 +162,11 @@ export default function SocialMediaPage() {
                     className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-on-surface-variant text-label-md hover:bg-surface-container-low transition"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Sayfayı Görüntüle
+                    {viewLabel(a.platform)}
                   </a>
                 ) : (
                   <button
-                    onClick={() => toggleConnection(a.platform)}
+                    onClick={() => handleConnect(a.platform, a.label)}
                     className={cn(
                       "inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-label-md transition",
                       a.connected
@@ -167,7 +175,7 @@ export default function SocialMediaPage() {
                     )}
                   >
                     <PlugZap className="w-3.5 h-3.5" />
-                    {a.connected ? "Bağlantıyı Kes" : "Bağlan"}
+                    {a.connected ? "Bağlantıyı Kes" : "Bağla"}
                   </button>
                 )}
                 <button
@@ -393,7 +401,7 @@ export default function SocialMediaPage() {
                 className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-on-primary px-4 py-2.5 text-label-md font-semibold hover:bg-primary-container transition"
               >
                 <ExternalLink className="w-4 h-4" />
-                Sayfayı Görüntüle
+                {viewLabel(openDetail.platform)}
               </a>
             )}
             <div className="pt-3 mt-3 border-t border-outline-variant text-label-sm text-on-surface-variant">
@@ -402,8 +410,33 @@ export default function SocialMediaPage() {
           </div>
         )}
       </Modal>
+
+      {/* Coming-soon toast */}
+      {comingSoonToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] inline-flex items-center gap-2 rounded-xl bg-primary text-on-primary px-4 py-3 text-label-md font-semibold shadow-[0_8px_24px_rgba(0,24,53,0.25)]"
+        >
+          <Sparkles className="w-4 h-4" />
+          {comingSoonToast}
+        </div>
+      )}
     </AdminLayout>
   );
+}
+
+function viewLabel(platform: SocialPlatform): string {
+  switch (platform) {
+    case "facebook":
+      return "Sayfayı Görüntüle";
+    case "instagram":
+    case "tiktok":
+    case "twitter":
+      return "Profili Görüntüle";
+    case "youtube":
+      return "Kanalı Görüntüle";
+  }
 }
 
 function Row({ label, value }: { label: string; value: string }) {
