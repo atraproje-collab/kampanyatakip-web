@@ -1,4 +1,5 @@
 import { demoCampaign } from "./mock-campaign-data";
+import { FACEBOOK_URL, FACEBOOK_PAGE_NAME } from "./social-links";
 
 export type DonationStatus = "Onaylandı" | "Bekliyor";
 
@@ -134,14 +135,26 @@ export type SocialAccount = {
   followers: number;
   postsThisMonth: number;
   lastPost: string;
+  url?: string;
+  pageName?: string;
 };
 
 export const socialAccounts: SocialAccount[] = [
-  { platform: "facebook", label: "Facebook", handle: "/minikdefnekampanya", connected: true, followers: 8420, postsThisMonth: 14, lastPost: "2026-04-23" },
-  { platform: "instagram", label: "Instagram", handle: "@minikdefne", connected: true, followers: 24560, postsThisMonth: 22, lastPost: "2026-04-24" },
-  { platform: "youtube", label: "YouTube", handle: "Minik Defne Kampanyası", connected: true, followers: 1840, postsThisMonth: 4, lastPost: "2026-04-21" },
-  { platform: "tiktok", label: "TikTok", handle: "@minikdefne", connected: true, followers: 56200, postsThisMonth: 31, lastPost: "2026-04-24" },
-  { platform: "twitter", label: "X / Twitter", handle: "@minikdefne", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  {
+    platform: "facebook",
+    label: "Facebook",
+    handle: FACEBOOK_PAGE_NAME,
+    connected: true,
+    followers: 0,
+    postsThisMonth: 0,
+    lastPost: "—",
+    url: FACEBOOK_URL,
+    pageName: FACEBOOK_PAGE_NAME,
+  },
+  { platform: "instagram", label: "Instagram", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  { platform: "youtube", label: "YouTube", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  { platform: "tiktok", label: "TikTok", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
+  { platform: "twitter", label: "X / Twitter", handle: "Bağlantı Yok / Yakında", connected: false, followers: 0, postsThisMonth: 0, lastPost: "—" },
 ];
 
 export type ScheduledPost = {
