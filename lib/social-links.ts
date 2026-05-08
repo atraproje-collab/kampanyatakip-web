@@ -1,7 +1,8 @@
-// Kampanya Takip - resmi sosyal medya bağlantıları
-// Vanity URL alındığında tek satırda değiştirilebilir
-export const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61589243289036";
-export const FACEBOOK_PAGE_NAME = "Kampanya Takip";
+// Geriye dönük uyumluluk için — yeni kod lib/social-media.ts'i kullanmalı.
+import { SOCIAL_MEDIA, SOCIAL_MEDIA_HANDLES } from "./social-media";
+
+export const FACEBOOK_URL = SOCIAL_MEDIA.facebook;
+export const FACEBOOK_PAGE_NAME = SOCIAL_MEDIA_HANDLES.facebook;
 
 export type SocialLink = {
   url: string | null;
@@ -10,8 +11,16 @@ export type SocialLink = {
 };
 
 export const SOCIAL_LINKS: Record<"facebook" | "instagram" | "youtube" | "tiktok", SocialLink> = {
-  facebook: { url: FACEBOOK_URL, name: FACEBOOK_PAGE_NAME, connected: true },
-  instagram: { url: null, name: null, connected: false },
+  facebook: {
+    url: SOCIAL_MEDIA.facebook,
+    name: SOCIAL_MEDIA_HANDLES.facebook,
+    connected: true,
+  },
+  instagram: {
+    url: SOCIAL_MEDIA.instagram,
+    name: SOCIAL_MEDIA_HANDLES.instagram,
+    connected: true,
+  },
   youtube: { url: null, name: null, connected: false },
   tiktok: { url: null, name: null, connected: false },
 };
