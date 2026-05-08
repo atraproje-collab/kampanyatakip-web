@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { BadgeCheck, Heart, Sparkles } from "lucide-react";
+import { ArrowRight, BadgeCheck, Heart, Lock, Sparkles } from "lucide-react";
 import { LiveCounter } from "@/components/campaign/LiveCounter";
 import { DonateButton } from "@/components/campaign/DonateButton";
 import { ShareButtons } from "@/components/campaign/ShareButtons";
@@ -129,6 +130,38 @@ export function CampaignHero() {
             <div className="rounded-2xl bg-white/[0.08] backdrop-blur-md border border-white/15 p-6 md:p-7 shadow-[0_20px_40px_rgba(0,0,0,0.2)]">
               <LiveCounter variant="dark" />
             </div>
+
+            {/* Şeffaflık Merkezi CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.32 }}
+              className="mt-4"
+            >
+              <Link
+                href="/kampanya/demo/seffaflik"
+                className="group/cta flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/40 bg-emerald-400/[0.08] backdrop-blur-md px-5 py-4 text-white hover:bg-emerald-400/[0.14] hover:border-emerald-300/60 transition-all"
+                aria-label="Şeffaflık Merkezi&apos;ni görüntüle"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="w-10 h-10 rounded-xl bg-emerald-400/25 text-emerald-200 flex items-center justify-center">
+                    <Lock size={18} />
+                  </span>
+                  <span>
+                    <span className="block text-[14.5px] font-bold leading-tight">
+                      🔒 Şeffaflık Merkezi&apos;ni Görüntüle
+                    </span>
+                    <span className="block mt-0.5 text-[12px] text-white/75">
+                      Tüm gelir-gider kayıtları açık ve denetlenebilir
+                    </span>
+                  </span>
+                </span>
+                <ArrowRight
+                  size={18}
+                  className="text-emerald-200 transition-transform group-hover/cta:translate-x-0.5 shrink-0"
+                />
+              </Link>
+            </motion.div>
           </motion.div>
         </div>
       </div>

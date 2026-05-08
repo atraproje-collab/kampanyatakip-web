@@ -90,8 +90,14 @@ export default function CampaignDemoPage() {
 
         {/* Follow on social media */}
         <section className="border-t border-outline-variant bg-surface-container-lowest py-10 md:py-12">
-          <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <div className="mx-auto max-w-7xl px-4 md:px-6 flex flex-col items-center gap-5">
             <FollowSocialButtons />
+            <a
+              href="/kampanya/demo/seffaflik"
+              className="inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-white text-primary-container px-3.5 py-1.5 text-[12px] font-semibold hover:border-primary-container hover:bg-surface-container-low transition-colors"
+            >
+              🔒 Şeffaflık Merkezi
+            </a>
           </div>
         </section>
 
