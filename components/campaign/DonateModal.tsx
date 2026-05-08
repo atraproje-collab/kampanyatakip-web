@@ -498,6 +498,14 @@ export function DonateModal({ isOpen, onClose }: DonateModalProps) {
                       banka hesabına geçer. KAMPANYATAKİP sadece bağışı takip
                       ve raporlama için kullanılır.
                     </p>
+                    <Link
+                      href="/kampanya/demo/seffaflik"
+                      onClick={onClose}
+                      className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-secondary hover:text-on-secondary-container underline underline-offset-2"
+                    >
+                      Tüm gelir-gider kayıtlarımızı şeffaflık merkezinden inceleyin
+                      <ArrowRight size={12} />
+                    </Link>
                   </div>
                 </div>
               </section>
