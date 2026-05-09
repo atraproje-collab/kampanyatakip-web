@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
@@ -34,6 +34,14 @@ const TABS: Array<{
 
 export function CampaignTabs() {
   const [active, setActive] = useState<TabId>("story");
+
+  // İlk yüklemede URL'de ?subtab= varsa Şeffaflık sekmesini auto aç.
+  // (Şeffaflık alt-sekme state'ini TransparencyCenter kendisi yönetir.)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("subtab")) setActive("transparency");
+  }, []);
 
   return (
     <div>
