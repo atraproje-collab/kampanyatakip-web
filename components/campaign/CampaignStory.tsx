@@ -13,6 +13,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
+import { getKategoriLabel } from "@/lib/galeri";
 
 const TIMELINE = [
   {
@@ -115,8 +116,11 @@ export function CampaignStory() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {galleryTeaser.map((g, idx) => {
-                    const caption = g.baslik.trim() || `Foto #${idx + 1}`;
+                    const kat = getKategoriLabel(g.kategori);
+                    // Üst satır: kategori emoji + label
+                    // Alt satır: yüklenme tarihi (Mayıs 2026) — yoksa "Foto #N"
                     const dateLabel = formatMonthYearTr(g.yuklenmeTarihi);
+                    const subLabel = dateLabel || `Foto #${idx + 1}`;
                     return (
                       <div
                         key={g.id}
@@ -125,19 +129,17 @@ export function CampaignStory() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={g.fotoUrl}
-                          alt={caption}
+                          alt={g.baslik || `${kat.label} fotoğrafı`}
                           className="absolute inset-0 w-full h-full object-cover"
                           loading="lazy"
                         />
                         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-1.5 py-1">
                           <p className="text-[10px] font-semibold leading-tight text-white line-clamp-1">
-                            {caption}
+                            <span aria-hidden>{kat.emoji}</span> {kat.label}
                           </p>
-                          {dateLabel && (
-                            <p className="text-[9px] text-white/75 leading-tight tabular-nums">
-                              {dateLabel}
-                            </p>
-                          )}
+                          <p className="text-[9px] text-white/75 leading-tight tabular-nums">
+                            {subLabel}
+                          </p>
                         </div>
                       </div>
                     );

@@ -30,7 +30,17 @@ export async function POST(
     );
   }
 
+  // Debug: proxy'ye gelen body — kategori field'ı dahil mi?
+  // eslint-disable-next-line no-console
+  console.log(`[proxy:galeri-ekle/${slug}] forwarding →`, {
+    targetUrl,
+    body,
+    hasKategori:
+      typeof body === "object" && body !== null && "kategori" in body,
+  });
+
   try {
+    const forwardBody = JSON.stringify(body);
     const upstream = await fetch(targetUrl, {
       method: "POST",
       cache: "no-store",
@@ -38,7 +48,7 @@ export async function POST(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify(body),
+      body: forwardBody,
     });
 
     const contentType = upstream.headers.get("content-type") ?? "";

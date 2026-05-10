@@ -4,12 +4,37 @@
 
 export type GaleriTip = "galeri" | "hikaye" | string;
 
+// ── Kategoriler ──────────────────────────────────────────────────────────────
+
+export const GALERI_KATEGORILER = [
+  { value: "aile", label: "Aile", emoji: "👨‍👩‍👧" },
+  { value: "hastane", label: "Hastane / Tedavi", emoji: "🏥" },
+  { value: "kampanya", label: "Kampanya", emoji: "💼" },
+  { value: "basin", label: "Basın", emoji: "📰" },
+  { value: "diger", label: "Diğer", emoji: "🌿" },
+] as const;
+
+export type GaleriKategoriValue = (typeof GALERI_KATEGORILER)[number]["value"];
+
+/**
+ * Backend her zaman bilinen bir kategori değeri dönmeyebilir; bilinmeyen
+ * değerleri "Diğer"e düşür. Hiçbir kategori eşleşmezse son öğe (Diğer) döner.
+ */
+export function getKategoriLabel(value: string) {
+  return (
+    GALERI_KATEGORILER.find((k) => k.value === value) ??
+    GALERI_KATEGORILER[GALERI_KATEGORILER.length - 1]
+  );
+}
+
 export type GaleriItem = {
   id: number;
   fotoUrl: string;
   baslik: string;
   aciklama: string;
   tip: GaleriTip;
+  /** "aile" | "hastane" | "kampanya" | "basin" | "diger". Boşsa "diger". */
+  kategori: string;
   siralama: number;
   yuklenmeTarihi: string; // ISO, "" if missing
 };
@@ -66,6 +91,7 @@ export function parseGaleriItem(raw: unknown): GaleriItem | null {
     baslik: pickString(row, "baslik", "title"),
     aciklama: pickString(row, "aciklama", "description"),
     tip: pickString(row, "tip", "type") || "galeri",
+    kategori: pickString(row, "kategori", "category") || "diger",
     siralama: pickNumber(row, "siralama", "order", "sira"),
     yuklenmeTarihi: pickString(
       row,
@@ -119,6 +145,7 @@ export type CreateGaleriPayload = {
   baslik?: string;
   aciklama?: string;
   tip?: GaleriTip;
+  kategori?: string;
   siralama?: number;
 };
 
@@ -126,6 +153,15 @@ export async function createGaleriItem(
   payload: CreateGaleriPayload,
   slug: string = DEFAULT_SLUG,
 ): Promise<{ ok: boolean; error?: string }> {
+  const serialized = JSON.stringify(payload);
+  // eslint-disable-next-line no-console
+  console.log("[createGaleriItem] POST →", {
+    url: `/api/kampanya/${slug}/galeri-ekle`,
+    payload,
+    bodyJson: serialized,
+    hasKategori: "kategori" in payload,
+    kategoriValue: payload.kategori ?? null,
+  });
   try {
     const res = await fetch(
       `/api/kampanya/${slug}/galeri-ekle?t=${Date.now()}`,
@@ -136,18 +172,27 @@ export async function createGaleriItem(
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: serialized,
       },
     );
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[createGaleriItem] FAIL HTTP ${res.status}${errText ? ` — ${errText.slice(0, 200)}` : ""}`,
+      );
       return {
         ok: false,
         error: `HTTP ${res.status}${errText ? ` — ${errText.slice(0, 160)}` : ""}`,
       };
     }
+    const data = await res.json().catch(() => null);
+    // eslint-disable-next-line no-console
+    console.log("[createGaleriItem] OK →", data);
     return { ok: true };
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[createGaleriItem] ERROR:", e);
     return {
       ok: false,
       error: e instanceof Error ? e.message : "network error",
