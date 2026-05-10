@@ -13,6 +13,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
+import { setCampaignTab } from "@/components/campaign/CampaignTabs";
 import { getKategoriLabel } from "@/lib/galeri";
 
 const TIMELINE = [
@@ -102,17 +103,22 @@ export function CampaignStory() {
               </figure>
             )}
 
-            {/* Gallery teaser — gerçek galeri foto'larından ilk 3 */}
+            {/* Gallery teaser — gerçek galeri foto'larından ilk 3, hepsi tıklanabilir */}
             {galleryTeaser.length > 0 && (
               <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-3 md:p-4">
                 <div className="flex items-center justify-between mb-2.5">
                   <p className="text-[12px] font-bold text-primary-container uppercase tracking-[0.12em]">
                     Daha fazla fotoğraf
                   </p>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary">
+                  <button
+                    type="button"
+                    onClick={() => setCampaignTab("gallery")}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary hover:text-on-secondary-container hover:underline transition-colors cursor-pointer"
+                    aria-label="Galeri sekmesine geç"
+                  >
                     <Images size={12} />
-                    Galeri sekmesi
-                  </span>
+                    Galeri sekmesi →
+                  </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {galleryTeaser.map((g, idx) => {
@@ -122,18 +128,21 @@ export function CampaignStory() {
                     const dateLabel = formatMonthYearTr(g.yuklenmeTarihi);
                     const subLabel = dateLabel || `Foto #${idx + 1}`;
                     return (
-                      <div
+                      <button
                         key={g.id}
-                        className="relative aspect-square rounded-lg overflow-hidden border border-outline-variant bg-surface-container"
+                        type="button"
+                        onClick={() => setCampaignTab("gallery")}
+                        aria-label={`${kat.label}: ${g.baslik || `Foto #${idx + 1}`} — Galeri sekmesini aç`}
+                        className="group relative aspect-square rounded-lg overflow-hidden border border-outline-variant bg-surface-container cursor-pointer hover:border-secondary hover:shadow-[0_8px_18px_rgba(0,24,53,0.12)] hover:scale-[1.03] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={g.fotoUrl}
                           alt={g.baslik || `${kat.label} fotoğrafı`}
-                          className="absolute inset-0 w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
                         />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-1.5 py-1">
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-1.5 py-1 text-left">
                           <p className="text-[10px] font-semibold leading-tight text-white line-clamp-1">
                             <span aria-hidden>{kat.emoji}</span> {kat.label}
                           </p>
@@ -141,13 +150,20 @@ export function CampaignStory() {
                             {subLabel}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
                 <p className="mt-2.5 text-[11.5px] leading-[16px] text-on-surface-variant">
                   + Toplam {galeri.length.toLocaleString("tr-TR")} fotoğraf için{" "}
-                  <strong>Galeri</strong> sekmesini inceleyin.
+                  <button
+                    type="button"
+                    onClick={() => setCampaignTab("gallery")}
+                    className="inline font-bold text-secondary underline underline-offset-2 hover:text-on-secondary-container cursor-pointer"
+                  >
+                    Galeri
+                  </button>{" "}
+                  sekmesini inceleyin.
                 </p>
               </div>
             )}

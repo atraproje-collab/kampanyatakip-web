@@ -17,7 +17,28 @@ import { KumbaraList } from "@/components/campaign/KumbaraList";
 import { CampaignGallery } from "@/components/campaign/CampaignGallery";
 import { cn } from "@/lib/utils";
 
-type TabId = "story" | "transparency" | "donors" | "kumbaralar" | "gallery";
+export type TabId =
+  | "story"
+  | "transparency"
+  | "donors"
+  | "kumbaralar"
+  | "gallery";
+
+/** Diğer kampanya bileşenlerinin sekme değişimi tetiklemesi için
+ *  yayımladığı window event'i. Detail = TabId. */
+export const CAMPAIGN_SET_TAB_EVENT = "campaign:set-tab";
+
+/** Sekmeyi programatik olarak değiştirmek için yardımcı.
+ *  Tab nav'ı viewport'a kaydırır ki kullanıcı yeni içeriği görsün. */
+export function setCampaignTab(tab: TabId) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<TabId>(CAMPAIGN_SET_TAB_EVENT, { detail: tab }));
+  // Sticky nav'ı görünür yap → yeni sekme içeriği nav'ın altına gelsin
+  const nav = document.querySelector(
+    '[role="tablist"][aria-label="Kampanya sekmeleri"]',
+  );
+  nav?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 const TABS: Array<{
   id: TabId;
@@ -41,6 +62,24 @@ export function CampaignTabs() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.has("subtab")) setActive("transparency");
+  }, []);
+
+  // Diğer bileşenlerden gelen sekme değişim isteklerini dinle.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<TabId>).detail;
+      if (!detail) return;
+      const valid: TabId[] = [
+        "story",
+        "transparency",
+        "donors",
+        "kumbaralar",
+        "gallery",
+      ];
+      if (valid.includes(detail)) setActive(detail);
+    };
+    window.addEventListener(CAMPAIGN_SET_TAB_EVENT, handler);
+    return () => window.removeEventListener(CAMPAIGN_SET_TAB_EVENT, handler);
   }, []);
 
   return (
