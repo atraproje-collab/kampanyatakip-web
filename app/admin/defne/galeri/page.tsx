@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,9 +14,11 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/admin/AdminUI";
 import {
   CLOUDINARY_GALERI_CONFIG,
+  GALERI_KATEGORILER,
   createGaleriItem,
   deleteGaleriItem,
   fetchGaleri,
+  getKategoriLabel,
   loadCloudinaryWidget,
   nextSiralama,
   type CloudinaryWidgetInstance,
@@ -28,6 +30,8 @@ import { cn } from "@/lib/utils";
 type ToastKind = "success" | "error";
 type Toast = { kind: ToastKind; message: string } | null;
 
+const FILTER_ALL = "all";
+
 export default function GaleriPage() {
   const [items, setItems] = useState<GaleriItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +39,15 @@ export default function GaleriPage() {
 
   const [openingWidget, setOpeningWidget] = useState(false);
   const [uploadInProgress, setUploadInProgress] = useState(false);
+
+  // Pre-upload kategori seçim modal'ı
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerKategori, setPickerKategori] = useState<string>("diger");
+  // Widget callback'inde okunabilmesi için ref
+  const pendingKategoriRef = useRef<string>("diger");
+
+  // Aktif filtre
+  const [activeFilter, setActiveFilter] = useState<string>(FILTER_ALL);
 
   const [deleteTarget, setDeleteTarget] = useState<GaleriItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -99,6 +112,20 @@ export default function GaleriPage() {
     };
   }, []);
 
+  // ── Filter + counts ───────────────────────────────────────────────────────
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const it of items) {
+      m.set(it.kategori, (m.get(it.kategori) ?? 0) + 1);
+    }
+    return m;
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (activeFilter === FILTER_ALL) return items;
+    return items.filter((it) => it.kategori === activeFilter);
+  }, [items, activeFilter]);
+
   // ── Persist uploaded URLs to backend ──────────────────────────────────────
   const flushUploads = async () => {
     const urls = uploadedUrlsRef.current.splice(0);
@@ -107,6 +134,7 @@ export default function GaleriPage() {
       return;
     }
     setUploadInProgress(true);
+    const kategori = pendingKategoriRef.current || "diger";
     let nextOrder = nextSiralama(itemsRef.current);
     const results = await Promise.all(
       urls.map((u) =>
@@ -115,6 +143,7 @@ export default function GaleriPage() {
           baslik: "",
           aciklama: "",
           tip: "galeri",
+          kategori,
           siralama: nextOrder++,
         }),
       ),
@@ -127,28 +156,31 @@ export default function GaleriPage() {
     await refresh(true);
     setUploadInProgress(false);
 
+    const katLabel = getKategoriLabel(kategori).label;
     if (failCount === 0) {
-      showToast("success", `✓ ${okCount} fotoğraf yüklendi`);
+      showToast("success", `✓ ${okCount} fotoğraf "${katLabel}" kategorisine yüklendi`);
     } else if (okCount > 0) {
-      showToast(
-        "error",
-        `✓ ${okCount} yüklendi, ${failCount} başarısız`,
-      );
+      showToast("error", `✓ ${okCount} yüklendi, ${failCount} başarısız`);
     } else {
       showToast("error", "✗ Yükleme kaydedilemedi");
     }
   };
 
-  // ── Open Cloudinary widget ────────────────────────────────────────────────
-  const handleOpenUpload = async () => {
+  // ── Pre-upload picker → Cloudinary widget ─────────────────────────────────
+  const handleOpenPicker = () => {
     if (openingWidget || uploadInProgress) return;
+    setPickerOpen(true);
+  };
+
+  const handleConfirmPicker = async () => {
+    pendingKategoriRef.current = pickerKategori;
+    setPickerOpen(false);
     setOpeningWidget(true);
     try {
       await loadCloudinaryWidget();
       const cld = window.cloudinary;
       if (!cld) throw new Error("Cloudinary widget yüklenemedi");
 
-      // Mevcut widget'ı kapat (varsa) — temiz başlangıç
       try {
         widgetRef.current?.destroy?.();
       } catch {
@@ -158,9 +190,7 @@ export default function GaleriPage() {
       uploadedUrlsRef.current = [];
 
       const widget = cld.createUploadWidget(
-        {
-          ...CLOUDINARY_GALERI_CONFIG,
-        },
+        { ...CLOUDINARY_GALERI_CONFIG },
         (error, result: CloudinaryWidgetResult | null) => {
           if (error) {
             // eslint-disable-next-line no-console
@@ -172,7 +202,6 @@ export default function GaleriPage() {
             const url = result.info?.secure_url;
             if (url) uploadedUrlsRef.current.push(url);
           } else if (result.event === "queues-end") {
-            // Tüm yüklemeler tamamlandı — kaydet ve tazele
             void flushUploads();
           }
         },
@@ -180,10 +209,7 @@ export default function GaleriPage() {
       widgetRef.current = widget;
       widget.open();
     } catch (e) {
-      showToast(
-        "error",
-        e instanceof Error ? e.message : "Yükleme açılamadı",
-      );
+      showToast("error", e instanceof Error ? e.message : "Yükleme açılamadı");
     } finally {
       setOpeningWidget(false);
     }
@@ -206,6 +232,8 @@ export default function GaleriPage() {
     showToast("success", "✓ Fotoğraf silindi");
   };
 
+  const isUploadBusy = openingWidget || uploadInProgress;
+
   return (
     <AdminLayout
       title="Galeri Yönetimi"
@@ -218,8 +246,8 @@ export default function GaleriPage() {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleOpenUpload}
-            disabled={openingWidget || uploadInProgress}
+            onClick={handleOpenPicker}
+            disabled={isUploadBusy}
             className="hidden md:inline-flex"
           >
             {openingWidget ? (
@@ -254,16 +282,46 @@ export default function GaleriPage() {
         </div>
       )}
 
+      {/* Kategori filtre çubuğu — admin'de hep tüm kategoriler görünür,
+          0 olan kategori soluk + tıklanamaz */}
+      {!loading && items.length > 0 && (
+        <div className="mb-4 -mx-4 md:mx-0 px-4 md:px-0 overflow-x-auto">
+          <div className="flex flex-wrap gap-2 min-w-max md:min-w-0">
+            <FilterChip
+              active={activeFilter === FILTER_ALL}
+              label="Tümü"
+              count={items.length}
+              onClick={() => setActiveFilter(FILTER_ALL)}
+            />
+            {GALERI_KATEGORILER.map((k) => {
+              const c = counts.get(k.value) ?? 0;
+              return (
+                <FilterChip
+                  key={k.value}
+                  active={activeFilter === k.value}
+                  emoji={k.emoji}
+                  label={k.label}
+                  count={c}
+                  disabled={c === 0}
+                  onClick={() => c > 0 && setActiveFilter(k.value)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <GridSkeleton />
       ) : items.length === 0 ? (
-        <EmptyState
-          onAdd={handleOpenUpload}
-          disabled={openingWidget || uploadInProgress}
-        />
+        <EmptyState onAdd={handleOpenPicker} disabled={isUploadBusy} />
+      ) : filteredItems.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center text-body-sm text-on-surface-variant">
+          Bu kategoride henüz fotoğraf yok.
+        </div>
       ) : (
         <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {items.map((it) => (
+          {filteredItems.map((it) => (
             <GalleryCard
               key={it.id}
               item={it}
@@ -276,19 +334,96 @@ export default function GaleriPage() {
       {/* Mobile floating action button */}
       <button
         type="button"
-        onClick={handleOpenUpload}
-        disabled={openingWidget || uploadInProgress}
+        onClick={handleOpenPicker}
+        disabled={isUploadBusy}
         aria-label="Fotoğraf ekle"
         className={cn(
           "md:hidden fixed bottom-20 right-4 z-30 w-14 h-14 rounded-full bg-secondary text-on-secondary shadow-[0_8px_20px_rgba(0,103,127,0.4)] flex items-center justify-center transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
         )}
       >
-        {openingWidget || uploadInProgress ? (
+        {isUploadBusy ? (
           <Loader2 className="w-6 h-6 animate-spin" />
         ) : (
           <Plus className="w-6 h-6" strokeWidth={2.5} />
         )}
       </button>
+
+      {/* Pre-upload kategori picker */}
+      <Modal
+        open={pickerOpen}
+        onClose={() => !openingWidget && setPickerOpen(false)}
+        title="Kategori seç"
+        description="Bu yüklemedeki tüm fotoğraflar seçilen kategoriye atanır."
+        size="sm"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPickerOpen(false)}
+              disabled={openingWidget}
+            >
+              Vazgeç
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmPicker}
+              disabled={openingWidget}
+            >
+              {openingWidget ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Açılıyor…
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Devam et → Yükle
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        <fieldset className="space-y-2">
+          <legend className="sr-only">Kategori</legend>
+          {GALERI_KATEGORILER.map((k) => {
+            const checked = pickerKategori === k.value;
+            return (
+              <label
+                key={k.value}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition",
+                  checked
+                    ? "border-secondary bg-secondary/10"
+                    : "border-outline-variant hover:border-secondary/60 hover:bg-surface-container-low",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="kategori"
+                  value={k.value}
+                  checked={checked}
+                  onChange={() => setPickerKategori(k.value)}
+                  className="accent-secondary w-4 h-4"
+                />
+                <span className="text-xl leading-none" aria-hidden>
+                  {k.emoji}
+                </span>
+                <span
+                  className={cn(
+                    "text-body-sm font-semibold",
+                    checked ? "text-on-surface" : "text-on-surface",
+                  )}
+                >
+                  {k.label}
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+      </Modal>
 
       {/* Delete confirmation modal */}
       <Modal
@@ -375,6 +510,51 @@ export default function GaleriPage() {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
+function FilterChip({
+  active,
+  emoji,
+  label,
+  count,
+  onClick,
+  disabled,
+}: {
+  active: boolean;
+  emoji?: string;
+  label: string;
+  count: number;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-label-md font-semibold whitespace-nowrap transition",
+        active
+          ? "bg-secondary text-on-secondary border-secondary"
+          : "bg-white text-on-surface border-outline-variant hover:border-secondary hover:text-secondary",
+        disabled && "opacity-40 cursor-not-allowed hover:border-outline-variant hover:text-on-surface-variant",
+      )}
+      aria-pressed={active}
+    >
+      {emoji && <span aria-hidden>{emoji}</span>}
+      <span>{label}</span>
+      <span
+        className={cn(
+          "tabular-nums px-1.5 py-0.5 rounded-full text-[10.5px]",
+          active
+            ? "bg-on-secondary/15 text-on-secondary"
+            : "bg-surface-container text-on-surface-variant",
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
 function GalleryCard({
   item,
   onDelete,
@@ -382,6 +562,7 @@ function GalleryCard({
   item: GaleriItem;
   onDelete: () => void;
 }) {
+  const kat = getKategoriLabel(item.kategori);
   return (
     <li className="group relative rounded-xl overflow-hidden border border-outline-variant bg-surface-container-lowest hover:border-secondary hover:shadow-[0_8px_18px_rgba(0,24,53,0.08)] transition-all">
       <div className="relative aspect-square bg-surface-container-low">
@@ -398,7 +579,7 @@ function GalleryCard({
           #{item.siralama || item.id}
         </span>
 
-        {/* Sil butonu — sağ üst (mobilde her zaman, desktop'ta hover) */}
+        {/* Sil butonu — sağ üst */}
         <button
           type="button"
           onClick={onDelete}
@@ -407,6 +588,12 @@ function GalleryCard({
         >
           <Trash2 className="w-4 h-4" />
         </button>
+
+        {/* Kategori badge — sol alt */}
+        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-label-sm font-semibold">
+          <span aria-hidden>{kat.emoji}</span>
+          <span>{kat.label}</span>
+        </span>
       </div>
       {item.baslik && (
         <div className="px-3 py-2">
