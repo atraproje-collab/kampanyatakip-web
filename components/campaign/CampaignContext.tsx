@@ -28,6 +28,12 @@ import {
   CAMPAIGN_SETTINGS_EVENT,
   type CampaignSettings,
 } from "@/lib/campaign-settings";
+import {
+  defaultIcerikContent,
+  fetchIcerik,
+  type IcerikContent,
+} from "@/lib/icerik";
+import { fetchGaleri, type GaleriItem } from "@/lib/galeri";
 
 const POLL_INTERVAL_MS = 30_000; // 30 saniye
 
@@ -52,6 +58,10 @@ type ContextValue = {
   recentDonors: RecentDonor[];
   kumbaralar: KumbaraRow[];
   stantlar: StantRow[];
+  /** İçerik (hero başlık/alt başlık, hikaye, doktor görüşü, kapak URL). */
+  icerik: IcerikContent;
+  /** Galeri fotoğrafları (siralama ASC). */
+  galeri: GaleriItem[];
   toasts: Toast[];
   dismissToast: (id: number) => void;
   /** true once at least one successful API response has been received */
@@ -105,6 +115,8 @@ export function CampaignProvider({
   const [donations, setDonations] = useState<Donation[]>([]);
   const [kumbaralar, setKumbaralar] = useState<KumbaraRow[]>([]);
   const [stantlar, setStantlar] = useState<StantRow[]>([]);
+  const [icerik, setIcerik] = useState<IcerikContent>(defaultIcerikContent);
+  const [galeri, setGaleri] = useState<GaleriItem[]>([]);
   const [apiConnected, setApiConnected] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -120,11 +132,14 @@ export function CampaignProvider({
     let mounted = true;
 
     const sync = async () => {
-      const [donationsRes, kumbaralarRes, stantlarRes] = await Promise.allSettled([
-        fetchDonations(),
-        fetchKumbaralar(),
-        fetchStantlar(),
-      ]);
+      const [donationsRes, kumbaralarRes, stantlarRes, icerikRes, galeriRes] =
+        await Promise.allSettled([
+          fetchDonations(),
+          fetchKumbaralar(),
+          fetchStantlar(),
+          fetchIcerik(),
+          fetchGaleri(),
+        ]);
       if (!mounted) return;
 
       let gotAny = false;
@@ -159,6 +174,36 @@ export function CampaignProvider({
         gotAny = true;
       } else {
         failures.push("stantlar");
+      }
+
+      if (icerikRes.status === "fulfilled" && icerikRes.value.ok) {
+        setIcerik(icerikRes.value.content);
+        gotAny = true;
+        // eslint-disable-next-line no-console
+        console.log("[CampaignContext] /icerik →", {
+          heroBaslik: icerikRes.value.content.heroBaslik,
+          heroAltBaslik: icerikRes.value.content.heroAltBaslik,
+          coverUrl: icerikRes.value.content.coverUrl,
+          doktorAdi: icerikRes.value.content.doktorAdi,
+        });
+      } else {
+        failures.push("içerik");
+        // eslint-disable-next-line no-console
+        console.warn("[CampaignContext] /icerik başarısız", icerikRes);
+      }
+
+      if (galeriRes.status === "fulfilled" && galeriRes.value.ok) {
+        setGaleri(galeriRes.value.items);
+        gotAny = true;
+        // eslint-disable-next-line no-console
+        console.log("[CampaignContext] /galeri →", {
+          count: galeriRes.value.items.length,
+          first: galeriRes.value.items[0]?.fotoUrl,
+        });
+      } else {
+        failures.push("galeri");
+        // eslint-disable-next-line no-console
+        console.warn("[CampaignContext] /galeri başarısız", galeriRes);
       }
 
       setApiConnected(gotAny);
@@ -199,6 +244,8 @@ export function CampaignProvider({
         recentDonors,
         kumbaralar,
         stantlar,
+        icerik,
+        galeri,
         toasts,
         dismissToast,
         apiConnected,
