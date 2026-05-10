@@ -3,53 +3,16 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Camera,
   ChevronLeft,
   ChevronRight,
-  Heart,
-  Play,
-  Stethoscope,
-  Store,
-  Users as UsersIcon,
-  Users2,
-  Video,
+  Image as ImageIcon,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import { useCampaign } from "@/components/campaign/CampaignContext";
-import type { GalleryItem } from "@/lib/mock-campaign-data";
-
-const ICONS: Record<GalleryItem["placeholder"], LucideIcon> = {
-  family: Heart,
-  hospital: Stethoscope,
-  "donation-box": Camera,
-  stand: Store,
-  video: Video,
-  volunteers: UsersIcon,
-  team: Users2,
-  treatment: Stethoscope,
-};
-
-const GRADIENTS: Record<GalleryItem["placeholder"], string> = {
-  family:
-    "linear-gradient(135deg, #012d59 0%, #00677f 80%, #66daff 160%)",
-  hospital:
-    "linear-gradient(135deg, #00677f 0%, #5fd5f9 100%)",
-  "donation-box":
-    "linear-gradient(135deg, #001835 0%, #012d59 100%)",
-  stand:
-    "linear-gradient(135deg, #3f5f8e 0%, #66daff 130%)",
-  video: "linear-gradient(135deg, #001835 0%, #00677f 100%)",
-  volunteers:
-    "linear-gradient(135deg, #00677f 0%, #012d59 110%)",
-  team: "linear-gradient(135deg, #012d59 0%, #5fd5f9 150%)",
-  treatment:
-    "linear-gradient(135deg, #00677f 0%, #d3e4fe 170%)",
-};
 
 export function CampaignGallery() {
-  const { campaign } = useCampaign();
-  const items = campaign.gallery;
+  const { galeri } = useCampaign();
+  const items = galeri;
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
@@ -72,64 +35,69 @@ export function CampaignGallery() {
     };
   }, [lightbox, items.length]);
 
+  if (items.length === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-outline-variant bg-surface-container-lowest p-10 md:p-14 flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-2xl bg-surface-container text-on-surface-variant flex items-center justify-center mb-4">
+          <ImageIcon className="w-8 h-8" />
+        </div>
+        <h3 className="text-[18px] md:text-[20px] font-semibold text-on-surface">
+          Henüz fotoğraf eklenmemiş
+        </h3>
+        <p className="mt-1.5 text-[13.5px] text-on-surface-variant max-w-md">
+          Kampanya yöneticisi galeriye fotoğraf eklediğinde burada
+          görüntülenecek.
+        </p>
+      </div>
+    );
+  }
+
+  const active = lightbox !== null ? items[lightbox] : null;
+
   return (
     <>
       <div className="space-y-5">
         <p className="text-[13px] text-on-surface-variant">
-          Bu bölümdeki görseller demo amaçlı soyut kart tasarımlarıdır.
-          Gerçek kampanya sayfasında fotoğraf ve video içerikleri görüntülenir.
+          {items.length.toLocaleString("tr-TR")} fotoğraf — büyütmek için
+          karta tıklayın.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-          {items.map((item, i) => {
-            const Icon = ICONS[item.placeholder];
-            return (
-              <button
-                key={item.title}
-                type="button"
-                onClick={() => setLightbox(i)}
-                className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(0,24,53,0.15)] transition-all"
-              >
-                <div
-                  className="absolute inset-0"
-                  style={{ background: GRADIENTS[item.placeholder] }}
-                  aria-hidden
-                />
-                <div
-                  className="absolute inset-0 opacity-20 mix-blend-soft-light"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
-                    backgroundSize: "24px 24px",
-                  }}
-                  aria-hidden
-                />
-                <Icon
-                  size={72}
-                  strokeWidth={1.2}
-                  aria-hidden
-                  className="absolute -right-4 -bottom-4 text-white/30 transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-x-4 bottom-4 text-left">
-                  <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white/70">
-                    {item.type === "video" ? "Video" : "Fotoğraf"}
-                  </span>
-                  <h4 className="mt-1 text-[15px] font-semibold text-white leading-tight">
-                    {item.title}
-                  </h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4">
+          {items.map((item, i) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setLightbox(i)}
+              title={item.aciklama || item.baslik || undefined}
+              className="group relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant hover:border-secondary hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(0,24,53,0.15)] transition-all bg-surface-container-low"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={item.fotoUrl}
+                alt={item.baslik || `Galeri fotoğrafı #${item.id}`}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              {(item.baslik || item.aciklama) && (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 text-left">
+                  {item.baslik && (
+                    <h4 className="text-[13.5px] font-semibold text-white leading-tight line-clamp-2">
+                      {item.baslik}
+                    </h4>
+                  )}
+                  {item.aciklama && (
+                    <p className="mt-0.5 text-[11px] text-white/85 leading-tight line-clamp-2">
+                      {item.aciklama}
+                    </p>
+                  )}
                 </div>
-                {item.type === "video" && (
-                  <span className="absolute top-4 right-4 inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/90 text-primary-container shadow-[0_6px_12px_rgba(0,0,0,0.2)]">
-                    <Play size={20} className="fill-current" strokeWidth={0} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
       <AnimatePresence>
-        {lightbox !== null && (
+        {active !== null && (
           <div
             role="dialog"
             aria-modal="true"
@@ -148,33 +116,28 @@ export function CampaignGallery() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.25 }}
-              className="relative w-full max-w-4xl aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl bg-black"
             >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: GRADIENTS[items[lightbox].placeholder],
-                }}
-                aria-hidden
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={active.fotoUrl}
+                alt={active.baslik || `Galeri fotoğrafı #${active.id}`}
+                className="block w-full max-h-[85vh] object-contain bg-black"
               />
-              {(() => {
-                const Icon = ICONS[items[lightbox].placeholder];
-                return (
-                  <Icon
-                    size={260}
-                    strokeWidth={1}
-                    className="absolute inset-0 m-auto text-white/30"
-                  />
-                );
-              })()}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                <span className="inline-block text-[11px] font-bold uppercase tracking-widest text-white/80">
-                  {items[lightbox].type === "video" ? "Video" : "Fotoğraf"}
-                </span>
-                <h3 className="mt-1 text-[20px] font-semibold text-white">
-                  {items[lightbox].title}
-                </h3>
-              </div>
+              {(active.baslik || active.aciklama) && (
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-5 md:p-6">
+                  {active.baslik && (
+                    <h3 className="text-[18px] md:text-[20px] font-semibold text-white">
+                      {active.baslik}
+                    </h3>
+                  )}
+                  {active.aciklama && (
+                    <p className="mt-1 text-[13px] md:text-[14px] text-white/85 leading-snug">
+                      {active.aciklama}
+                    </p>
+                  )}
+                </div>
+              )}
             </motion.div>
 
             <button
@@ -185,7 +148,7 @@ export function CampaignGallery() {
             >
               <X size={20} />
             </button>
-            {lightbox > 0 && (
+            {lightbox !== null && lightbox > 0 && (
               <button
                 type="button"
                 onClick={() => setLightbox(lightbox - 1)}
@@ -195,7 +158,7 @@ export function CampaignGallery() {
                 <ChevronLeft size={22} />
               </button>
             )}
-            {lightbox < items.length - 1 && (
+            {lightbox !== null && lightbox < items.length - 1 && (
               <button
                 type="button"
                 onClick={() => setLightbox(lightbox + 1)}

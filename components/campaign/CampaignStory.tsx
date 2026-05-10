@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   AlertCircle,
   Banknote,
@@ -8,6 +7,7 @@ import {
   Camera,
   ClipboardCheck,
   HeartPulse,
+  Image as ImageIcon,
   Images,
   Plane,
   Quote,
@@ -48,25 +48,17 @@ const TIMELINE = [
   },
 ];
 
-const DOCTOR_QUOTE = {
-  text:
-    "SMA Tip 1'de her hafta kritik. Tedavi ne kadar erken uygulanırsa, motor nöronlardaki geri dönüşsüz hasar o kadar sınırlı kalıyor. Zolgensma tek doz uygulanan gen tedavisi olarak bu hasarı durdurma potansiyeline sahip.",
-  author: "Dr. Ayşe Demir",
-  role: "Pediatrik Nöroloji Uzmanı",
-};
-
-const GALLERY_TEASER = [
-  { label: "Aile", hint: "Ocak 2026" },
-  { label: "Hastane", hint: "Şubat 2026" },
-  { label: "Kampanya", hint: "Nisan 2026" },
-];
-
 export function CampaignStory() {
-  const { campaign } = useCampaign();
-  const paragraphs = campaign.story
-    .split("\n\n")
-    .map((p) => p.trim())
-    .filter(Boolean);
+  const { campaign, icerik, galeri } = useCampaign();
+
+  const storyText = icerik.hikayeMetni.trim();
+  const paragraphs = storyText
+    ? storyText.split("\n\n").map((p) => p.trim()).filter(Boolean)
+    : [];
+
+  const hasDoctor = icerik.doktorAlintisi.trim().length > 0;
+  const galleryTeaser = galeri.slice(0, 3);
+  const coverUrl = icerik.coverUrl;
 
   return (
     <div className="space-y-10 md:space-y-12">
@@ -75,68 +67,66 @@ export function CampaignStory() {
         {/* Photo — first on mobile, second on desktop */}
         <div className="order-first lg:order-last">
           <div className="lg:sticky lg:top-28 space-y-4">
-            <figure className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant shadow-[0_10px_20px_rgba(0,24,53,0.08)] group">
-              <Image
-                src="/campaigns/defne-hero.jpg"
-                alt="Minik Defne ve ailesi — SMA Tip 1 tedavisi için açılan kampanya"
-                fill
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                priority
-              />
-              <span className="absolute left-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 text-[11.5px] font-semibold">
-                <Camera size={12} strokeWidth={2.25} />
-                Defne ve ailesi · Ocak 2026
-              </span>
+            <figure className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant shadow-[0_10px_20px_rgba(0,24,53,0.08)] group bg-surface-container-low">
+              {coverUrl ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverUrl}
+                    alt={
+                      icerik.heroBaslik
+                        ? `${icerik.heroBaslik} — kampanya kapak fotoğrafı`
+                        : "Kampanya kapak fotoğrafı"
+                    }
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <span className="absolute left-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 text-[11.5px] font-semibold">
+                    <Camera size={12} strokeWidth={2.25} />
+                    Kampanya kapak fotoğrafı
+                  </span>
+                </>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant gap-2 px-4 text-center">
+                  <ImageIcon size={32} className="opacity-50" />
+                  <p className="text-[12.5px]">Kapak fotoğrafı henüz eklenmemiş</p>
+                </div>
+              )}
             </figure>
 
-            {/* Gallery teaser */}
-            <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-3 md:p-4">
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[12px] font-bold text-primary-container uppercase tracking-[0.12em]">
-                  Daha fazla fotoğraf
-                </p>
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary">
-                  <Images size={12} />
-                  Galeri sekmesi
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {GALLERY_TEASER.map((g, i) => (
-                  <div
-                    key={i}
-                    className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary-container to-secondary border border-outline-variant"
-                  >
+            {/* Gallery teaser — gerçek galeri foto'larından ilk 3 */}
+            {galleryTeaser.length > 0 && (
+              <div className="rounded-2xl border border-outline-variant bg-surface-container-low p-3 md:p-4">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-[12px] font-bold text-primary-container uppercase tracking-[0.12em]">
+                    Daha fazla fotoğraf
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-secondary">
+                    <Images size={12} />
+                    Galeri sekmesi
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {galleryTeaser.map((g) => (
                     <div
-                      aria-hidden
-                      className="absolute inset-0 opacity-20"
-                      style={{
-                        backgroundImage:
-                          "radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)",
-                        backgroundSize: "14px 14px",
-                      }}
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-1">
-                      <Camera
-                        size={18}
-                        strokeWidth={1.4}
-                        className="text-white/80"
+                      key={g.id}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-outline-variant bg-surface-container"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={g.fotoUrl}
+                        alt={g.baslik || `Galeri fotoğrafı #${g.id}`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        loading="lazy"
                       />
-                      <span className="mt-1 text-[10px] font-semibold leading-tight">
-                        {g.label}
-                      </span>
-                      <span className="text-[9px] text-white/70">
-                        {g.hint}
-                      </span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <p className="mt-2.5 text-[11.5px] leading-[16px] text-on-surface-variant">
+                  + Toplam {galeri.length.toLocaleString("tr-TR")} fotoğraf için{" "}
+                  <strong>Galeri</strong> sekmesini inceleyin.
+                </p>
               </div>
-              <p className="mt-2.5 text-[11.5px] leading-[16px] text-on-surface-variant">
-                + Daha fazla fotoğraf için <strong>Galeri</strong> sekmesini
-                inceleyin.
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -145,36 +135,52 @@ export function CampaignStory() {
           <h2 className="text-[24px] md:text-[28px] font-semibold text-primary-container tracking-[-0.02em] leading-tight">
             Kampanyanın Hikayesi
           </h2>
-          {paragraphs.map((p, i) => (
-            <p
-              key={i}
-              className="text-[15px] md:text-[15.5px] leading-[26px] text-on-surface-variant"
-            >
-              {p}
+          {paragraphs.length > 0 ? (
+            paragraphs.map((p, i) => (
+              <p
+                key={i}
+                className="text-[15px] md:text-[15.5px] leading-[26px] text-on-surface-variant whitespace-pre-line"
+              >
+                {p}
+              </p>
+            ))
+          ) : (
+            <p className="text-[14px] leading-[22px] text-on-surface-variant italic">
+              Kampanya hikayesi henüz eklenmemiş.
             </p>
-          ))}
+          )}
 
-          {/* Doctor quote */}
-          <figure className="mt-8 relative rounded-2xl bg-surface-container-low border border-outline-variant p-6 md:p-7">
-            <Quote
-              size={28}
-              className="absolute top-5 right-5 text-secondary/30"
-              strokeWidth={2}
-              aria-hidden
-            />
-            <blockquote className="text-[15px] md:text-[16.5px] leading-[26px] text-on-surface font-medium italic">
-              &ldquo;{DOCTOR_QUOTE.text}&rdquo;
-            </blockquote>
-            <figcaption className="mt-4 text-[12.5px]">
-              <strong className="text-primary-container">
-                {DOCTOR_QUOTE.author}
-              </strong>
-              <span className="text-on-surface-variant">
-                {" "}
-                · {DOCTOR_QUOTE.role}
-              </span>
-            </figcaption>
-          </figure>
+          {/* Doctor quote — sadece içerikte alıntı varsa */}
+          {hasDoctor && (
+            <figure className="mt-8 relative rounded-2xl bg-surface-container-low border border-outline-variant p-6 md:p-7">
+              <Quote
+                size={28}
+                className="absolute top-5 right-5 text-secondary/30"
+                strokeWidth={2}
+                aria-hidden
+              />
+              <blockquote className="text-[15px] md:text-[16.5px] leading-[26px] text-on-surface font-medium italic">
+                &ldquo;{icerik.doktorAlintisi}&rdquo;
+              </blockquote>
+              {(icerik.doktorAdi || icerik.doktorUnvan) && (
+                <figcaption className="mt-4 text-[12.5px]">
+                  {icerik.doktorAdi && (
+                    <strong className="text-primary-container">
+                      {icerik.doktorAdi}
+                    </strong>
+                  )}
+                  {icerik.doktorAdi && icerik.doktorUnvan && (
+                    <span className="text-on-surface-variant"> · </span>
+                  )}
+                  {icerik.doktorUnvan && (
+                    <span className="text-on-surface-variant">
+                      {icerik.doktorUnvan}
+                    </span>
+                  )}
+                </figcaption>
+              )}
+            </figure>
+          )}
 
           {/* Urgency box */}
           <div className="rounded-2xl bg-error/[0.06] border border-error/25 p-5 md:p-6 flex items-start gap-4">

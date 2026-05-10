@@ -9,23 +9,48 @@ import { ShareButtons } from "@/components/campaign/ShareButtons";
 import { useCampaign } from "@/components/campaign/CampaignContext";
 
 export function CampaignHero() {
-  const { campaign } = useCampaign();
+  const { campaign, icerik } = useCampaign();
   const { provinceApproval } = campaign;
+
+  // Hero başlığı/alt başlığı için fallback zinciri:
+  // 1) admin İçerik formu (icerik.heroBaslik)
+  // 2) admin Ayarlar formu (campaign.title — DB'den)
+  // 3) statik metin
+  const heroTitle = icerik.heroBaslik || campaign.title || "Kampanya Adı";
+  const heroSubtitle = icerik.heroAltBaslik || campaign.subtitle || "";
+  const coverUrl = icerik.coverUrl;
 
   return (
     <section className="relative overflow-hidden">
-      {/* Gradient/abstract cover */}
+      {/* Cover image — admin İçerik'ten yüklendiyse arka planda göster */}
+      {coverUrl && (
+        <div aria-hidden className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={coverUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Okunabilirlik için koyu overlay */}
+          <div className="absolute inset-0 bg-[#001835]/70" />
+        </div>
+      )}
+
+      {/* Gradient/abstract cover — kapak yoksa baskın olarak görünür,
+          kapak varsa overlay'in üstünde sadece doku katar */}
+      {!coverUrl && (
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, #001835 0%, #012d59 55%, #00677f 120%)",
+          }}
+        />
+      )}
       <div
         aria-hidden
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(135deg, #001835 0%, #012d59 55%, #00677f 120%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-60"
+        className={`absolute inset-0 pointer-events-none ${coverUrl ? "opacity-30" : "opacity-60"}`}
         style={{
           background:
             "radial-gradient(at 20% 20%, rgba(102,218,255,0.28) 0%, transparent 50%), radial-gradient(at 80% 85%, rgba(0,103,127,0.35) 0%, transparent 55%)",
@@ -60,16 +85,18 @@ export function CampaignHero() {
               transition={{ duration: 0.55, delay: 0.05 }}
               className="mt-5 text-[34px] md:text-[48px] lg:text-[56px] font-bold tracking-[-0.02em] leading-[1.05]"
             >
-              {campaign.title}
+              {heroTitle}
             </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.12 }}
-              className="mt-4 text-[15px] md:text-[17px] leading-[26px] text-white/85 max-w-2xl"
-            >
-              {campaign.subtitle}
-            </motion.p>
+            {heroSubtitle && (
+              <motion.p
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.12 }}
+                className="mt-4 text-[15px] md:text-[17px] leading-[26px] text-white/85 max-w-2xl"
+              >
+                {heroSubtitle}
+              </motion.p>
+            )}
 
             {/* Approval badge */}
             <motion.div
