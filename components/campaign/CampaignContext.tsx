@@ -179,15 +179,31 @@ export function CampaignProvider({
       if (icerikRes.status === "fulfilled" && icerikRes.value.ok) {
         setIcerik(icerikRes.value.content);
         gotAny = true;
+        // eslint-disable-next-line no-console
+        console.log("[CampaignContext] /icerik →", {
+          heroBaslik: icerikRes.value.content.heroBaslik,
+          heroAltBaslik: icerikRes.value.content.heroAltBaslik,
+          coverUrl: icerikRes.value.content.coverUrl,
+          doktorAdi: icerikRes.value.content.doktorAdi,
+        });
       } else {
         failures.push("içerik");
+        // eslint-disable-next-line no-console
+        console.warn("[CampaignContext] /icerik başarısız", icerikRes);
       }
 
       if (galeriRes.status === "fulfilled" && galeriRes.value.ok) {
         setGaleri(galeriRes.value.items);
         gotAny = true;
+        // eslint-disable-next-line no-console
+        console.log("[CampaignContext] /galeri →", {
+          count: galeriRes.value.items.length,
+          first: galeriRes.value.items[0]?.fotoUrl,
+        });
       } else {
         failures.push("galeri");
+        // eslint-disable-next-line no-console
+        console.warn("[CampaignContext] /galeri başarısız", galeriRes);
       }
 
       setApiConnected(gotAny);

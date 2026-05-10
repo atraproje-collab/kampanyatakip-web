@@ -7,7 +7,6 @@ import {
   Camera,
   ClipboardCheck,
   HeartPulse,
-  Image as ImageIcon,
   Images,
   Plane,
   Quote,
@@ -69,7 +68,14 @@ export function CampaignStory() {
 
   const hasDoctor = icerik.doktorAlintisi.trim().length > 0;
   const galleryTeaser = galeri.slice(0, 3);
-  const coverUrl = icerik.coverUrl;
+
+  // Yan figure görseli: 1) admin İçerik kapak  2) galeri'nin ilk fotosu
+  // 3) hiç yok → tüm figure render edilmiyor.
+  const sideImageUrl = icerik.coverUrl.trim() || galeri[0]?.fotoUrl || "";
+
+  // Caption: hero başlığını yansıt — sabit string yok.
+  const sideImageCaption =
+    icerik.heroBaslik.trim() || campaign.title.trim() || "";
 
   return (
     <div className="space-y-10 md:space-y-12">
@@ -78,31 +84,22 @@ export function CampaignStory() {
         {/* Photo — first on mobile, second on desktop */}
         <div className="order-first lg:order-last">
           <div className="lg:sticky lg:top-28 space-y-4">
-            <figure className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant shadow-[0_10px_20px_rgba(0,24,53,0.08)] group bg-surface-container-low">
-              {coverUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={coverUrl}
-                    alt={
-                      icerik.heroBaslik
-                        ? `${icerik.heroBaslik} — kampanya kapak fotoğrafı`
-                        : "Kampanya kapak fotoğrafı"
-                    }
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
+            {sideImageUrl && (
+              <figure className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-outline-variant shadow-[0_10px_20px_rgba(0,24,53,0.08)] group bg-surface-container-low">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={sideImageUrl}
+                  alt={sideImageCaption || "Kampanya fotoğrafı"}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                {sideImageCaption && (
                   <span className="absolute left-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white px-3 py-1.5 text-[11.5px] font-semibold">
                     <Camera size={12} strokeWidth={2.25} />
-                    Kampanya kapak fotoğrafı
+                    {sideImageCaption}
                   </span>
-                </>
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant gap-2 px-4 text-center">
-                  <ImageIcon size={32} className="opacity-50" />
-                  <p className="text-[12.5px]">Kapak fotoğrafı henüz eklenmemiş</p>
-                </div>
-              )}
-            </figure>
+                )}
+              </figure>
+            )}
 
             {/* Gallery teaser — gerçek galeri foto'larından ilk 3 */}
             {galleryTeaser.length > 0 && (
