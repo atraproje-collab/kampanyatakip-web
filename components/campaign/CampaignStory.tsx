@@ -48,6 +48,17 @@ const TIMELINE = [
   },
 ];
 
+/** "2026-05-12T12:34:00Z" → "Mayıs 2026". Boş/geçersiz değerde "" döner. */
+function formatMonthYearTr(iso: string): string {
+  if (!iso) return "";
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t) || t === 0) return "";
+  return new Date(t).toLocaleDateString("tr-TR", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export function CampaignStory() {
   const { campaign, icerik, galeri } = useCampaign();
 
@@ -106,20 +117,34 @@ export function CampaignStory() {
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {galleryTeaser.map((g) => (
-                    <div
-                      key={g.id}
-                      className="relative aspect-square rounded-lg overflow-hidden border border-outline-variant bg-surface-container"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={g.fotoUrl}
-                        alt={g.baslik || `Galeri fotoğrafı #${g.id}`}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  ))}
+                  {galleryTeaser.map((g, idx) => {
+                    const caption = g.baslik.trim() || `Foto #${idx + 1}`;
+                    const dateLabel = formatMonthYearTr(g.yuklenmeTarihi);
+                    return (
+                      <div
+                        key={g.id}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-outline-variant bg-surface-container"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={g.fotoUrl}
+                          alt={caption}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-1.5 py-1">
+                          <p className="text-[10px] font-semibold leading-tight text-white line-clamp-1">
+                            {caption}
+                          </p>
+                          {dateLabel && (
+                            <p className="text-[9px] text-white/75 leading-tight tabular-nums">
+                              {dateLabel}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <p className="mt-2.5 text-[11.5px] leading-[16px] text-on-surface-variant">
                   + Toplam {galeri.length.toLocaleString("tr-TR")} fotoğraf için{" "}

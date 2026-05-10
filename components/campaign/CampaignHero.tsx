@@ -13,12 +13,15 @@ export function CampaignHero() {
   const { provinceApproval } = campaign;
 
   // Hero başlığı/alt başlığı için fallback zinciri:
-  // 1) admin İçerik formu (icerik.heroBaslik)
-  // 2) admin Ayarlar formu (campaign.title — DB'den)
+  // 1) admin İçerik formu (icerik.heroBaslik)  ← öncelik
+  // 2) admin Ayarlar formu (campaign.title — DB)
   // 3) statik metin
-  const heroTitle = icerik.heroBaslik || campaign.title || "Kampanya Adı";
-  const heroSubtitle = icerik.heroAltBaslik || campaign.subtitle || "";
-  const coverUrl = icerik.coverUrl;
+  // .trim() ile whitespace-only değerler de fallback tetiklesin.
+  const heroTitle =
+    icerik.heroBaslik.trim() || campaign.title.trim() || "Kampanya Adı";
+  const heroSubtitle =
+    icerik.heroAltBaslik.trim() || campaign.subtitle.trim() || "";
+  const coverUrl = icerik.coverUrl.trim();
 
   return (
     <section className="relative overflow-hidden">
