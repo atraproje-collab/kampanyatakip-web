@@ -268,28 +268,21 @@ export default function IcerikPage() {
           >
             <div className="px-5 py-4 space-y-3">
               {content.coverUrl ? (
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low">
+                <div className="relative w-full max-w-2xl mx-auto aspect-video rounded-xl overflow-hidden border border-outline-variant bg-surface-container-low">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={content.coverUrl}
                     alt="Kapak fotoğrafı önizleme"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  <button
-                    type="button"
-                    onClick={() => updateField("coverUrl", "")}
-                    className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 text-white text-label-sm font-semibold hover:bg-black/75 transition"
-                    aria-label="Kapak fotoğrafını kaldır"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Kaldır
-                  </button>
                 </div>
               ) : (
-                <div className="w-full aspect-video rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low/40 flex items-center justify-center text-center px-4">
+                <div className="w-full max-w-md mx-auto h-40 rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low/40 flex items-center justify-center text-center px-4">
                   <div className="text-on-surface-variant">
-                    <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-60" />
-                    <p className="text-body-sm font-medium">Henüz kapak fotoğrafı yok</p>
+                    <ImageIcon className="w-7 h-7 mx-auto mb-1.5 opacity-60" />
+                    <p className="text-label-md font-medium">
+                      Henüz kapak fotoğrafı yok
+                    </p>
                     <p className="text-label-sm mt-0.5">
                       Aşağıdaki butonla yükleyebilirsiniz
                     </p>
@@ -305,7 +298,7 @@ export default function IcerikPage() {
                 onChange={handleFileChange}
               />
 
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center justify-center gap-2 flex-wrap">
                 <Button
                   variant={content.coverUrl ? "ghost" : "primary"}
                   size="sm"
@@ -324,10 +317,17 @@ export default function IcerikPage() {
                     </>
                   )}
                 </Button>
-                <span className="text-label-sm text-on-surface-variant">
-                  Cloudinary klasörü:{" "}
-                  <code className="font-mono">kampanyatakip/kapak</code>
-                </span>
+                {content.coverUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateField("coverUrl", "")}
+                    disabled={uploading}
+                  >
+                    <X className="w-4 h-4" />
+                    Kaldır
+                  </Button>
+                )}
               </div>
 
               {uploadError && (
