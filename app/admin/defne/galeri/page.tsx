@@ -43,8 +43,11 @@ export default function GaleriPage() {
   // Pre-upload kategori seçim modal'ı
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerKategori, setPickerKategori] = useState<string>("diger");
-  // Widget callback'inde okunabilmesi için ref
+  // Widget callback'inde okunabilmesi için ref — pickerKategori ile sürekli senkron.
   const pendingKategoriRef = useRef<string>("diger");
+  useEffect(() => {
+    pendingKategoriRef.current = pickerKategori;
+  }, [pickerKategori]);
 
   // Aktif filtre
   const [activeFilter, setActiveFilter] = useState<string>(FILTER_ALL);
@@ -136,17 +139,29 @@ export default function GaleriPage() {
     setUploadInProgress(true);
     const kategori = pendingKategoriRef.current || "diger";
     let nextOrder = nextSiralama(itemsRef.current);
+
+    // eslint-disable-next-line no-console
+    console.log("[GaleriEkle] Batch başlatılıyor:", {
+      kategori,
+      pickerSelection: pickerKategori,
+      urlCount: urls.length,
+      startSiralama: nextOrder,
+    });
+
     const results = await Promise.all(
-      urls.map((u) =>
-        createGaleriItem({
+      urls.map((u) => {
+        const body = {
           foto_url: u,
           baslik: "",
           aciklama: "",
-          tip: "galeri",
+          tip: "galeri" as const,
           kategori,
           siralama: nextOrder++,
-        }),
-      ),
+        };
+        // eslint-disable-next-line no-console
+        console.log("[GaleriEkle] Yüklenecek body:", body);
+        return createGaleriItem(body);
+      }),
     );
     const okCount = results.filter((r) => r.ok).length;
     const failCount = results.length - okCount;

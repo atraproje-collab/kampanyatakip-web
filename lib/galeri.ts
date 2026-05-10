@@ -153,6 +153,15 @@ export async function createGaleriItem(
   payload: CreateGaleriPayload,
   slug: string = DEFAULT_SLUG,
 ): Promise<{ ok: boolean; error?: string }> {
+  const serialized = JSON.stringify(payload);
+  // eslint-disable-next-line no-console
+  console.log("[createGaleriItem] POST →", {
+    url: `/api/kampanya/${slug}/galeri-ekle`,
+    payload,
+    bodyJson: serialized,
+    hasKategori: "kategori" in payload,
+    kategoriValue: payload.kategori ?? null,
+  });
   try {
     const res = await fetch(
       `/api/kampanya/${slug}/galeri-ekle?t=${Date.now()}`,
@@ -163,18 +172,27 @@ export async function createGaleriItem(
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: serialized,
       },
     );
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[createGaleriItem] FAIL HTTP ${res.status}${errText ? ` — ${errText.slice(0, 200)}` : ""}`,
+      );
       return {
         ok: false,
         error: `HTTP ${res.status}${errText ? ` — ${errText.slice(0, 160)}` : ""}`,
       };
     }
+    const data = await res.json().catch(() => null);
+    // eslint-disable-next-line no-console
+    console.log("[createGaleriItem] OK →", data);
     return { ok: true };
   } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[createGaleriItem] ERROR:", e);
     return {
       ok: false,
       error: e instanceof Error ? e.message : "network error",
