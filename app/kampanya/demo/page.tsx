@@ -9,6 +9,7 @@ import { DonationToast } from "@/components/campaign/DonationToast";
 import { TrustPanel } from "@/components/campaign/TrustPanel";
 import { FollowSocialButtons } from "@/components/campaign/FollowSocialButtons";
 import { SystemAttribution } from "@/components/campaign/SystemAttribution";
+import AiChatWidget from "@/components/AiChatWidget";
 import { demoCampaign } from "@/lib/mock-campaign-data";
 
 export const metadata: Metadata = {
@@ -104,6 +105,9 @@ export default function CampaignDemoPage() {
         <SystemAttribution />
 
         <DonationToast />
+
+        {/* AI Asistan — floating sağ alt */}
+        <AiChatWidget />
 
         {/* Structured data */}
         <script
