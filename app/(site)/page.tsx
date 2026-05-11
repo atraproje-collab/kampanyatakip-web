@@ -1,7 +1,7 @@
 import { Hero } from "@/components/sections/Hero";
 import { ValueProps } from "@/components/sections/ValueProps";
 import { Features } from "@/components/sections/Features";
-import { Pricing } from "@/components/sections/Pricing";
+import PaketlerSection from "@/components/PaketlerSection";
 import { CTAClosing } from "@/components/sections/CTAClosing";
 
 export default function Home() {
@@ -10,7 +10,7 @@ export default function Home() {
       <Hero />
       <ValueProps />
       <Features />
-      <Pricing />
+      <PaketlerSection />
       <CTAClosing />
     </>
   );
