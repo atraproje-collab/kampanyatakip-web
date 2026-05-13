@@ -107,7 +107,7 @@ export function Hero() {
         </span>
       </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[85vh] md:min-h-[640px] flex items-center py-24 md:py-32">
+      <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[85vh] md:min-h-[640px] flex items-center py-16 md:py-20">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}

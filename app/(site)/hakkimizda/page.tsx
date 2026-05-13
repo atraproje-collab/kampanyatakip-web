@@ -289,7 +289,7 @@ export default function HakkimizdaPage() {
       />
 
       {/* Hikaye */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="max-w-3xl mx-auto">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -360,7 +360,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Çözdüğümüz Problemler */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-16 md:py-20 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -409,7 +409,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Nasıl Farkındayız (karşılaştırma) */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -467,7 +467,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Misyon · Vizyon · Taahhüt */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-16 md:py-20 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -499,7 +499,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Değerler */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -533,7 +533,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Teknik Derinlik */}
-      <section className="py-16 md:py-24 bg-primary-container text-white relative overflow-hidden">
+      <section className="py-16 md:py-20 bg-primary-container text-white relative overflow-hidden">
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none opacity-50"
@@ -583,7 +583,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Hizmetlerimiz */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -619,7 +619,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Kime Hizmet Veriyoruz */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-16 md:py-20 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -673,7 +673,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Süreç */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="text-center max-w-2xl mx-auto mb-12 md:mb-14">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
@@ -717,7 +717,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Sayılarla */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-16 md:py-20 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-10">
             <EarlyAccessBadge label="ERKEN ERİŞİM AŞAMASI" />
@@ -753,7 +753,7 @@ export default function HakkimizdaPage() {
       </section>
 
       {/* Vizyon Quote */}
-      <section className="py-16 md:py-24">
+      <section className="py-16 md:py-20">
         <Container>
           <div className="relative mx-auto max-w-4xl rounded-3xl bg-surface-container p-10 md:p-16 overflow-hidden">
             <div

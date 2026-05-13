@@ -23,7 +23,7 @@ const itemVariant = {
 
 export function Features() {
   return (
-    <section id="features" className="py-20 md:py-24 bg-surface-container-low">
+    <section id="features" className="py-12 md:py-16 bg-surface-container-low">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 24 }}

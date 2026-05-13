@@ -320,7 +320,7 @@ function PaketKart({ paket, idx }: { paket: Paket; idx: number }) {
 export default function PaketlerSection() {
   return (
     <section
-      className="py-20 bg-gradient-to-b from-slate-50 to-white"
+      className="py-12 md:py-16 bg-gradient-to-b from-slate-50 to-white"
       id="paketler"
     >
       <div className="container mx-auto px-4 max-w-7xl">

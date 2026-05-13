@@ -188,7 +188,7 @@ export default function BasvuruPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-16 md:py-20 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="text-center mb-12 max-w-2xl mx-auto">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
