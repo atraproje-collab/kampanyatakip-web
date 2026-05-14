@@ -98,7 +98,7 @@ export default function BasvuruPage() {
         badge="ERKEN ERİŞİM"
       />
 
-      <section className="py-14 md:py-20">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-12 items-start">
             {/* Left: Next steps */}
@@ -188,9 +188,9 @@ export default function BasvuruPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-8 md:py-12 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
-          <div className="text-center mb-12 max-w-2xl mx-auto">
+          <div className="text-center mb-6 max-w-2xl mx-auto">
             <span className="text-[13px] font-semibold text-secondary uppercase tracking-widest">
               Öncü Kuruluşlar
             </span>
@@ -236,7 +236,7 @@ export default function BasvuruPage() {
       </section>
 
       {/* FAQ teaser */}
-      <section className="py-16 md:py-20">
+      <section className="py-8 md:py-10">
         <Container>
           <div className="text-center mb-10">
             <h2 className="text-[24px] md:text-[28px] font-semibold text-primary-container tracking-[-0.02em]">

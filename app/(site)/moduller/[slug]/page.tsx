@@ -57,7 +57,7 @@ export default async function ModuleDetailPage(props: {
       />
 
       {/* Hero */}
-      <section className="py-12 md:py-16">
+      <section className="py-6 md:py-10">
         <Container>
           <Link
             href="/moduller"
@@ -96,7 +96,7 @@ export default async function ModuleDetailPage(props: {
       </section>
 
       {/* Features */}
-      <section className="py-12 md:py-16 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-6 md:py-10 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="max-w-4xl mx-auto">
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-[0.14em]">
@@ -126,7 +126,7 @@ export default async function ModuleDetailPage(props: {
       </section>
 
       {/* How it works */}
-      <section className="py-12 md:py-16">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="max-w-4xl mx-auto">
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-[0.14em]">
@@ -156,7 +156,7 @@ export default async function ModuleDetailPage(props: {
       </section>
 
       {/* Benefits */}
-      <section className="py-12 md:py-16 bg-surface-container-lowest border-y border-outline-variant">
+      <section className="py-6 md:py-10 bg-surface-container-lowest border-y border-outline-variant">
         <Container>
           <div className="max-w-4xl mx-auto">
             <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-secondary uppercase tracking-[0.14em]">
@@ -186,7 +186,7 @@ export default async function ModuleDetailPage(props: {
       </section>
 
       {/* Technical details */}
-      <section className="py-12 md:py-16">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="max-w-4xl mx-auto rounded-2xl bg-primary-container text-white p-7 md:p-9 relative overflow-hidden">
             <div
@@ -224,7 +224,7 @@ export default async function ModuleDetailPage(props: {
 
       {/* Related modules */}
       {related.length > 0 && (
-        <section className="py-12 md:py-16 bg-surface-container-lowest border-y border-outline-variant">
+        <section className="py-6 md:py-10 bg-surface-container-lowest border-y border-outline-variant">
           <Container>
             <div className="flex items-center justify-between flex-wrap gap-3 mb-8">
               <div>
@@ -279,7 +279,7 @@ export default async function ModuleDetailPage(props: {
       )}
 
       {/* CTA */}
-      <section className="py-14 md:py-20">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="relative overflow-hidden rounded-3xl p-10 md:p-14 hero-gradient text-white text-center">
             <div

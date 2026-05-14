@@ -82,7 +82,7 @@ export default function IletisimPage() {
         description="Sorularınızı yanıtlayalım, size özel çözüm sunalım"
       />
 
-      <section className="py-14 md:py-20">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-12">
             {/* Left column */}
@@ -177,7 +177,7 @@ export default function IletisimPage() {
       </section>
 
       {/* FAQ teaser */}
-      <section className="py-16 md:py-20 bg-surface-container-lowest border-t border-outline-variant">
+      <section className="py-8 md:py-10 bg-surface-container-lowest border-t border-outline-variant">
         <Container>
           <div className="text-center mb-10">
             <h2 className="text-[24px] md:text-[28px] font-semibold text-primary-container tracking-[-0.02em]">

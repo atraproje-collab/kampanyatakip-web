@@ -107,7 +107,7 @@ export function Hero() {
         </span>
       </div>
 
-      <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[85vh] md:min-h-[640px] flex items-center py-24 md:py-32">
+      <div className="relative mx-auto w-full max-w-7xl px-6 md:px-8 min-h-[85vh] md:min-h-[640px] flex items-center py-12 md:py-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
@@ -151,7 +151,7 @@ export function Hero() {
               </Link>
             </div>
 
-            <div className="mt-12 flex flex-wrap gap-6 md:gap-8">
+            <div className="mt-6 flex flex-wrap gap-6 md:gap-8">
               {TRUST_BADGES.map(({ icon: Icon, label }) => (
                 <div
                   key={label}

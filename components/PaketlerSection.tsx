@@ -320,7 +320,7 @@ function PaketKart({ paket, idx }: { paket: Paket; idx: number }) {
 export default function PaketlerSection() {
   return (
     <section
-      className="py-20 bg-gradient-to-b from-slate-50 to-white"
+      className="py-8 bg-gradient-to-b from-slate-50 to-white"
       id="paketler"
     >
       <div className="container mx-auto px-4 max-w-7xl">
@@ -329,7 +329,7 @@ export default function PaketlerSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-6"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
             Size Uygun Paketi Seçin
@@ -341,7 +341,7 @@ export default function PaketlerSection() {
         </motion.div>
 
         {/* KATMAN 1 — Paket Kartları */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {PAKETLER.map((paket, idx) => (
             <PaketKart key={paket.ad} paket={paket} idx={idx} />
           ))}
@@ -352,7 +352,7 @@ export default function PaketlerSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-20"
+          className="mb-10"
         >
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium mb-3">
