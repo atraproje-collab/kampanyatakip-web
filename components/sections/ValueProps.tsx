@@ -56,7 +56,7 @@ const itemVariants = {
 
 export function ValueProps() {
   return (
-    <section id="value-props" className="py-20 md:py-24 bg-surface-container-lowest">
+    <section id="value-props" className="py-8 md:py-12 bg-surface-container-lowest">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 24 }}

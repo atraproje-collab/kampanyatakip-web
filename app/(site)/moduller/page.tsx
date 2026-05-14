@@ -22,7 +22,7 @@ export default function ModullerIndexPage() {
         badge="17 MODÜL"
       />
 
-      <section className="py-12 md:py-16">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <p className="text-[15px] leading-[24px] text-on-surface-variant max-w-2xl">
@@ -74,7 +74,7 @@ export default function ModullerIndexPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-14 md:py-20">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="relative overflow-hidden rounded-3xl p-10 md:p-14 hero-gradient text-white text-center">
             <div

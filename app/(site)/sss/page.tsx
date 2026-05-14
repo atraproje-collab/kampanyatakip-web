@@ -20,7 +20,7 @@ export default function SSSPage() {
         description="KAMPANYATAKİP hakkında merak edilen tüm soruların cevapları"
       />
 
-      <section className="py-14 md:py-20">
+      <section className="py-6 md:py-10">
         <Container>
           <div className="max-w-3xl mx-auto">
             <AccordionFAQ />

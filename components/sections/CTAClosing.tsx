@@ -14,7 +14,7 @@ const TRUST_BADGES = [
 
 export function CTAClosing() {
   return (
-    <section className="py-20 md:py-24 bg-surface">
+    <section className="py-8 md:py-12 bg-surface">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 40 }}
