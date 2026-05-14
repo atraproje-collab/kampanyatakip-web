@@ -23,14 +23,14 @@ const itemVariant = {
 
 export function Features() {
   return (
-    <section id="features" className="py-12 md:py-16 bg-surface-container-low">
+    <section id="features" className="py-8 md:py-12 bg-surface-container-low">
       <Container>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-          className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 mb-12 md:mb-16"
+          className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 mb-6 md:mb-16"
         >
           <div className="max-w-2xl">
             <span className="text-[13px] font-semibold text-secondary tracking-widest uppercase">
