@@ -22,6 +22,7 @@ import {
   Receipt,
   Settings,
   Store,
+  Target,
   Users,
   X,
 } from "lucide-react";
@@ -72,6 +73,12 @@ const NAV: NavItem[] = [
     label: "Influencer Radar",
     shortLabel: "Radar",
     icon: Radar,
+  },
+  {
+    href: "/admin/defne/reklam-performansi",
+    label: "Reklam Performansı",
+    shortLabel: "Reklam",
+    icon: Target,
   },
   { href: "/admin/defne/raporlar", label: "Raporlar", shortLabel: "Rapor", icon: FileBarChart },
   { href: "/admin/defne/ayarlar", label: "Ayarlar", shortLabel: "Ayar", icon: Settings },
