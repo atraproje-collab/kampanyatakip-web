@@ -7,6 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   BarChart3,
   Bot,
+  Briefcase,
   Coins,
   FileBarChart,
   FileText,
@@ -16,6 +17,7 @@ import {
   Menu,
   MessageCircle,
   PiggyBank,
+  Radar,
   Radio,
   Receipt,
   Settings,
@@ -59,6 +61,18 @@ const NAV: NavItem[] = [
   { href: "/admin/defne/galeri", label: "Galeri", shortLabel: "Galeri", icon: Images },
   { href: "/admin/defne/ai-asistan", label: "AI Asistan", shortLabel: "AI", icon: Bot },
   { href: "/admin/defne/canli-yayin", label: "TikTok Geliri", shortLabel: "TikTok", icon: Radio },
+  {
+    href: "/admin/defne/kurumsal-destekci",
+    label: "Kurumsal Destekçi",
+    shortLabel: "Kurumsal",
+    icon: Briefcase,
+  },
+  {
+    href: "/admin/defne/influencer-radar",
+    label: "Influencer Radar",
+    shortLabel: "Radar",
+    icon: Radar,
+  },
   { href: "/admin/defne/raporlar", label: "Raporlar", shortLabel: "Rapor", icon: FileBarChart },
   { href: "/admin/defne/ayarlar", label: "Ayarlar", shortLabel: "Ayar", icon: Settings },
 ];
