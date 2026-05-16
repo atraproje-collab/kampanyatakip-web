@@ -34,6 +34,12 @@ type ContactCard = {
 
 const CONTACT_CARDS: ContactCard[] = [
   {
+    icon: Mail,
+    title: "E-posta",
+    value: siteConfig.contact.email,
+    href: `mailto:${siteConfig.contact.email}`,
+  },
+  {
     icon: Phone,
     title: "Telefon",
     value: siteConfig.contact.phone,
