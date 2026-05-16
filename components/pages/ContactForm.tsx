@@ -77,14 +77,38 @@ export function ContactForm() {
 
     setLoading(true);
     try {
-      // TODO: Connect to n8n webhook or API endpoint
-      console.log("Contact form submission:", data);
-      await new Promise((r) => setTimeout(r, 1500));
+      // API'nin beklediği alan adlarıyla map'le.
+      const konuLabel =
+        SUBJECT_OPTIONS.find((o) => o.value === data.subject)?.label ??
+        data.subject;
+      const payload = {
+        ad: data.fullName,
+        email: data.email,
+        telefon: data.phone,
+        konu: konuLabel,
+        mesaj: data.message,
+        kurulus: data.organization,
+      };
+
+      const res = await fetch("/api/iletisim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || "Bir hata oluştu");
+      }
+
       setSuccess(true);
       setData(initialData);
-    } catch {
+    } catch (e) {
       setSubmitError(
-        "Mesajınız gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.",
+        e instanceof Error && e.message
+          ? e.message
+          : "Mesajınız gönderilirken bir sorun oluştu. Lütfen tekrar deneyin.",
       );
     } finally {
       setLoading(false);
