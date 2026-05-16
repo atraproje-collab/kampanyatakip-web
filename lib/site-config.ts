@@ -10,7 +10,7 @@ export const siteConfig = {
   },
 
   contact: {
-    email: "info@kampanyatakip.com",
+    email: "bilgi@kampanyatakip.com.tr",
     supportEmail: "destek@kampanyatakip.com",
     phone: "0850 XXX XX XX",
     phoneLink: "tel:+908500000000",
