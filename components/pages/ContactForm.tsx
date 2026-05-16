@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/pages/FormField";
-import { siteConfig } from "@/lib/site-config";
+import { KvkkModal } from "@/components/pages/KvkkModal";
 
 type FormData = {
   fullName: string;
@@ -49,6 +48,7 @@ export function ContactForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [kvkkModalOpen, setKvkkModalOpen] = useState(false);
 
   const update = <K extends keyof FormData>(key: K, value: FormData[K]) => {
     setData((d) => ({ ...d, [key]: value }));
@@ -146,6 +146,7 @@ export function ContactForm() {
   }
 
   return (
+    <>
     <form
       onSubmit={handleSubmit}
       noValidate
@@ -242,12 +243,16 @@ export function ContactForm() {
         />
         <span>
           Kişisel verilerimin KVKK kapsamında işlenmesini kabul ediyorum.{" "}
-          <Link
-            href={siteConfig.urls.kvkk}
-            className="text-secondary underline underline-offset-2 hover:text-on-secondary-container"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setKvkkModalOpen(true);
+            }}
+            className="text-secondary underline underline-offset-2 hover:text-on-secondary-container cursor-pointer"
           >
             Aydınlatma metni
-          </Link>
+          </button>
           .
         </span>
       </label>
@@ -281,5 +286,11 @@ export function ContactForm() {
         )}
       </Button>
     </form>
+
+    <KvkkModal
+      open={kvkkModalOpen}
+      onClose={() => setKvkkModalOpen(false)}
+    />
+    </>
   );
 }
