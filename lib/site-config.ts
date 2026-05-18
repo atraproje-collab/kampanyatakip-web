@@ -45,6 +45,7 @@ export const siteConfig = {
   urls: {
     home: "/",
     about: "/hakkimizda",
+    howItWorks: "/nasil-calisir",
     faq: "/sss",
     contact: "/iletisim",
     campaignDemo: "/kampanya/demo",
@@ -59,6 +60,7 @@ export const siteConfig = {
   nav: [
     { label: "Ana Sayfa", href: "/" },
     { label: "Hakkımızda", href: "/hakkimizda" },
+    { label: "Nasıl Çalışır", href: "/nasil-calisir" },
     { label: "Modüller", href: "/moduller" },
     { label: "Fiyatlandırma", href: "/#pricing" },
     { label: "SSS", href: "/sss" },
