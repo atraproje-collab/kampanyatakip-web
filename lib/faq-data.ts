@@ -25,47 +25,44 @@ export const faqCategories: FaqCategory[] = [
 ];
 
 export const faqItems: FaqItem[] = [
+  // ── Fiyatlandırma ─────────────────────────────────────────────────────────
   {
-    category: "genel",
-    question: "KAMPANYATAKİP nedir?",
+    category: "fiyatlandirma",
+    question: "Ücretler nedir?",
     answer:
-      "KAMPANYATAKİP, Türkiye'deki valilik onaylı yardım kampanyaları için geliştirilmiş, yapay zeka destekli bir bağış yönetim ve şeffaflık platformudur. Her kampanya için özel, izole bir sistem kurar ve tüm bağış/harcama süreçlerini otomatikleştirir.",
+      "Fiyat bilgisi için iletişime geçin: bilgi@kampanyatakip.com.tr — size kampanyanıza özel teklif sunalım.",
   },
   {
-    category: "genel",
-    question: "Kimler kullanabilir?",
+    category: "fiyatlandirma",
+    question: "Komisyon alıyor musunuz?",
     answer:
-      "Valilik onaylı yardım kampanyası düzenleyen tüm kuruluşlar (dernekler, vakıflar, kampanya komisyonları) KAMPANYATAKİP'i kullanabilir. SMA, DMD, kanser, afet yardımı, eğitim bağışı gibi her tür kampanya desteklenir.",
+      "Hayır. KAMPANYATAKİP bir yazılım/platform kiralama hizmetidir. Bağışlardan komisyon almaz, ödeme aracısı değildir. Aylık paket ücreti dışında ek bir tahsilat yapmıyoruz.",
   },
   {
-    category: "genel",
-    question: "Valilik onayı olmadan kullanılabilir mi?",
+    category: "fiyatlandirma",
+    question: "Gizli ücret var mı?",
     answer:
-      "Hayır. KAMPANYATAKİP, yalnızca valilik onaylı kampanyalara hizmet verir. Bu, platformumuzun güvenilirlik ve hukuki uygunluk standartlarının temel şartıdır.",
+      "Hayır. Paket fiyatına kurulum, izole sunucu, alan adı, SSL, yedekleme, destek ve tüm modüller dahildir. Paket limitlerini aştığınızda (mesaj veya dakika) ek ücret şeffaf şekilde uygulanır.",
   },
   {
-    category: "kurulum",
-    question: "Kurulum ne kadar sürer?",
+    category: "fiyatlandirma",
+    question: "Sözleşme süresi nedir?",
     answer:
-      "Seçtiğiniz pakete bağlı olarak 2-4 iş günü içinde kampanyanız tamamen faaliyete geçer. Bu süreçte izole sunucunuz hazırlanır, alan adınız yapılandırılır, tüm modüller kurulur ve eğitim verilir.",
+      "Aylık ödeme sistemiyle çalışıyoruz. Minimum sözleşme süresi yoktur, istediğiniz ay iptal edebilirsiniz.",
   },
+
+  // ── Güvenlik & Şeffaflık ──────────────────────────────────────────────────
   {
-    category: "kurulum",
-    question: "Kendi alan adımı kullanabilir miyim?",
+    category: "guvenlik",
+    question: "Para güvende mi?",
     answer:
-      "Evet. Mevcut alan adınızı sisteme bağlayabilir veya size özel bir alan adı alabiliriz. SSL sertifikası otomatik olarak kurulur ve yenilenir.",
-  },
-  {
-    category: "kurulum",
-    question: "Mevcut bağış verilerimi sisteme aktarabilir miyim?",
-    answer:
-      "Evet. Excel, CSV veya banka ekstresi formatındaki mevcut verileriniz kurulum sırasında sisteme aktarılır. Geçmiş bağışlar da şeffaflık merkezinde görüntülenir.",
+      "Bağışçılar doğrudan sizin banka hesabınıza transfer yapar. Para KAMPANYATAKİP sistemine hiç girmez — biz sadece takip ve raporlama sağlarız. Kampanya sahibinin banka hesabı tek tahsilat noktasıdır.",
   },
   {
     category: "guvenlik",
     question: "Verilerim güvende mi?",
     answer:
-      "Evet. Her kampanya için izole bir sunucu kurulur (başka müşterilerle veri paylaşımı yoktur). Tüm bağış kayıtları değiştirilemez veritabanında tutulur, günlük otomatik yedekleme yapılır ve kurumsal güvenlik katmanı ile korunur.",
+      "Evet. Her kampanya tamamen izole sunucuda çalışır (başka müşteriyle veri paylaşımı yoktur). KVKK uyumlu altyapı, bağışçı gizlilik maskesi ve değiştirilemez kayıt sistemi ile verileriniz güvende.",
   },
   {
     category: "guvenlik",
@@ -83,37 +80,67 @@ export const faqItems: FaqItem[] = [
     category: "guvenlik",
     question: "Kayıtlar silinebilir mi?",
     answer:
-      "Hayır. Sistemdeki tüm gelir ve gider kayıtları değiştirilemez (immutable) yapıda tutulur. Hatalı giriş yapılırsa, düzeltme ayrı bir kayıt olarak eklenir; orijinal kayıt silinmez. Bu, KAMPANYATAKİP'in denetim standardı olma özelliğinin temelidir.",
+      "Hayır. Tüm gelir ve gider kayıtları değiştirilemez (immutable) yapıda tutulur. Hatalı giriş yapılırsa düzeltme yeni bir kayıt olarak eklenir; orijinal kayıt tarih ve imzasıyla korunur.",
+  },
+
+  // ── Kurulum ───────────────────────────────────────────────────────────────
+  {
+    category: "kurulum",
+    question: "Kurulum ne kadar sürer?",
+    answer:
+      "2-4 iş günü içinde tüm altyapınız hazır olur. Bu süreçte izole sunucunuz hazırlanır, alan adınız yapılandırılır, tüm modüller kurulur ve eğitim verilir.",
   },
   {
-    category: "fiyatlandirma",
-    question: "Hangi paketler mevcut?",
+    category: "kurulum",
+    question: "Kendi alan adımı kullanabilir miyim?",
     answer:
-      "Dört paket sunuyoruz: Temel (9.900 TL/ay), Standart (17.900 TL/ay), Premium (29.900 TL/ay) ve Özel (teklife özel). Detaylı karşılaştırma için fiyatlandırma bölümümüze göz atabilirsiniz.",
+      "Evet. Mevcut alan adınızı sisteme bağlayabilir veya size özel bir alan adı alabiliriz. SSL sertifikası otomatik olarak kurulur ve yenilenir.",
   },
   {
-    category: "fiyatlandirma",
-    question: "Sözleşme süresi nedir?",
+    category: "kurulum",
+    question: "Mevcut bağış verilerimi sisteme aktarabilir miyim?",
     answer:
-      "Aylık ödeme sistemiyle çalışıyoruz. Minimum sözleşme süresi yoktur. İstediğiniz ay iptal edebilirsiniz.",
+      "Evet. Excel, CSV veya banka ekstresi formatındaki mevcut verileriniz kurulum sırasında sisteme aktarılır. Geçmiş bağışlar da şeffaflık merkezinde görüntülenir.",
+  },
+
+  // ── Genel ─────────────────────────────────────────────────────────────────
+  {
+    category: "genel",
+    question: "Hangi kampanyalar için uygundur?",
+    answer:
+      "Valilik onaylı tüm yardım kampanyaları için uygundur. SMA, DMD ve diğer nadir hastalık kampanyaları başta olmak üzere tüm onaylı kampanyalar sisteme dahil edilebilir.",
   },
   {
-    category: "fiyatlandirma",
-    question: "İptal edersem verilerim ne olur?",
+    category: "genel",
+    question: "KAMPANYATAKİP nedir?",
     answer:
-      "İptal sonrası 30 gün boyunca verileriniz saklanır ve indirme hakkınız vardır. 30 gün sonunda tüm veriler kalıcı olarak silinir.",
+      "Türkiye'deki valilik onaylı yardım kampanyaları için geliştirilmiş, yapay zeka destekli bir bağış yönetim ve şeffaflık platformudur. Her kampanya için özel, izole bir sistem kurar ve tüm bağış/harcama süreçlerini otomatikleştirir.",
   },
   {
-    category: "fiyatlandirma",
-    question: "Gizli ücret var mı?",
+    category: "genel",
+    question: "Valilik onayı olmadan kullanılabilir mi?",
     answer:
-      "Hayır. Paket fiyatına kurulum, sunucu, alan adı, SSL, yedekleme, destek ve tüm modüller dahildir. Aşım ücretleri (mesaj veya sesli hat dakika aşımı) paket limitlerinizi aştığınızda şeffaf şekilde uygulanır.",
+      "Hayır. KAMPANYATAKİP yalnızca valilik onaylı kampanyalara hizmet verir. Bu, platformumuzun güvenilirlik ve hukuki uygunluk standartlarının temel şartıdır.",
   },
+  {
+    category: "genel",
+    question: "Demo görebilir miyim?",
+    answer:
+      "Evet! /kampanya/demo adresinden canlı demo kampanyamızı (Minik Defne) inceleyebilir — gerçek veri akışıyla şeffaflık merkezini, bağış sürecini ve admin panelini görebilirsiniz.",
+  },
+  {
+    category: "genel",
+    question: "İletişim için?",
+    answer:
+      "bilgi@kampanyatakip.com.tr adresine yazabilir veya iletişim sayfamızdan formu doldurabilirsiniz. 1 iş günü içinde dönüş yaparız.",
+  },
+
+  // ── Teknik ────────────────────────────────────────────────────────────────
   {
     category: "teknik",
     question: "Mobil uygulama var mı?",
     answer:
-      "Kampanyalarınız tam responsive web sayfası olarak çalışır — tüm mobil tarayıcılarda mükemmel görünür. Ayrıca kampanya yöneticileri için mesajlaşma üzerinden tüm bildirimleri alırlar, ayrı uygulama kurmaya gerek yoktur.",
+      "Kampanyalarınız tam responsive web sayfası olarak çalışır — tüm mobil tarayıcılarda mükemmel görünür. Kampanya yöneticileri için ayrı bir uygulama kurmaya gerek yoktur.",
   },
   {
     category: "teknik",
