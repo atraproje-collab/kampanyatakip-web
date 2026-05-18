@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, MessageCircle, Send, X } from "lucide-react";
+import { Bot, ExternalLink, MessageCircle, Send, ShieldCheck, X } from "lucide-react";
 
 // ── Tipler ──────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,7 @@ const BRAND_GREEN = "#10b981";
 
 export default function AnaSayfaChat() {
   const [open, setOpen] = useState(false);
+  const [kvkkOnaylandi, setKvkkOnaylandi] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,16 +52,16 @@ export default function AnaSayfaChat() {
     }
   }, [messages, loading]);
 
-  // Widget açılınca input'a odak
+  // Widget açılınca (ve KVKK kabul edildikten sonra) input'a odak
   useEffect(() => {
-    if (!open) return;
+    if (!open || !kvkkOnaylandi) return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 200);
     return () => window.clearTimeout(t);
-  }, [open]);
+  }, [open, kvkkOnaylandi]);
 
   async function handleSend() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || !kvkkOnaylandi) return;
 
     const userMsg: ChatMessage = { role: "user", text, ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
@@ -173,35 +174,43 @@ export default function AnaSayfaChat() {
             </button>
           </div>
 
-          {/* Mesaj listesi */}
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50"
-          >
-            {messages.map((m, i) => (
-              <Bubble key={i} message={m} />
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl rounded-bl-sm shadow-sm">
-                  <div className="flex gap-1">
-                    <span
-                      className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    />
-                    <span
-                      className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    />
+          {/* KVKK onay ekranı — ilk açılışta */}
+          {!kvkkOnaylandi ? (
+            <KvkkConsent
+              onAccept={() => setKvkkOnaylandi(true)}
+              onDecline={() => setOpen(false)}
+            />
+          ) : (
+            /* Mesaj listesi */
+            <div
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50"
+            >
+              {messages.map((m, i) => (
+                <Bubble key={i} message={m} />
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-slate-200 px-3.5 py-2.5 rounded-2xl rounded-bl-sm shadow-sm">
+                    <div className="flex gap-1">
+                      <span
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <span
+                        className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Input */}
           <div className="p-2.5 bg-white border-t border-slate-200">
@@ -212,9 +221,13 @@ export default function AnaSayfaChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                disabled={loading}
-                placeholder="Mesajınızı yazın…"
-                className="flex-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-slate-100"
+                disabled={loading || !kvkkOnaylandi}
+                placeholder={
+                  kvkkOnaylandi
+                    ? "Mesajınızı yazın…"
+                    : "Önce gizlilik bildirimini onaylayın"
+                }
+                className="flex-1 px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
                 style={
                   {
                     "--tw-ring-color": BRAND_BLUE,
@@ -224,7 +237,7 @@ export default function AnaSayfaChat() {
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || !kvkkOnaylandi}
                 aria-label="Gönder"
                 className="w-10 h-10 rounded-xl text-white flex items-center justify-center disabled:bg-slate-300 disabled:cursor-not-allowed hover:opacity-90 transition-opacity shrink-0"
                 style={{
@@ -242,6 +255,72 @@ export default function AnaSayfaChat() {
         </div>
       )}
     </>
+  );
+}
+
+// ── KVKK onay ekranı ────────────────────────────────────────────────────────
+
+function KvkkConsent({
+  onAccept,
+  onDecline,
+}: {
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto p-5 bg-white flex flex-col">
+      <div className="flex-1 flex flex-col items-center text-center">
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+          style={{
+            backgroundColor: `${BRAND_BLUE}15`,
+            color: BRAND_BLUE,
+          }}
+        >
+          <ShieldCheck className="w-7 h-7" />
+        </div>
+        <h4 className="text-[16px] font-bold text-slate-900 mb-2">
+          Gizlilik Bildirimi
+        </h4>
+        <p className="text-[13px] leading-[20px] text-slate-600 max-w-xs">
+          Talebinize yanıt verebilmemiz amacıyla iletişim bilgileriniz
+          işlenebilir. Detaylı bilgi için{" "}
+          <a
+            href="/kvkk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-0.5"
+            style={{ color: BRAND_BLUE }}
+          >
+            Gizlilik Politikamızı
+            <ExternalLink className="w-3 h-3" aria-hidden />
+          </a>{" "}
+          inceleyebilirsiniz.
+        </p>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        <button
+          type="button"
+          onClick={onAccept}
+          className="w-full py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90"
+          style={{ backgroundColor: BRAND_BLUE }}
+        >
+          Kabul Ediyorum
+        </button>
+        <button
+          type="button"
+          onClick={onDecline}
+          className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors"
+        >
+          Kabul Etmiyorum
+        </button>
+      </div>
+
+      <p className="mt-3 text-[10.5px] text-slate-400 text-center">
+        Onay yalnızca bu oturum için geçerlidir.
+      </p>
+    </div>
   );
 }
 

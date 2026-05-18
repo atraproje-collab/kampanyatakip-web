@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
+  ExternalLink,
   Loader2,
   MessageCircle,
   Send,
+  ShieldCheck,
   Sparkles,
   Trash2,
   X,
@@ -35,6 +37,7 @@ type PendingForm = { konu?: string } | null;
 
 export default function AiChatWidget() {
   const [open, setOpen] = useState(false);
+  const [kvkkOnaylandi, setKvkkOnaylandi] = useState(false);
   // Lazy init: localStorage'dan oku. SSR'da loadHistory() zaten [] döner,
   // client hydrate olduktan sonra gerçek geçmişi alır.
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadHistory());
@@ -82,13 +85,13 @@ export default function AiChatWidget() {
     }
   }, [messages, loading, pendingForm]);
 
-  // ── Widget açılınca input'a odak ──────────────────────────────────────────
+  // ── Widget açılınca (ve KVKK onaylanınca) input'a odak ───────────────────
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !kvkkOnaylandi) return;
     const t = setTimeout(() => inputRef.current?.focus(), 200);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, kvkkOnaylandi]);
 
   // ── Açma/kapama ───────────────────────────────────────────────────────────
 
@@ -105,7 +108,7 @@ export default function AiChatWidget() {
 
   async function handleSend(textOverride?: string) {
     const text = (textOverride ?? input).trim();
-    if (!text || loading) return;
+    if (!text || loading || !kvkkOnaylandi) return;
 
     resetIdleTimer();
 
@@ -312,10 +315,20 @@ export default function AiChatWidget() {
             </div>
           </div>
 
+          {/* KVKK onay ekranı — ilk açılışta */}
+          {!kvkkOnaylandi && (
+            <KvkkConsentWidget
+              onAccept={() => setKvkkOnaylandi(true)}
+              onDecline={() => setOpen(false)}
+            />
+          )}
+
           {/* Mesajlar */}
           <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50"
+            className={`flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50 ${
+              !kvkkOnaylandi ? "hidden" : ""
+            }`}
           >
             {messages.length === 0 && (
               <div className="text-center py-8">
@@ -409,14 +422,18 @@ export default function AiChatWidget() {
                   resetIdleTimer();
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Mesajınızı yazın…"
-                disabled={loading}
-                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100"
+                placeholder={
+                  kvkkOnaylandi
+                    ? "Mesajınızı yazın…"
+                    : "Önce gizlilik bildirimini onaylayın"
+                }
+                disabled={loading || !kvkkOnaylandi}
+                className="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-100 disabled:cursor-not-allowed"
               />
               <button
                 type="button"
                 onClick={() => handleSend()}
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loading || !kvkkOnaylandi}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white p-2.5 rounded-xl transition-colors"
                 aria-label="Gönder"
               >
@@ -430,6 +447,66 @@ export default function AiChatWidget() {
         </div>
       )}
     </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KVKK Onay Ekranı
+// ─────────────────────────────────────────────────────────────────────────────
+
+function KvkkConsentWidget({
+  onAccept,
+  onDecline,
+}: {
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto p-5 bg-white flex flex-col">
+      <div className="flex-1 flex flex-col items-center text-center">
+        <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mb-4">
+          <ShieldCheck className="w-7 h-7" />
+        </div>
+        <h4 className="text-[16px] font-bold text-slate-900 mb-2">
+          Gizlilik Bildirimi
+        </h4>
+        <p className="text-[13px] leading-[20px] text-slate-600 max-w-xs">
+          Talebinize yanıt verebilmemiz amacıyla iletişim bilgileriniz
+          işlenebilir. Detaylı bilgi için{" "}
+          <a
+            href="/kvkk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-900 inline-flex items-center gap-0.5"
+          >
+            Gizlilik Politikamızı
+            <ExternalLink className="w-3 h-3" aria-hidden />
+          </a>{" "}
+          inceleyebilirsiniz.
+        </p>
+      </div>
+
+      <div className="mt-5 space-y-2">
+        <button
+          type="button"
+          onClick={onAccept}
+          className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+        >
+          Kabul Ediyorum
+        </button>
+        <button
+          type="button"
+          onClick={onDecline}
+          className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors"
+        >
+          Kabul Etmiyorum
+        </button>
+      </div>
+
+      <p className="mt-3 text-[10.5px] text-slate-400 text-center">
+        Onay yalnızca bu oturum için geçerlidir.
+      </p>
+    </div>
   );
 }
 
