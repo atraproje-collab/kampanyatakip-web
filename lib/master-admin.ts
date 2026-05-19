@@ -238,6 +238,9 @@ function parsePaket(raw: unknown): Paket {
 }
 
 function parseDurum(raw: unknown): Durum {
+  // Boolean `aktif` field (backend's primary signal)
+  if (typeof raw === "boolean") return raw ? "aktif" : "pasif";
+  if (typeof raw === "number") return raw !== 0 ? "aktif" : "pasif";
   const s = String(raw ?? "")
     .trim()
     .toLocaleLowerCase("tr-TR");
@@ -252,21 +255,34 @@ function parseCampaign(raw: unknown): MasterCampaign | null {
   const row = raw as Row;
   const slug = pickString(row, "slug", "kampanya_slug");
   if (!slug) return null;
+  // durum öncelikle `aktif` boolean field'ından, yoksa `durum` string'inden gelir.
+  const durumRaw = row.aktif ?? row.durum ?? row.status;
   return {
     slug,
     name: pickString(row, "kampanya_adi", "name", "ad") || slug,
     musteri: pickString(row, "musteri_adi", "musteri", "customer", "musteri_ad"),
     paket: parsePaket(row.paket ?? row.package),
     aylikUcret: pickNumber(row, "aylik_ucret", "monthly_fee", "aylik"),
-    durum: parseDurum(row.durum ?? row.status),
+    durum: parseDurum(durumRaw),
   };
 }
 
+/**
+ * Modül durumlarını hem `stant: true` hem `modul_stant: true` alan adlarından
+ * okuyabilen esnek parser. Backend hangi convention'ı kullanırsa kullansın.
+ */
 export function parseModuleConfig(raw: unknown): ModuleConfig {
   const row = unwrapSingle(raw);
   if (!row) return { ...DEFAULT_MODULE_CONFIG };
   const cfg: ModuleConfig = { ...DEFAULT_MODULE_CONFIG };
-  for (const k of ALL_MODULE_KEYS) cfg[k] = pickBool(row, k);
+  for (const k of ALL_MODULE_KEYS) {
+    // Önce ham anahtar, yoksa modul_ prefix'li alan adı
+    if (k in row) {
+      cfg[k] = pickBool(row, k);
+    } else {
+      cfg[k] = pickBool(row, `modul_${k}`);
+    }
+  }
   cfg.ai_mesaj_limit = pickNumber(row, "ai_mesaj_limit");
   cfg.whatsapp_mesaj_limit = pickNumber(row, "whatsapp_mesaj_limit");
   cfg.video_limit = pickNumber(row, "video_limit");
@@ -379,29 +395,80 @@ export async function saveModuleConfig(
   }
 }
 
+/**
+ * Kampanya aktif/pasif. POST body: { kampanya_slug, aktif: boolean }
+ * → /webhook/master/kampanya-durum
+ */
 export async function saveCampaignDurum(
   slug: string,
   durum: Durum,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const res = await fetch(
-      `/api/master/moduller-guncelle?t=${Date.now()}`,
-      {
-        method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ slug, durum }),
+    const res = await fetch(`/api/master/kampanya-durum?t=${Date.now()}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+      body: JSON.stringify({
+        kampanya_slug: slug,
+        aktif: durum === "aktif",
+      }),
+    });
     if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status}` };
+      const errText = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `HTTP ${res.status}${errText ? ` — ${errText.slice(0, 160)}` : ""}`,
+      };
     }
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "network error" };
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "network error",
+    };
+  }
+}
+
+/**
+ * Tek bir modülü aç/kapa. POST body: { kampanya_slug, modul_adi, aktif }
+ * → /webhook/master/modul-durum
+ * Granüler güncellemeler için (yan etkisiz tek modül toggle).
+ */
+export async function saveModuleStatus(
+  slug: string,
+  modulAdi: ModuleKey,
+  aktif: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`/api/master/modul-durum?t=${Date.now()}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        kampanya_slug: slug,
+        modul_adi: modulAdi,
+        aktif,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `HTTP ${res.status}${errText ? ` — ${errText.slice(0, 160)}` : ""}`,
+      };
+    }
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "network error",
+    };
   }
 }
 
