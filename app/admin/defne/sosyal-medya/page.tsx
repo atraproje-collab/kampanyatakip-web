@@ -18,6 +18,7 @@ import {
   Sparkles,
   Unplug,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { FormField, Modal, PanelCard, StatCard, inputClass } from "@/components/admin/AdminUI";
@@ -56,6 +57,14 @@ const PLATFORM_LABELS: Record<SocialPlatform, string> = {
 };
 
 export default function SocialMediaPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="fb_ig_dm">
+      <SocialMediaPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function SocialMediaPageInner() {
   const [accounts, setAccounts] = useState<SocialAccount[]>(initialAccounts);
   const [posts, setPosts] = useState<ScheduledPost[]>(initialPosts);
   const [openPlan, setOpenPlan] = useState(false);

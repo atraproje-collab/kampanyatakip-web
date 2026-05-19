@@ -7,9 +7,18 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { ComingSoonPage } from "@/components/admin/ComingSoonPage";
 
 export default function InfluencerRadarPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="influencer_radar">
+      <InfluencerRadarPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function InfluencerRadarPageInner() {
   return (
     <ComingSoonPage
       title="Influencer Radar"

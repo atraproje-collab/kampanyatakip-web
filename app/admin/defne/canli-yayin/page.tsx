@@ -13,6 +13,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -83,6 +84,14 @@ function validateBaseFields(form: TikTokIncomeInput): string | null {
 }
 
 export default function TikTokIncomePage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="tiktok_gelir">
+      <TikTokIncomePageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function TikTokIncomePageInner() {
   const [items, setItems] = useState<TikTokIncome[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

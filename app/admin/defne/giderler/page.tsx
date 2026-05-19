@@ -17,6 +17,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -307,6 +308,14 @@ function mockFallback(): Gider[] {
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default function GiderlerPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="gelir_gider">
+      <GiderlerPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function GiderlerPageInner() {
   const [items, setItems] = useState<Gider[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);

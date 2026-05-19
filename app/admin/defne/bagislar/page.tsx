@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, Eye, Search } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -185,6 +186,14 @@ const startOfWeek = (d: Date) => {
 };
 
 export default function DonationsPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="bagis_takibi">
+      <DonationsPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function DonationsPageInner() {
   const [items, setItems] = useState<AdminDonation[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);

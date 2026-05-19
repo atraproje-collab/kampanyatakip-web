@@ -17,6 +17,7 @@ import {
   Search,
   Star,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { FormField, PanelCard, inputClass } from "@/components/admin/AdminUI";
@@ -94,6 +95,14 @@ function normalizeWebsite(url: string): string {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function KurumsalDestekciPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="kurumsal_bagis">
+      <KurumsalDestekciPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function KurumsalDestekciPageInner() {
   const [sehir, setSehir] = useState("İstanbul");
   const [ilce, setIlce] = useState("");
   const [sektor, setSektor] = useState("");
