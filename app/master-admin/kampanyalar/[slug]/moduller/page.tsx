@@ -21,10 +21,10 @@ import {
   MODULE_LABELS,
   MODULE_LIMIT_LINKS,
   PAKET_BADGE_STYLE,
-  PAKET_PRESETS,
   fetchMasterCampaigns,
   fetchModuleConfig,
   saveModuleConfig,
+  saveModuleStatus,
   type LimitKey,
   type ModuleConfig,
   type ModuleKey,
@@ -52,6 +52,50 @@ const STANDART_MODULES_SET: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
   "canva",
   "reklam_performansi",
 ]);
+
+/** Paket seçilince otomatik uygulanan modül + limit değerleri. */
+type PaketPreset = {
+  moduller: Record<ModuleKey, boolean>;
+  limitler: Partial<Record<LimitKey, number>>;
+};
+
+const PAKET_PRESETS_FULL: Record<string, PaketPreset | null> = {
+  Temel: {
+    moduller: {
+      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
+      tiktok_gelir: true, gelir_gider: true, galeri: true,
+      raporlama: true, canva: true, reklam_performansi: true,
+      ai_sohbet: true,
+      fb_ig_dm: false, youtube_yorum: false, whatsapp: false,
+      ivr_0850: false, video: false, influencer_radar: false,
+      kurumsal_bagis: false, hukuk: false,
+    },
+    limitler: { ai_mesaj_limit: 1000, whatsapp_mesaj_limit: 0, video_limit: 0 },
+  },
+  Standart: {
+    moduller: {
+      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
+      tiktok_gelir: true, gelir_gider: true, galeri: true,
+      raporlama: true, canva: true, reklam_performansi: true,
+      ai_sohbet: true, fb_ig_dm: true, youtube_yorum: false,
+      video: true, whatsapp: false, ivr_0850: false,
+      influencer_radar: false, kurumsal_bagis: false, hukuk: false,
+    },
+    limitler: { ai_mesaj_limit: 3000, whatsapp_mesaj_limit: 0, video_limit: 5 },
+  },
+  Premium: {
+    moduller: {
+      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
+      tiktok_gelir: true, gelir_gider: true, galeri: true,
+      raporlama: true, canva: true, reklam_performansi: true,
+      ai_sohbet: true, fb_ig_dm: true, youtube_yorum: true,
+      video: true, whatsapp: true, ivr_0850: true,
+      influencer_radar: true, kurumsal_bagis: true, hukuk: true,
+    },
+    limitler: { ai_mesaj_limit: 5000, whatsapp_mesaj_limit: 0, video_limit: 15 },
+  },
+  Özel: null, // manuel — hiçbir otomatik değişiklik
+};
 
 export default function MasterModulesPage() {
   const params = useParams<{ slug: string }>();
@@ -111,22 +155,45 @@ export default function MasterModulesPage() {
 
   useEffect(() => {
     if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3000);
+    const id = setTimeout(() => setToast(null), 2000);
     return () => clearTimeout(id);
   }, [toast]);
 
-  // Paket seçince modüller otomatik işaretlenir (Özel dışında).
-  // Özel'i seçince mevcut seçimi koruyoruz.
+  // Paket seçince modüller + limitler otomatik işaretlenir (Özel dışında).
   const applyPaket = (next: Paket) => {
     setPaket(next);
-    if (next !== "Özel") {
-      setConfig({ ...PAKET_PRESETS[next] });
+    const preset = PAKET_PRESETS_FULL[next];
+    if (preset) {
+      setConfig((prev) => ({
+        ...prev,
+        ...preset.moduller,
+        ...preset.limitler,
+      }));
     }
   };
 
-  const toggleModule = (key: ModuleKey) => {
-    if (STANDART_MODULES_SET.has(key)) return; // standart modüller kapatılamaz
-    setConfig((prev) => ({ ...prev, [key]: !prev[key] }));
+  // Toggle'a basılınca: state güncelle + anında DB'ye kaydet
+  const [togglingKey, setTogglingKey] = useState<ModuleKey | null>(null);
+
+  const toggleModule = async (key: ModuleKey) => {
+    if (STANDART_MODULES_SET.has(key)) return;
+    const newValue = !config[key];
+
+    // Optimistic update
+    setConfig((prev) => ({ ...prev, [key]: newValue }));
+    setTogglingKey(key);
+
+    const r = await saveModuleStatus(slug, key, newValue);
+    setTogglingKey(null);
+
+    if (!r.ok) {
+      // Rollback
+      setConfig((prev) => ({ ...prev, [key]: !newValue }));
+      setToast({ kind: "error", text: `✗ ${MODULE_LABELS[key]} kaydedilemedi` });
+    } else {
+      setOriginalConfig((prev) => ({ ...prev, [key]: newValue }));
+      setToast({ kind: "success", text: `✓ ${MODULE_LABELS[key]} → ${newValue ? "Açık" : "Kapalı"}` });
+    }
   };
 
   const updateLimit = (key: LimitKey, value: number) => {
@@ -324,7 +391,8 @@ export default function MasterModulesPage() {
                     <Toggle
                       checked={isStandard ? true : config[key]}
                       onChange={() => toggleModule(key)}
-                      disabled={isStandard}
+                      disabled={isStandard || togglingKey === key}
+                      loading={togglingKey === key}
                     />
                   </li>
                 );
@@ -404,10 +472,12 @@ function Toggle({
   checked,
   onChange,
   disabled,
+  loading,
 }: {
   checked: boolean;
   onChange: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   return (
     <button
@@ -418,6 +488,7 @@ function Toggle({
       disabled={disabled}
       className={cn(
         "relative w-11 h-6 rounded-full transition shrink-0",
+        loading && "animate-pulse",
         disabled
           ? "bg-surface-container-high opacity-50 cursor-not-allowed"
           : checked
