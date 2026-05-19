@@ -23,8 +23,6 @@ import {
   PAKET_BADGE_STYLE,
   fetchMasterCampaigns,
   fetchModuleConfig,
-  saveModuleConfig,
-  saveModuleStatus,
   type LimitKey,
   type ModuleConfig,
   type ModuleKey,
@@ -172,28 +170,9 @@ export default function MasterModulesPage() {
     }
   };
 
-  // Toggle'a basılınca: state güncelle + anında DB'ye kaydet
-  const [togglingKey, setTogglingKey] = useState<ModuleKey | null>(null);
-
-  const toggleModule = async (key: ModuleKey) => {
+  const toggleModule = (key: ModuleKey) => {
     if (STANDART_MODULES_SET.has(key)) return;
-    const newValue = !config[key];
-
-    // Optimistic update
-    setConfig((prev) => ({ ...prev, [key]: newValue }));
-    setTogglingKey(key);
-
-    const r = await saveModuleStatus(slug, key, newValue);
-    setTogglingKey(null);
-
-    if (!r.ok) {
-      // Rollback
-      setConfig((prev) => ({ ...prev, [key]: !newValue }));
-      setToast({ kind: "error", text: `✗ ${MODULE_LABELS[key]} kaydedilemedi` });
-    } else {
-      setOriginalConfig((prev) => ({ ...prev, [key]: newValue }));
-      setToast({ kind: "success", text: `✓ ${MODULE_LABELS[key]} → ${newValue ? "Açık" : "Kapalı"}` });
-    }
+    setConfig((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const updateLimit = (key: LimitKey, value: number) => {
@@ -424,8 +403,7 @@ export default function MasterModulesPage() {
                     <Toggle
                       checked={isStandard ? true : config[key]}
                       onChange={() => toggleModule(key)}
-                      disabled={isStandard || togglingKey === key}
-                      loading={togglingKey === key}
+                      disabled={isStandard}
                     />
                   </li>
                 );
@@ -505,12 +483,10 @@ function Toggle({
   checked,
   onChange,
   disabled,
-  loading,
 }: {
   checked: boolean;
   onChange: () => void;
   disabled?: boolean;
-  loading?: boolean;
 }) {
   return (
     <button
@@ -521,7 +497,6 @@ function Toggle({
       disabled={disabled}
       className={cn(
         "relative w-11 h-6 rounded-full transition shrink-0",
-        loading && "animate-pulse",
         disabled
           ? "bg-surface-container-high opacity-50 cursor-not-allowed"
           : checked
