@@ -17,6 +17,7 @@ import {
   Sparkles,
   User as UserIcon,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { FormField, Modal, PanelCard, StatCard, inputClass } from "@/components/admin/AdminUI";
 import { cn } from "@/lib/utils";
@@ -131,6 +132,14 @@ function isoYmd(date: string): string {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function MessagesPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="fb_ig_dm">
+      <MessagesPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function MessagesPageInner() {
   const [mesajlar, setMesajlar] = useState<SosyalMesaj[]>([]);
   const [stats, setStats] = useState<SosyalStats | null>(null);
   const [loading, setLoading] = useState(true);

@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/admin/AdminUI";
@@ -33,6 +34,14 @@ type Toast = { kind: ToastKind; message: string } | null;
 const FILTER_ALL = "all";
 
 export default function GaleriPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="galeri">
+      <GaleriPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function GaleriPageInner() {
   const [items, setItems] = useState<GaleriItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);

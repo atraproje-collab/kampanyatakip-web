@@ -11,6 +11,7 @@ import {
   Printer,
   Send,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import { Modal, PanelCard, formatCurrency } from "@/components/admin/AdminUI";
@@ -109,6 +110,14 @@ function buildReportRows(label: string, period: string, income: number, expense:
 }
 
 export default function ReportsPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="raporlama">
+      <ReportsPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function ReportsPageInner() {
   const [downloadTarget, setDownloadTarget] = useState<ReportPeriod | null>(null);
 
   const totalIncome = demoCampaign.transparency.income.reduce(

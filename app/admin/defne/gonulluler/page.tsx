@@ -14,6 +14,7 @@ import {
   User,
   Users,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -257,6 +258,14 @@ function formatPhoneLive(input: string): string {
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default function GonullulerPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="gonullu">
+      <GonullulerPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function GonullulerPageInner() {
   const [items, setItems] = useState<Gonullu[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);

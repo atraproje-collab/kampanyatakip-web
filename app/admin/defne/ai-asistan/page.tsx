@@ -18,6 +18,7 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -219,6 +220,14 @@ type ToastTone = "success" | "error" | "info";
 type Toast = { tone: ToastTone; text: string } | null;
 
 export default function AIAssistantPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="ai_sohbet">
+      <AIAssistantPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function AIAssistantPageInner() {
   const [statsData, setStatsData] = useState<AsistanStats | null>(null);
   const [sablonlar, setSablonlar] = useState<YanitSablonu[]>([]);
   const [loading, setLoading] = useState(true);

@@ -8,6 +8,7 @@ import {
   Target,
   Wallet,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { PanelCard, StatCard } from "@/components/admin/AdminUI";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,14 @@ const KAMPANYALAR: Kampanya[] = [
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function ReklamPerformansiPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="reklam_performansi">
+      <ReklamPerformansiPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function ReklamPerformansiPageInner() {
   return (
     <AdminLayout
       title="Reklam Performansı"

@@ -14,6 +14,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
@@ -215,6 +216,14 @@ async function postJson(path: string, body: unknown): Promise<PostResult> {
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default function KumbaralarPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="kumbara">
+      <KumbaralarPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function KumbaralarPageInner() {
   // Start empty — populated by API. Mock only used as fallback if API fails.
   const [items, setItems] = useState<KumbaraDraft[]>([]);
   const [loading, setLoading] = useState(true);
