@@ -275,30 +275,49 @@ function parseCampaign(raw: unknown): MasterCampaign | null {
 }
 
 /**
- * Modül durumlarını hem `stant: true` hem `modul_stant: true` alan adlarından
- * okuyabilen esnek parser. Backend hangi convention'ı kullanırsa kullansın.
+ * Modül durumlarını hem `modul_stant: true` hem `stant: true` alan adlarından
+ * okuyabilen esnek parser. Öncelik: modul_ prefix → direkt key → failsafe true.
+ * Strict `=== true` karşılaştırma — loose coercion yok.
  */
 export function parseModuleConfig(raw: unknown): ModuleConfig {
   const row = unwrapSingle(raw);
   if (!row) return { ...DEFAULT_MODULE_CONFIG };
-  const cfg: ModuleConfig = { ...DEFAULT_MODULE_CONFIG };
-  for (const k of ALL_MODULE_KEYS) {
-    // Önce ham anahtar, yoksa modul_ prefix'li alan adı
-    // Field DB'de yoksa failsafe: true döndür (erişimi engellemek yerine aç)
-    if (k in row) {
-      cfg[k] = pickBool(row, k);
-    } else if (`modul_${k}` in row) {
-      cfg[k] = pickBool(row, `modul_${k}`);
-    } else {
-      // DB'de bu field yok → failsafe olarak aktif say
-      cfg[k] = true;
-    }
-  }
-  cfg.ai_mesaj_limit = pickNumber(row, "ai_mesaj_limit");
-  cfg.whatsapp_mesaj_limit = pickNumber(row, "whatsapp_mesaj_limit");
-  cfg.ivr_dakika_limit = pickNumber(row, "ivr_dakika_limit");
-  cfg.video_adet_limit = pickNumber(row, "video_adet_limit", "video_limit");
-  return cfg;
+
+  const getBool = (key: string): boolean => {
+    // Önce modul_ prefix ile ara
+    if (`modul_${key}` in row) return row[`modul_${key}`] === true;
+    // Sonra direkt key ile ara
+    if (key in row) return row[key] === true;
+    // Bulunamazsa true (failsafe)
+    return true;
+  };
+
+  return {
+    bagis_takibi: getBool("bagis_takibi"),
+    kumbara: getBool("kumbara"),
+    stant: getBool("stant"),
+    gonullu: getBool("gonullu"),
+    tiktok_gelir: getBool("tiktok_gelir"),
+    gelir_gider: getBool("gelir_gider"),
+    galeri: getBool("galeri"),
+    raporlama: getBool("raporlama"),
+    canva: getBool("canva"),
+    reklam_performansi: getBool("reklam_performansi"),
+    ai_sohbet: getBool("ai_sohbet"),
+    fb_ig_dm: getBool("fb_ig_dm"),
+    youtube_yorum: getBool("youtube_yorum"),
+    video: getBool("video"),
+    whatsapp: getBool("whatsapp"),
+    ivr_0850: getBool("ivr_0850"),
+    influencer_radar: getBool("influencer_radar"),
+    kurumsal_bagis: getBool("kurumsal_bagis"),
+    hukuk: getBool("hukuk"),
+    twitter: getBool("twitter"),
+    ai_mesaj_limit: Number(row.ai_mesaj_limit) || 0,
+    whatsapp_mesaj_limit: Number(row.whatsapp_mesaj_limit) || 0,
+    ivr_dakika_limit: Number(row.ivr_dakika_limit) || 0,
+    video_adet_limit: Number(row.video_adet_limit) || 0,
+  } as ModuleConfig;
 }
 
 // ── API ──────────────────────────────────────────────────────────────────────
