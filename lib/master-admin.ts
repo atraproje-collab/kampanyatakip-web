@@ -277,10 +277,14 @@ export function parseModuleConfig(raw: unknown): ModuleConfig {
   const cfg: ModuleConfig = { ...DEFAULT_MODULE_CONFIG };
   for (const k of ALL_MODULE_KEYS) {
     // Önce ham anahtar, yoksa modul_ prefix'li alan adı
+    // Field DB'de yoksa failsafe: true döndür (erişimi engellemek yerine aç)
     if (k in row) {
       cfg[k] = pickBool(row, k);
-    } else {
+    } else if (`modul_${k}` in row) {
       cfg[k] = pickBool(row, `modul_${k}`);
+    } else {
+      // DB'de bu field yok → failsafe olarak aktif say
+      cfg[k] = true;
     }
   }
   cfg.ai_mesaj_limit = pickNumber(row, "ai_mesaj_limit");
