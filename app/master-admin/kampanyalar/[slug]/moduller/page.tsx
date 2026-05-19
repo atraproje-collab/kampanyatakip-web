@@ -221,18 +221,48 @@ export default function MasterModulesPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const r = await saveModuleConfig(slug, paket, config);
-    setSaving(false);
-    if (!r.ok) {
-      setToast({ kind: "error", text: `✗ Kaydedilemedi: ${r.error}` });
-      return;
-    }
-    setOriginalConfig({ ...config });
-    setOriginalPaket(paket);
-    setToast({ kind: "success", text: "✓ Modül ayarları kaydedildi" });
+    try {
+      // Modüller ve limitler ayrı objeler
+      const moduller: Record<string, boolean> = {};
+      for (const k of ALL_MODULE_KEYS) {
+        moduller[k] = config[k];
+      }
+      const limitler: Record<string, number> = {
+        ai_mesaj_limit: config.ai_mesaj_limit,
+        whatsapp_mesaj_limit: config.whatsapp_mesaj_limit,
+        video_limit: config.video_limit,
+      };
 
-    // Kayıt sonrası verileri DB'den tazele
-    setTimeout(() => window.location.reload(), 800);
+      const payload = {
+        kampanya_slug: slug,
+        paket: paket.toLocaleLowerCase("tr-TR"),
+        moduller,
+        limitler,
+      };
+
+      console.log("POST gönderiliyor:", JSON.stringify(payload));
+
+      const res = await fetch("/api/master/moduller-guncelle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log("Yanıt:", JSON.stringify(data));
+
+      if (!res.ok) throw new Error("Kayıt başarısız");
+
+      setOriginalConfig({ ...config });
+      setOriginalPaket(paket);
+      setToast({ kind: "success", text: "✓ Kaydedildi" });
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      console.error("Hata:", err);
+      setToast({ kind: "error", text: "✗ Kayıt başarısız" });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
