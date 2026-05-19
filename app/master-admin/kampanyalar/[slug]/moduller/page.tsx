@@ -38,6 +38,20 @@ const LIMIT_KEYS: LimitKey[] = [
   "video_limit",
 ];
 
+/** Her pakette bulunan standart modüller — kapatılamaz. */
+const STANDART_MODULES_SET: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
+  "bagis_takibi",
+  "kumbara",
+  "stant",
+  "gonullu",
+  "tiktok_gelir",
+  "gelir_gider",
+  "galeri",
+  "raporlama",
+  "canva",
+  "reklam_performansi",
+]);
+
 export default function MasterModulesPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
@@ -95,6 +109,7 @@ export default function MasterModulesPage() {
   };
 
   const toggleModule = (key: ModuleKey) => {
+    if (STANDART_MODULES_SET.has(key)) return; // standart modüller kapatılamaz
     setConfig((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -241,15 +256,26 @@ export default function MasterModulesPage() {
             <ul className="divide-y divide-outline-variant">
               {ALL_MODULE_KEYS.map((key) => {
                 const limitKey = MODULE_LIMIT_LINKS[key];
+                const isStandard = STANDART_MODULES_SET.has(key);
                 return (
                   <li
                     key={key}
-                    className="px-5 py-3 flex items-center justify-between gap-4 flex-wrap"
+                    className={cn(
+                      "px-5 py-3 flex items-center justify-between gap-4 flex-wrap",
+                      isStandard && "bg-surface-container-lowest",
+                    )}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-body-md font-medium text-on-surface">
-                        {MODULE_LABELS[key]}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-body-md font-medium text-on-surface">
+                          {MODULE_LABELS[key]}
+                        </p>
+                        {isStandard && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                            Standart ✓
+                          </span>
+                        )}
+                      </div>
                       <p className="text-label-sm text-on-surface-variant">
                         <code className="font-mono">{key}</code>
                       </p>
@@ -280,8 +306,9 @@ export default function MasterModulesPage() {
                     )}
 
                     <Toggle
-                      checked={config[key]}
+                      checked={isStandard ? true : config[key]}
                       onChange={() => toggleModule(key)}
+                      disabled={isStandard}
                     />
                   </li>
                 );
@@ -360,19 +387,26 @@ export default function MasterModulesPage() {
 function Toggle({
   checked,
   onChange,
+  disabled,
 }: {
   checked: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
+      disabled={disabled}
       className={cn(
         "relative w-11 h-6 rounded-full transition shrink-0",
-        checked ? "bg-emerald-500" : "bg-surface-container-high",
+        disabled
+          ? "bg-surface-container-high opacity-50 cursor-not-allowed"
+          : checked
+            ? "bg-emerald-500"
+            : "bg-surface-container-high",
       )}
     >
       <span
