@@ -97,12 +97,14 @@ export default function MasterModulesPage() {
       if (!mounted) return;
 
       const cfg = modulR.config;
+      console.log("[load] DB config:", JSON.stringify(cfg));
 
       // Ek modüllerin boolean durumlarını al
       const m: Record<string, boolean> = {};
       for (const mod of EK_MODULLER) {
         m[mod.key] = cfg[mod.key] ?? false;
       }
+      console.log("[load] Initial moduller:", JSON.stringify(m));
       setModuller(m);
 
       // Limit değerlerini al
@@ -136,7 +138,11 @@ export default function MasterModulesPage() {
 
   /* ── Handlers ──────────────────────────────────────────────────────────── */
   const toggleModule = (key: ModuleKey) => {
-    setModuller((prev) => ({ ...prev, [key]: !prev[key] }));
+    setModuller((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      console.log(`[toggle] ${key}: ${prev[key]} → ${next[key]}`);
+      return next;
+    });
   };
 
   const updateLimit = (key: LimitKey, value: number) => {
@@ -147,6 +153,9 @@ export default function MasterModulesPage() {
   };
 
   const handleSave = async () => {
+    console.log("State:", JSON.stringify(moduller));
+    console.log("Limitler:", JSON.stringify(limitler));
+
     setSaving(true);
     try {
       // Standart modülleri de ekle (hepsi true)
