@@ -3,8 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, Lock } from "lucide-react";
 import {
-  fetchModuleConfig,
   MODULE_LABELS,
+  parseModuleConfig,
   type ModuleKey,
 } from "@/lib/master-admin";
 
@@ -62,15 +62,24 @@ export function ModuleActiveGate({
     let mounted = true;
 
     const check = async () => {
-      const r = await fetchModuleConfig(slug);
-      if (!mounted) return;
-      if (!r.ok) {
-        setState({ status: "error" });
-        return;
+      try {
+        const res = await fetch(
+          `/api/master/moduller?slug=${slug}&_=${Date.now()}`,
+          { cache: "no-store" },
+        );
+        if (!mounted) return;
+        if (!res.ok) {
+          setState({ status: "error" });
+          return;
+        }
+        const data: unknown = await res.json();
+        const config = parseModuleConfig(data);
+        setState({
+          status: config[moduleKey] ? "enabled" : "disabled",
+        });
+      } catch {
+        if (mounted) setState({ status: "error" });
       }
-      setState({
-        status: r.config[moduleKey] ? "enabled" : "disabled",
-      });
     };
 
     // İlk kontrol
