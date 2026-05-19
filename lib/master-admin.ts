@@ -369,6 +369,27 @@ export async function saveModuleConfig(
   paket: Paket,
   config: ModuleConfig,
 ): Promise<{ ok: boolean; error?: string }> {
+  // Modüller ve limitler ayrı objeler olarak gönder
+  const moduller: Record<string, boolean> = {};
+  for (const k of ALL_MODULE_KEYS) {
+    moduller[k] = config[k];
+  }
+  const limitler: Record<string, number> = {
+    ai_mesaj_limit: config.ai_mesaj_limit,
+    whatsapp_mesaj_limit: config.whatsapp_mesaj_limit,
+    video_limit: config.video_limit,
+  };
+
+  const payload = {
+    kampanya_slug: slug,
+    paket: paket.toLocaleLowerCase("tr-TR"),
+    moduller,
+    limitler,
+  };
+
+  // eslint-disable-next-line no-console
+  console.log("Kaydet body:", JSON.stringify(payload));
+
   try {
     const res = await fetch(
       `/api/master/moduller-guncelle?t=${Date.now()}`,
@@ -379,11 +400,7 @@ export async function saveModuleConfig(
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          slug,
-          paket,
-          ...config,
-        }),
+        body: JSON.stringify(payload),
       },
     );
     if (!res.ok) {

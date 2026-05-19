@@ -230,6 +230,9 @@ export default function MasterModulesPage() {
     setOriginalConfig({ ...config });
     setOriginalPaket(paket);
     setToast({ kind: "success", text: "✓ Modül ayarları kaydedildi" });
+
+    // Kayıt sonrası verileri DB'den tazele
+    setTimeout(() => window.location.reload(), 800);
   };
 
   return (
