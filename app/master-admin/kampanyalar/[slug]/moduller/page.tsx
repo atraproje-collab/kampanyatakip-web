@@ -7,22 +7,27 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
+  ChevronDown,
   Loader2,
   Lock,
+  Package,
   Save,
 } from "lucide-react";
 import { MasterAdminLayout } from "@/components/master-admin/MasterAdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
+  fetchMasterCampaigns,
   fetchModuleConfig,
   LIMIT_LABELS,
-  MODULE_LABELS,
-  MODULE_LIMIT_LINKS,
+  PAKET_BADGE_STYLE,
   type LimitKey,
   type ModuleConfig,
   type ModuleKey,
+  type Paket,
 } from "@/lib/master-admin";
 import { cn } from "@/lib/utils";
+
+const PAKETLER: Paket[] = ["Temel", "Standart", "Premium", "Özel"];
 
 /* ── Standart modüller — her zaman açık, kapatılamaz ──────────────────────── */
 const STANDART_MODULLER: { key: ModuleKey; label: string }[] = [
@@ -67,6 +72,11 @@ export default function MasterModulesPage() {
     video_adet_limit: 0,
   });
 
+  // Paket state (bağımsız — modüllerle ilgisi yok)
+  const [paket, setPaket] = useState<Paket>("Özel");
+  const [paketMenuOpen, setPaketMenuOpen] = useState(false);
+  const [paketSaving, setPaketSaving] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,15 +85,18 @@ export default function MasterModulesPage() {
     text: string;
   } | null>(null);
 
-  /* ── İlk yükleme: GET /api/master/moduller?slug=... ────────────────────── */
+  /* ── İlk yükleme: modüller + kampanya paketini paralel çek ─────────────── */
   useEffect(() => {
     if (!slug) return;
     let mounted = true;
     (async () => {
-      const result = await fetchModuleConfig(slug);
+      const [modulR, campR] = await Promise.all([
+        fetchModuleConfig(slug),
+        fetchMasterCampaigns(),
+      ]);
       if (!mounted) return;
 
-      const cfg = result.config;
+      const cfg = modulR.config;
 
       // Ek modüllerin boolean durumlarını al
       const m: Record<string, boolean> = {};
@@ -100,7 +113,13 @@ export default function MasterModulesPage() {
         video_adet_limit: cfg.video_adet_limit ?? 0,
       });
 
-      setLoadError(result.ok ? null : result.error ?? "API'ye bağlanılamadı");
+      // Kampanya listesinden mevcut paketi bul
+      const campaign = campR.ok
+        ? campR.items.find((c) => c.slug === slug)
+        : null;
+      setPaket(campaign?.paket ?? modulR.paket ?? "Özel");
+
+      setLoadError(modulR.ok ? null : modulR.error ?? "API'ye bağlanılamadı");
       setLoading(false);
     })();
     return () => {
@@ -158,13 +177,47 @@ export default function MasterModulesPage() {
 
       if (!res.ok) throw new Error("Kayıt başarısız");
 
-      setToast({ kind: "success", text: "✓ Kaydedildi" });
+      setToast({ kind: "success", text: "✓ Modüller kaydedildi" });
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error("Hata:", err);
       setToast({ kind: "error", text: "✗ Kayıt başarısız" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  /** Paketi değiştir — sadece kampanya_paket tablosunu günceller, modüllere dokunmaz */
+  const handlePaketChange = async (yeniPaket: Paket) => {
+    if (yeniPaket === paket) {
+      setPaketMenuOpen(false);
+      return;
+    }
+    setPaketMenuOpen(false);
+    setPaketSaving(true);
+    try {
+      const payload = {
+        kampanya_slug: slug,
+        paket: yeniPaket.toLocaleLowerCase("tr-TR"),
+      };
+
+      console.log("Paket POST:", JSON.stringify(payload));
+
+      const res = await fetch("/api/master/paket-guncelle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Paket güncellenemedi");
+
+      setPaket(yeniPaket);
+      setToast({ kind: "success", text: `✓ Paket → ${yeniPaket}` });
+    } catch (err) {
+      console.error("Paket hata:", err);
+      setToast({ kind: "error", text: "✗ Paket güncellenemedi" });
+    } finally {
+      setPaketSaving(false);
     }
   };
 
@@ -223,6 +276,94 @@ export default function MasterModulesPage() {
         </div>
       ) : (
         <div className="space-y-5">
+          {/* ── MEVCUT PAKET ─────────────────────────────────────────────── */}
+          <section className="rounded-2xl border border-outline-variant bg-white p-5">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5 text-on-surface-variant" />
+                <div>
+                  <p className="text-label-sm text-on-surface-variant">
+                    Mevcut Paket
+                  </p>
+                  <p className="text-body-lg font-semibold text-on-surface">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-label-md font-semibold border",
+                        PAKET_BADGE_STYLE[paket],
+                      )}
+                    >
+                      {paket}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Paketi Değiştir — dropdown */}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPaketMenuOpen((v) => !v)}
+                  disabled={paketSaving}
+                >
+                  {paketSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Güncelleniyor…
+                    </>
+                  ) : (
+                    <>
+                      Paketi Değiştir
+                      <ChevronDown className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+                {paketMenuOpen && (
+                  <>
+                    {/* Dışa tıklayınca kapat */}
+                    <div
+                      className="fixed inset-0 z-20"
+                      onClick={() => setPaketMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1 z-30 w-44 rounded-xl border border-outline-variant bg-white shadow-[0_8px_20px_rgba(0,24,53,0.12)] py-1">
+                      {PAKETLER.map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handlePaketChange(p)}
+                          className={cn(
+                            "w-full text-left px-4 py-2.5 text-body-sm transition",
+                            p === paket
+                              ? "bg-surface-container font-semibold text-on-surface cursor-default"
+                              : "text-on-surface hover:bg-surface-container-low",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-semibold border",
+                              PAKET_BADGE_STYLE[p],
+                            )}
+                          >
+                            {p}
+                          </span>
+                          {p === paket && (
+                            <span className="ml-2 text-label-sm text-on-surface-variant">
+                              (mevcut)
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <p className="text-label-sm text-on-surface-variant mt-2">
+              Paket değişikliği modülleri etkilemez. Modüller ayrıca "Kaydet"
+              ile kaydedilir.
+            </p>
+          </section>
+
           {/* ── STANDART MODÜLLER ─────────────────────────────────────────── */}
           <section className="rounded-2xl border border-outline-variant bg-white">
             <header className="px-5 py-4 border-b border-outline-variant">
