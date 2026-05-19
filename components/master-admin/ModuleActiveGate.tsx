@@ -8,6 +8,20 @@ import {
   type ModuleKey,
 } from "@/lib/master-admin";
 
+/** Standart modüller — DB'deki değerden bağımsız olarak her zaman aktif. */
+const STANDART_MODULLER: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
+  "bagis_takibi",
+  "kumbara",
+  "stant",
+  "gonullu",
+  "tiktok_gelir",
+  "gelir_gider",
+  "galeri",
+  "raporlama",
+  "canva",
+  "reklam_performansi",
+]);
+
 interface ModuleActiveGateProps {
   slug: string;
   moduleKey: ModuleKey;
@@ -34,9 +48,17 @@ export function ModuleActiveGate({
   children,
   allowOnError = true,
 }: ModuleActiveGateProps) {
-  const [state, setState] = useState<State>({ status: "loading" });
+  // Standart modüller her zaman aktif — DB'ye bakmadan geç
+  const isStandard = STANDART_MODULLER.has(moduleKey);
+
+  const [state, setState] = useState<State>(
+    isStandard ? { status: "enabled" } : { status: "loading" },
+  );
 
   useEffect(() => {
+    // Standart modüller için API çağrısı yapma
+    if (isStandard) return;
+
     let mounted = true;
 
     const check = async () => {
@@ -68,7 +90,7 @@ export function ModuleActiveGate({
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [slug, moduleKey]);
+  }, [slug, moduleKey, isStandard]);
 
   if (state.status === "loading") {
     return (
