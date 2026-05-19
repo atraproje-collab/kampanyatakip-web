@@ -38,7 +38,8 @@ export function ModuleActiveGate({
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+
+    const check = async () => {
       const r = await fetchModuleConfig(slug);
       if (!mounted) return;
       if (!r.ok) {
@@ -48,9 +49,24 @@ export function ModuleActiveGate({
       setState({
         status: r.config[moduleKey] ? "enabled" : "disabled",
       });
-    })();
+    };
+
+    // İlk kontrol
+    check();
+
+    // 30 saniyede bir yeniden kontrol
+    const interval = setInterval(check, 30_000);
+
+    // Tab'a geri dönüldüğünde anında kontrol
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       mounted = false;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [slug, moduleKey]);
 
