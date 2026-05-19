@@ -49,8 +49,7 @@ interface SosyalStats {
 
 type PlatformKey = "facebook" | "instagram" | "youtube" | "tiktok" | "twitter";
 
-const API_URL =
-  "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya/demo-defne/sosyal-yorumlar";
+const API_URL = "/api/kampanya/demo-defne/sosyal-yorumlar";
 
 // ── Platform map ────────────────────────────────────────────────────────────
 
