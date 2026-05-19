@@ -22,6 +22,7 @@ import {
   MODULE_LIMIT_LINKS,
   PAKET_BADGE_STYLE,
   PAKET_PRESETS,
+  fetchMasterCampaigns,
   fetchModuleConfig,
   saveModuleConfig,
   type LimitKey,
@@ -73,19 +74,34 @@ export default function MasterModulesPage() {
     text: string;
   } | null>(null);
 
-  // İlk yükleme
+  // İlk yükleme — modüller + kampanya paketini paralel çek
   useEffect(() => {
     if (!slug) return;
     let mounted = true;
     (async () => {
-      const r = await fetchModuleConfig(slug);
+      const [modulR, campR] = await Promise.all([
+        fetchModuleConfig(slug),
+        fetchMasterCampaigns(),
+      ]);
       if (!mounted) return;
-      setConfig(r.config);
-      setOriginalConfig(r.config);
-      const p = r.paket ?? "Özel";
+
+      // Standart modülleri her zaman true olarak zorla
+      const merged: ModuleConfig = { ...modulR.config };
+      for (const k of STANDART_MODULES_SET) {
+        merged[k] = true;
+      }
+
+      // Kampanya listesinden mevcut paketi bul
+      const campaign = campR.ok
+        ? campR.items.find((c) => c.slug === slug)
+        : null;
+      const p = campaign?.paket ?? modulR.paket ?? "Özel";
+
+      setConfig(merged);
+      setOriginalConfig(merged);
       setPaket(p);
       setOriginalPaket(p);
-      setLoadError(r.ok ? null : r.error ?? "API'ye bağlanılamadı");
+      setLoadError(modulR.ok ? null : modulR.error ?? "API'ye bağlanılamadı");
       setLoading(false);
     })();
     return () => {
