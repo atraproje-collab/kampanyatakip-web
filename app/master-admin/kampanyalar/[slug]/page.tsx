@@ -52,7 +52,8 @@ const STANDART_SET: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
 const LIMIT_KEYS: LimitKey[] = [
   "ai_mesaj_limit",
   "whatsapp_mesaj_limit",
-  "video_limit",
+  "ivr_dakika_limit",
+  "video_adet_limit",
 ];
 
 function formatTRY(amount: number) {

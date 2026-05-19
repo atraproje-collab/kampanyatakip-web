@@ -8,105 +8,64 @@ import {
   ArrowLeft,
   CheckCircle2,
   Loader2,
-  RotateCcw,
+  Lock,
   Save,
-  Sparkles,
 } from "lucide-react";
 import { MasterAdminLayout } from "@/components/master-admin/MasterAdminLayout";
 import { Button } from "@/components/ui/Button";
 import {
-  ALL_MODULE_KEYS,
-  DEFAULT_MODULE_CONFIG,
+  fetchModuleConfig,
   LIMIT_LABELS,
   MODULE_LABELS,
   MODULE_LIMIT_LINKS,
-  PAKET_BADGE_STYLE,
-  fetchMasterCampaigns,
-  fetchModuleConfig,
   type LimitKey,
   type ModuleConfig,
   type ModuleKey,
-  type Paket,
 } from "@/lib/master-admin";
 import { cn } from "@/lib/utils";
 
-const PAKETLER: Paket[] = ["Temel", "Standart", "Premium", "Özel"];
-const LIMIT_KEYS: LimitKey[] = [
-  "ai_mesaj_limit",
-  "whatsapp_mesaj_limit",
-  "video_limit",
+/* ── Standart modüller — her zaman açık, kapatılamaz ──────────────────────── */
+const STANDART_MODULLER: { key: ModuleKey; label: string }[] = [
+  { key: "bagis_takibi", label: "Bağış Takibi" },
+  { key: "kumbara", label: "Kumbara Takibi" },
+  { key: "stant", label: "Stant Takibi" },
+  { key: "gonullu", label: "Gönüllü Yönetimi" },
+  { key: "tiktok_gelir", label: "TikTok Canlı Yayın Geliri" },
+  { key: "gelir_gider", label: "Gelir-Gider Şeffaflık" },
+  { key: "galeri", label: "Galeri" },
+  { key: "raporlama", label: "Otomatik Raporlama" },
+  { key: "canva", label: "Canva Pro Tasarım Aracı" },
+  { key: "reklam_performansi", label: "Reklam Performansı (Meta Ads)" },
 ];
 
-/** Her pakette bulunan standart modüller — kapatılamaz. */
-const STANDART_MODULES_SET: ReadonlySet<ModuleKey> = new Set<ModuleKey>([
-  "bagis_takibi",
-  "kumbara",
-  "stant",
-  "gonullu",
-  "tiktok_gelir",
-  "gelir_gider",
-  "galeri",
-  "raporlama",
-  "canva",
-  "reklam_performansi",
-]);
+/* ── Ek modüller — açılıp kapatılabilir ───────────────────────────────────── */
+const EK_MODULLER: { key: ModuleKey; label: string; limitKey?: LimitKey }[] = [
+  { key: "ai_sohbet", label: "AI Sohbet Botu", limitKey: "ai_mesaj_limit" },
+  { key: "fb_ig_dm", label: "Facebook + Instagram DM Otomasyonu" },
+  { key: "youtube_yorum", label: "YouTube Yorum Otomasyonu" },
+  { key: "video", label: "Video Üretim", limitKey: "video_adet_limit" },
+  { key: "whatsapp", label: "WhatsApp Mesaj", limitKey: "whatsapp_mesaj_limit" },
+  { key: "ivr_0850", label: "Sesli Bilgi Hattı (0850)", limitKey: "ivr_dakika_limit" },
+  { key: "influencer_radar", label: "Influencer Radar" },
+  { key: "kurumsal_bagis", label: "Kurumsal Bağış Sistemi" },
+  { key: "hukuk", label: "Hukuk Danışmanlığı" },
+  { key: "twitter", label: "Twitter (X) Otomasyonu" },
+];
 
-/** Paket seçilince otomatik uygulanan modül + limit değerleri. */
-type PaketPreset = {
-  moduller: Record<ModuleKey, boolean>;
-  limitler: Partial<Record<LimitKey, number>>;
-};
-
-const PAKET_PRESETS_FULL: Record<string, PaketPreset | null> = {
-  Temel: {
-    moduller: {
-      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
-      tiktok_gelir: true, gelir_gider: true, galeri: true,
-      raporlama: true, canva: true, reklam_performansi: true,
-      ai_sohbet: true,
-      fb_ig_dm: false, youtube_yorum: false, whatsapp: false,
-      ivr_0850: false, video: false, influencer_radar: false,
-      kurumsal_bagis: false, hukuk: false,
-    },
-    limitler: { ai_mesaj_limit: 1000, whatsapp_mesaj_limit: 0, video_limit: 0 },
-  },
-  Standart: {
-    moduller: {
-      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
-      tiktok_gelir: true, gelir_gider: true, galeri: true,
-      raporlama: true, canva: true, reklam_performansi: true,
-      ai_sohbet: true, fb_ig_dm: true, youtube_yorum: false,
-      video: true, whatsapp: false, ivr_0850: false,
-      influencer_radar: false, kurumsal_bagis: false, hukuk: false,
-    },
-    limitler: { ai_mesaj_limit: 3000, whatsapp_mesaj_limit: 0, video_limit: 5 },
-  },
-  Premium: {
-    moduller: {
-      bagis_takibi: true, kumbara: true, stant: true, gonullu: true,
-      tiktok_gelir: true, gelir_gider: true, galeri: true,
-      raporlama: true, canva: true, reklam_performansi: true,
-      ai_sohbet: true, fb_ig_dm: true, youtube_yorum: true,
-      video: true, whatsapp: true, ivr_0850: true,
-      influencer_radar: true, kurumsal_bagis: true, hukuk: true,
-    },
-    limitler: { ai_mesaj_limit: 5000, whatsapp_mesaj_limit: 0, video_limit: 15 },
-  },
-  Özel: null, // manuel — hiçbir otomatik değişiklik
-};
+const STANDART_SET = new Set(STANDART_MODULLER.map((m) => m.key));
 
 export default function MasterModulesPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
 
-  const [config, setConfig] = useState<ModuleConfig>({
-    ...DEFAULT_MODULE_CONFIG,
+  /* ── State ─────────────────────────────────────────────────────────────── */
+  const [moduller, setModuller] = useState<Record<string, boolean>>({});
+  const [limitler, setLimitler] = useState<Record<string, number>>({
+    ai_mesaj_limit: 0,
+    whatsapp_mesaj_limit: 0,
+    ivr_dakika_limit: 0,
+    video_adet_limit: 0,
   });
-  const [originalConfig, setOriginalConfig] = useState<ModuleConfig>({
-    ...DEFAULT_MODULE_CONFIG,
-  });
-  const [paket, setPaket] = useState<Paket>("Özel");
-  const [originalPaket, setOriginalPaket] = useState<Paket>("Özel");
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -116,34 +75,32 @@ export default function MasterModulesPage() {
     text: string;
   } | null>(null);
 
-  // İlk yükleme — modüller + kampanya paketini paralel çek
+  /* ── İlk yükleme: GET /api/master/moduller?slug=... ────────────────────── */
   useEffect(() => {
     if (!slug) return;
     let mounted = true;
     (async () => {
-      const [modulR, campR] = await Promise.all([
-        fetchModuleConfig(slug),
-        fetchMasterCampaigns(),
-      ]);
+      const result = await fetchModuleConfig(slug);
       if (!mounted) return;
 
-      // Standart modülleri her zaman true olarak zorla
-      const merged: ModuleConfig = { ...modulR.config };
-      for (const k of STANDART_MODULES_SET) {
-        merged[k] = true;
+      const cfg = result.config;
+
+      // Ek modüllerin boolean durumlarını al
+      const m: Record<string, boolean> = {};
+      for (const mod of EK_MODULLER) {
+        m[mod.key] = cfg[mod.key] ?? false;
       }
+      setModuller(m);
 
-      // Kampanya listesinden mevcut paketi bul
-      const campaign = campR.ok
-        ? campR.items.find((c) => c.slug === slug)
-        : null;
-      const p = campaign?.paket ?? modulR.paket ?? "Özel";
+      // Limit değerlerini al
+      setLimitler({
+        ai_mesaj_limit: cfg.ai_mesaj_limit ?? 0,
+        whatsapp_mesaj_limit: cfg.whatsapp_mesaj_limit ?? 0,
+        ivr_dakika_limit: cfg.ivr_dakika_limit ?? 0,
+        video_adet_limit: cfg.video_adet_limit ?? 0,
+      });
 
-      setConfig(merged);
-      setOriginalConfig(merged);
-      setPaket(p);
-      setOriginalPaket(p);
-      setLoadError(modulR.ok ? null : modulR.error ?? "API'ye bağlanılamadı");
+      setLoadError(result.ok ? null : result.error ?? "API'ye bağlanılamadı");
       setLoading(false);
     })();
     return () => {
@@ -151,72 +108,41 @@ export default function MasterModulesPage() {
     };
   }, [slug]);
 
+  /* ── Toast timer ───────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!toast) return;
-    const id = setTimeout(() => setToast(null), 2000);
+    const id = setTimeout(() => setToast(null), 2500);
     return () => clearTimeout(id);
   }, [toast]);
 
-  // Paket seçince modüller + limitler otomatik işaretlenir (Özel dışında).
-  const applyPaket = (next: Paket) => {
-    setPaket(next);
-    const preset = PAKET_PRESETS_FULL[next];
-    if (preset) {
-      setConfig((prev) => ({
-        ...prev,
-        ...preset.moduller,
-        ...preset.limitler,
-      }));
-    }
-  };
-
+  /* ── Handlers ──────────────────────────────────────────────────────────── */
   const toggleModule = (key: ModuleKey) => {
-    if (STANDART_MODULES_SET.has(key)) return;
-    setConfig((prev) => ({ ...prev, [key]: !prev[key] }));
+    setModuller((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const updateLimit = (key: LimitKey, value: number) => {
-    setConfig((prev) => ({
+    setLimitler((prev) => ({
       ...prev,
       [key]: Number.isFinite(value) && value >= 0 ? value : 0,
     }));
   };
 
-  const dirty =
-    paket !== originalPaket ||
-    ALL_MODULE_KEYS.some((k) => config[k] !== originalConfig[k]) ||
-    LIMIT_KEYS.some((k) => config[k] !== originalConfig[k]);
-
-  const handleDiscard = () => {
-    if (!dirty) return;
-    if (
-      typeof window !== "undefined" &&
-      !window.confirm("Kaydedilmemiş değişiklikleri at?")
-    )
-      return;
-    setConfig(originalConfig);
-    setPaket(originalPaket);
-  };
-
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Modüller ve limitler ayrı objeler
-      const moduller: Record<string, boolean> = {};
-      for (const k of ALL_MODULE_KEYS) {
-        moduller[k] = config[k];
+      // Standart modülleri de ekle (hepsi true)
+      const allModuller: Record<string, boolean> = {};
+      for (const mod of STANDART_MODULLER) {
+        allModuller[mod.key] = true;
       }
-      const limitler: Record<string, number> = {
-        ai_mesaj_limit: config.ai_mesaj_limit,
-        whatsapp_mesaj_limit: config.whatsapp_mesaj_limit,
-        video_limit: config.video_limit,
-      };
+      for (const mod of EK_MODULLER) {
+        allModuller[mod.key] = moduller[mod.key] ?? false;
+      }
 
       const payload = {
         kampanya_slug: slug,
-        paket: paket.toLocaleLowerCase("tr-TR"),
-        moduller,
-        limitler,
+        moduller: allModuller,
+        limitler: { ...limitler },
       };
 
       console.log("POST gönderiliyor:", JSON.stringify(payload));
@@ -232,10 +158,8 @@ export default function MasterModulesPage() {
 
       if (!res.ok) throw new Error("Kayıt başarısız");
 
-      setOriginalConfig({ ...config });
-      setOriginalPaket(paket);
       setToast({ kind: "success", text: "✓ Kaydedildi" });
-      setTimeout(() => window.location.reload(), 500);
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       console.error("Hata:", err);
       setToast({ kind: "error", text: "✗ Kayıt başarısız" });
@@ -244,14 +168,15 @@ export default function MasterModulesPage() {
     }
   };
 
+  /* ── Render ────────────────────────────────────────────────────────────── */
   return (
     <MasterAdminLayout
-      title="Modül Yönetimi"
-      subtitle={slug ? `Kampanya: ${slug}` : "Kampanya"}
+      title={`Modül Yönetimi — ${slug}`}
+      subtitle=""
       actions={
         <div className="flex items-center gap-2">
           <Link
-            href="/master-admin"
+            href={`/master-admin/kampanyalar/${slug}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-outline-variant text-label-md text-on-surface hover:bg-surface-container-low transition"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -261,7 +186,7 @@ export default function MasterModulesPage() {
             variant="primary"
             size="sm"
             onClick={handleSave}
-            disabled={loading || saving || !dirty}
+            disabled={loading || saving}
           >
             {saving ? (
               <>
@@ -278,6 +203,7 @@ export default function MasterModulesPage() {
         </div>
       }
     >
+      {/* Yükleme hatası */}
       {loadError && !loading && (
         <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-body-sm text-amber-900 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -297,103 +223,92 @@ export default function MasterModulesPage() {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Paket seçimi */}
-          <section className="rounded-2xl border border-outline-variant bg-white p-5">
-            <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
-              <div>
-                <h2 className="text-body-lg font-semibold text-on-surface">
-                  Paket
-                </h2>
-                <p className="text-label-sm text-on-surface-variant mt-0.5">
-                  Hazır paket seçince modüller otomatik işaretlenir. Özel'de tüm
-                  modülleri manuel seçersiniz.
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "inline-flex items-center px-2.5 py-1 rounded-full text-label-sm font-semibold border",
-                  PAKET_BADGE_STYLE[paket],
-                )}
-              >
-                Aktif: {paket}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {PAKETLER.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => applyPaket(p)}
-                  className={cn(
-                    "px-4 py-3 rounded-xl border-2 text-body-md font-semibold transition text-center",
-                    paket === p
-                      ? `${PAKET_BADGE_STYLE[p]} border-current shadow-[0_4px_12px_rgba(0,24,53,0.08)]`
-                      : "bg-white text-on-surface border-outline-variant hover:border-secondary hover:text-secondary",
-                  )}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Modüller */}
+          {/* ── STANDART MODÜLLER ─────────────────────────────────────────── */}
           <section className="rounded-2xl border border-outline-variant bg-white">
             <header className="px-5 py-4 border-b border-outline-variant">
-              <h2 className="text-body-lg font-semibold text-on-surface">
-                Modüller
+              <h2 className="text-body-lg font-semibold text-on-surface flex items-center gap-2">
+                <Lock className="w-4 h-4 text-emerald-600" />
+                Standart Modüller
               </h2>
               <p className="text-label-sm text-on-surface-variant mt-0.5">
-                Her modülü açıp kapatabilirsiniz. Limit gerektiren modüllerde
-                ayrıca aylık limit girin.
+                Her kampanyada varsayılan olarak açıktır. Kapatılamaz.
               </p>
             </header>
             <ul className="divide-y divide-outline-variant">
-              {ALL_MODULE_KEYS.map((key) => {
-                const limitKey = MODULE_LIMIT_LINKS[key];
-                const isStandard = STANDART_MODULES_SET.has(key);
+              {STANDART_MODULLER.map((mod) => (
+                <li
+                  key={mod.key}
+                  className="px-5 py-3 flex items-center justify-between gap-4 bg-surface-container-lowest"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-body-md font-medium text-on-surface">
+                        {mod.label}
+                      </p>
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                        Standart
+                      </span>
+                    </div>
+                    <p className="text-label-sm text-on-surface-variant">
+                      <code className="font-mono">{mod.key}</code>
+                    </p>
+                  </div>
+                  <Toggle checked disabled />
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* ── EK MODÜLLER ──────────────────────────────────────────────── */}
+          <section className="rounded-2xl border border-outline-variant bg-white">
+            <header className="px-5 py-4 border-b border-outline-variant">
+              <h2 className="text-body-lg font-semibold text-on-surface">
+                Ek Modüller
+              </h2>
+              <p className="text-label-sm text-on-surface-variant mt-0.5">
+                Açıp kapatabilirsiniz. Limit gerektiren modüllerde aylık limit
+                girin. Değişiklikler "Kaydet" butonuyla kaydedilir.
+              </p>
+            </header>
+            <ul className="divide-y divide-outline-variant">
+              {EK_MODULLER.map((mod) => {
+                const isActive = moduller[mod.key] ?? false;
                 return (
                   <li
-                    key={key}
-                    className={cn(
-                      "px-5 py-3 flex items-center justify-between gap-4 flex-wrap",
-                      isStandard && "bg-surface-container-lowest",
-                    )}
+                    key={mod.key}
+                    className="px-5 py-3 flex items-center justify-between gap-4 flex-wrap"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-body-md font-medium text-on-surface">
-                          {MODULE_LABELS[key]}
-                        </p>
-                        {isStandard && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
-                            Standart ✓
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-body-md font-medium text-on-surface">
+                        {mod.label}
+                      </p>
                       <p className="text-label-sm text-on-surface-variant">
-                        <code className="font-mono">{key}</code>
+                        <code className="font-mono">{mod.key}</code>
                       </p>
                     </div>
 
-                    {limitKey && (
+                    {/* Limit input — sadece ilgili modüller */}
+                    {mod.limitKey && (
                       <label
                         className={cn(
                           "flex items-center gap-2 text-label-sm",
-                          !config[key] && "opacity-50",
+                          !isActive && "opacity-50",
                         )}
                       >
                         <span className="text-on-surface-variant whitespace-nowrap">
-                          {LIMIT_LABELS[limitKey]}
+                          {LIMIT_LABELS[mod.limitKey]}
                         </span>
                         <input
                           type="number"
                           min={0}
                           step={100}
-                          disabled={!config[key]}
-                          value={config[limitKey]}
+                          disabled={!isActive}
+                          value={limitler[mod.limitKey] ?? 0}
                           onChange={(e) =>
-                            updateLimit(limitKey, Number(e.target.value) || 0)
+                            updateLimit(
+                              mod.limitKey!,
+                              Number(e.target.value) || 0,
+                            )
                           }
                           className="w-28 px-2.5 py-1 rounded-lg border border-outline-variant bg-white text-body-sm text-on-surface text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary disabled:bg-surface-container disabled:cursor-not-allowed"
                         />
@@ -401,61 +316,18 @@ export default function MasterModulesPage() {
                     )}
 
                     <Toggle
-                      checked={isStandard ? true : config[key]}
-                      onChange={() => toggleModule(key)}
-                      disabled={isStandard}
+                      checked={isActive}
+                      onChange={() => toggleModule(mod.key)}
                     />
                   </li>
                 );
               })}
             </ul>
           </section>
-
-          {/* Sticky save bar (mobil) */}
-          <div className="sticky bottom-4 z-10 mt-6 rounded-xl border border-outline-variant bg-surface-container-lowest/95 backdrop-blur supports-[backdrop-filter]:bg-surface-container-lowest/85 px-4 py-3 flex items-center justify-between gap-3 flex-wrap shadow-[0_8px_20px_rgba(0,24,53,0.08)]">
-            <p className="text-label-sm text-on-surface-variant inline-flex items-center gap-1.5">
-              {dirty ? (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  Kaydedilmemiş değişiklikler var
-                </>
-              ) : (
-                "Tüm değişiklikler kaydedildi."
-              )}
-            </p>
-            <div className="flex items-center gap-2 ml-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDiscard}
-                disabled={!dirty || saving}
-              >
-                <RotateCcw className="w-4 h-4" />
-                Vazgeç
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleSave}
-                disabled={loading || saving || !dirty}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Kaydediliyor…
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Kaydet
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
         </div>
       )}
 
+      {/* Toast */}
       {toast && (
         <div
           className={cn(
@@ -479,13 +351,14 @@ export default function MasterModulesPage() {
   );
 }
 
+/* ── Toggle bileşeni ─────────────────────────────────────────────────────── */
 function Toggle({
   checked,
   onChange,
   disabled,
 }: {
   checked: boolean;
-  onChange: () => void;
+  onChange?: () => void;
   disabled?: boolean;
 }) {
   return (
@@ -498,7 +371,7 @@ function Toggle({
       className={cn(
         "relative w-11 h-6 rounded-full transition shrink-0",
         disabled
-          ? "bg-surface-container-high opacity-50 cursor-not-allowed"
+          ? "bg-emerald-500 opacity-70 cursor-not-allowed"
           : checked
             ? "bg-emerald-500"
             : "bg-surface-container-high",
