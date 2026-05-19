@@ -37,9 +37,10 @@ export type ModuleKey =
   | "ivr_0850"
   | "influencer_radar"
   | "kurumsal_bagis"
-  | "hukuk";
+  | "hukuk"
+  | "twitter";
 
-export type LimitKey = "ai_mesaj_limit" | "whatsapp_mesaj_limit" | "video_limit";
+export type LimitKey = "ai_mesaj_limit" | "whatsapp_mesaj_limit" | "ivr_dakika_limit" | "video_adet_limit";
 
 export type ModuleConfig = Record<ModuleKey, boolean> & Record<LimitKey, number>;
 
@@ -65,19 +66,22 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   influencer_radar: "Influencer Radar",
   kurumsal_bagis: "Kurumsal Bağış Sistemi",
   hukuk: "Hukuk Danışmanlığı",
+  twitter: "Twitter (X) Otomasyonu",
 };
 
 export const LIMIT_LABELS: Record<LimitKey, string> = {
   ai_mesaj_limit: "AI mesaj limiti (aylık)",
   whatsapp_mesaj_limit: "WhatsApp mesaj limiti (aylık)",
-  video_limit: "Video üretim limiti (aylık)",
+  ivr_dakika_limit: "IVR dakika limiti (aylık)",
+  video_adet_limit: "Video adet limiti (aylık)",
 };
 
 /** Hangi modül hangi limit input'unu açar. */
 export const MODULE_LIMIT_LINKS: Partial<Record<ModuleKey, LimitKey>> = {
   ai_sohbet: "ai_mesaj_limit",
   whatsapp: "whatsapp_mesaj_limit",
-  video: "video_limit",
+  ivr_0850: "ivr_dakika_limit",
+  video: "video_adet_limit",
 };
 
 export const ALL_MODULE_KEYS: ModuleKey[] = Object.keys(
@@ -89,7 +93,8 @@ export const ALL_MODULE_KEYS: ModuleKey[] = Object.keys(
 const ZERO_LIMITS: Record<LimitKey, number> = {
   ai_mesaj_limit: 0,
   whatsapp_mesaj_limit: 0,
-  video_limit: 0,
+  ivr_dakika_limit: 0,
+  video_adet_limit: 0,
 };
 
 function buildPreset(
@@ -100,7 +105,8 @@ function buildPreset(
   for (const k of ALL_MODULE_KEYS) cfg[k] = enabled.includes(k);
   cfg.ai_mesaj_limit = limits.ai_mesaj_limit ?? 0;
   cfg.whatsapp_mesaj_limit = limits.whatsapp_mesaj_limit ?? 0;
-  cfg.video_limit = limits.video_limit ?? 0;
+  cfg.ivr_dakika_limit = limits.ivr_dakika_limit ?? 0;
+  cfg.video_adet_limit = limits.video_adet_limit ?? 0;
   return cfg;
 }
 
@@ -132,17 +138,18 @@ const PREMIUM_MODULES: ModuleKey[] = [
   "influencer_radar",
   "kurumsal_bagis",
   "hukuk",
+  "twitter",
 ];
 
 export const PAKET_PRESETS: Record<Paket, ModuleConfig> = {
   Temel: buildPreset(TEMEL_MODULES, { ai_mesaj_limit: 1000 }),
   Standart: buildPreset(STANDART_MODULES, {
     ai_mesaj_limit: 3000,
-    video_limit: 5,
+    video_adet_limit: 5,
   }),
   Premium: buildPreset(PREMIUM_MODULES, {
     ai_mesaj_limit: 5000,
-    video_limit: 15,
+    video_adet_limit: 15,
   }),
   Özel: buildPreset([], {}),
 };
@@ -289,7 +296,8 @@ export function parseModuleConfig(raw: unknown): ModuleConfig {
   }
   cfg.ai_mesaj_limit = pickNumber(row, "ai_mesaj_limit");
   cfg.whatsapp_mesaj_limit = pickNumber(row, "whatsapp_mesaj_limit");
-  cfg.video_limit = pickNumber(row, "video_limit");
+  cfg.ivr_dakika_limit = pickNumber(row, "ivr_dakika_limit");
+  cfg.video_adet_limit = pickNumber(row, "video_adet_limit", "video_limit");
   return cfg;
 }
 
@@ -366,7 +374,6 @@ export async function fetchModuleConfig(slug: string): Promise<{
 
 export async function saveModuleConfig(
   slug: string,
-  paket: Paket,
   config: ModuleConfig,
 ): Promise<{ ok: boolean; error?: string }> {
   // Modüller ve limitler ayrı objeler olarak gönder
@@ -377,12 +384,12 @@ export async function saveModuleConfig(
   const limitler: Record<string, number> = {
     ai_mesaj_limit: config.ai_mesaj_limit,
     whatsapp_mesaj_limit: config.whatsapp_mesaj_limit,
-    video_limit: config.video_limit,
+    ivr_dakika_limit: config.ivr_dakika_limit,
+    video_adet_limit: config.video_adet_limit,
   };
 
   const payload = {
     kampanya_slug: slug,
-    paket: paket.toLocaleLowerCase("tr-TR"),
     moduller,
     limitler,
   };
