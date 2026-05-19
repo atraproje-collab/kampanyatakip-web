@@ -32,8 +32,7 @@ import { cn } from "@/lib/utils";
 
 // ── API ─────────────────────────────────────────────────────────────────────
 
-const API_BASE =
-  "https://n8n.srv1587680.hstgr.cloud/webhook/kampanya/demo-defne";
+const API_BASE = "/api/kampanya/demo-defne";
 
 const NO_CACHE = {
   Accept: "application/json",
