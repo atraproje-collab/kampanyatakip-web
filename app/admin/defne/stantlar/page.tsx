@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ModuleActiveGate } from "@/components/master-admin/ModuleActiveGate";
 import {
   BarChart3,
   Calendar,
@@ -376,6 +377,14 @@ function filterByRange(rows: Kapanis[], range: GecmisFilter): Kapanis[] {
 // ── Page component ──────────────────────────────────────────────────────────
 
 export default function StantlarPage() {
+  return (
+    <ModuleActiveGate slug="demo-defne" moduleKey="stant">
+      <StantlarPageInner />
+    </ModuleActiveGate>
+  );
+}
+
+function StantlarPageInner() {
   const [items, setItems] = useState<StantRow[]>([]);
   const [rapor, setRapor] = useState<RaporRow[]>([]);
   const [loading, setLoading] = useState(true);

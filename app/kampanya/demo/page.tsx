@@ -9,8 +9,12 @@ import { DonationToast } from "@/components/campaign/DonationToast";
 import { TrustPanel } from "@/components/campaign/TrustPanel";
 import { FollowSocialButtons } from "@/components/campaign/FollowSocialButtons";
 import { SystemAttribution } from "@/components/campaign/SystemAttribution";
+import { CampaignActiveGate } from "@/components/master-admin/CampaignActiveGate";
 import AiChatWidget from "@/components/AiChatWidget";
 import { demoCampaign } from "@/lib/mock-campaign-data";
+
+// Master admin'de bu kampanyanın slug'ı. Aktif/pasif kontrolü buna göre yapılır.
+const CAMPAIGN_SLUG = "demo-defne";
 
 export const metadata: Metadata = {
   title: "Minik Defne'ye Umut Ol · Demo Kampanya",
@@ -45,6 +49,7 @@ const structuredData = {
 
 export default function CampaignDemoPage() {
   return (
+    <CampaignActiveGate slug={CAMPAIGN_SLUG}>
     <CampaignProvider campaign={demoCampaign}>
       <div className="min-h-screen flex flex-col bg-surface">
         <DemoBanner />
@@ -116,5 +121,6 @@ export default function CampaignDemoPage() {
         />
       </div>
     </CampaignProvider>
+    </CampaignActiveGate>
   );
 }
