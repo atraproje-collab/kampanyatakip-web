@@ -6,7 +6,7 @@
  * Tüm paket kartları, ek modüller ve bilgilendirme metinleri otomatik açılır.
  */
 
-export const SHOW_PRICES = false;
+export const SHOW_PRICES = true;
 
 export type PaketKey = "temel" | "standart" | "premium" | "ozel";
 
