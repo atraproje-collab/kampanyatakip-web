@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/pages/PageHeader";
 import { ContactForm } from "@/components/pages/ContactForm";
 import { SocialIcon } from "@/components/ui/SocialIcon";
 import { siteConfig } from "@/lib/site-config";
+import { SOCIAL_MEDIA, SOCIAL_MEDIA_HANDLES, type SocialPlatformKey } from "@/lib/social-media";
 import { faqItems } from "@/lib/faq-data";
 
 export const metadata: Metadata = {
@@ -66,12 +67,37 @@ const CONTACT_CARDS: ContactCard[] = [
   },
 ];
 
-type SocialKey = "linkedin" | "twitter" | "instagram" | "facebook" | "youtube";
+// Sosyal medya — lib/social-media.ts kanonik kaynak.
+// Hover renkleri sabit class olarak yazılı (Tailwind JIT için).
+const SOCIAL_CARDS: Array<{
+  key: SocialPlatformKey;
+  label: string;
+  hoverCls: string;
+}> = [
+  {
+    key: "facebook",
+    label: "Facebook",
+    hoverCls: "hover:border-[#1877F2] hover:text-[#1877F2]",
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    hoverCls: "hover:border-[#E1306C] hover:text-[#E1306C]",
+  },
+  {
+    key: "youtube",
+    label: "YouTube",
+    hoverCls: "hover:border-[#FF0000] hover:text-[#FF0000]",
+  },
+  {
+    key: "tiktok",
+    label: "TikTok",
+    hoverCls: "hover:border-black hover:text-black",
+  },
+];
 
 export default function IletisimPage() {
-  const socials = (
-    Object.entries(siteConfig.social) as Array<[SocialKey, string | null]>
-  ).filter(([, url]) => Boolean(url));
+  const socials = SOCIAL_CARDS.filter((s) => Boolean(SOCIAL_MEDIA[s.key]));
 
   const teaserFaqs = faqItems.slice(0, 3);
 
@@ -150,20 +176,29 @@ export default function IletisimPage() {
                   <h3 className="text-[12px] font-bold text-primary-container uppercase tracking-widest mb-3">
                     Sosyal Medya
                   </h3>
-                  <div className="flex gap-2">
-                    {socials.map(([key, url]) => (
-                      <a
-                        key={key}
-                        href={url!}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={key}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant bg-white text-on-surface-variant hover:border-secondary hover:text-secondary hover:-translate-y-0.5 transition-all"
-                      >
-                        <SocialIcon platform={key} size={18} />
-                      </a>
-                    ))}
+                  <div className="flex flex-wrap gap-2">
+                    {socials.map((s) => {
+                      const url = SOCIAL_MEDIA[s.key];
+                      const handle = SOCIAL_MEDIA_HANDLES[s.key];
+                      if (!url) return null;
+                      return (
+                        <a
+                          key={s.key}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${s.label} · ${handle ?? ""}`}
+                          title={handle ? `${s.label} · ${handle}` : s.label}
+                          className={`group inline-flex h-11 w-11 items-center justify-center rounded-xl border border-outline-variant bg-white text-on-surface-variant hover:-translate-y-0.5 hover:shadow-md transition-all ${s.hoverCls}`}
+                        >
+                          <SocialIcon platform={s.key} size={18} />
+                        </a>
+                      );
+                    })}
                   </div>
+                  <p className="mt-2.5 text-[11.5px] text-on-surface-variant">
+                    KAMPANYATAKİP resmi hesaplarımız — yeni sekmede açılır.
+                  </p>
                 </div>
               )}
             </div>
