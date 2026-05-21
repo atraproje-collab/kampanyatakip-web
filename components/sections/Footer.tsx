@@ -4,8 +4,36 @@ import { Container } from "@/components/Container";
 import { Logo } from "@/components/Logo";
 import { SocialIcon } from "@/components/ui/SocialIcon";
 import { siteConfig } from "@/lib/site-config";
+import { SOCIAL_MEDIA, type SocialPlatformKey } from "@/lib/social-media";
 
-type SocialKey = "linkedin" | "twitter" | "instagram" | "facebook" | "youtube";
+// Sosyal medya — lib/social-media.ts kanonik kaynak.
+// Hover renkleri sabit class olarak yazılı (Tailwind JIT için).
+const FOOTER_SOCIALS: Array<{
+  key: SocialPlatformKey;
+  label: string;
+  hoverCls: string;
+}> = [
+  {
+    key: "facebook",
+    label: "Facebook",
+    hoverCls: "hover:border-[#1877F2] hover:text-[#1877F2]",
+  },
+  {
+    key: "instagram",
+    label: "Instagram",
+    hoverCls: "hover:border-[#E1306C] hover:text-[#E1306C]",
+  },
+  {
+    key: "youtube",
+    label: "YouTube",
+    hoverCls: "hover:border-[#FF0000] hover:text-[#FF0000]",
+  },
+  {
+    key: "tiktok",
+    label: "TikTok",
+    hoverCls: "hover:border-black hover:text-black",
+  },
+];
 
 const CORPORATE_LINKS = [
   { label: "Hakkımızda", href: "/hakkimizda" },
@@ -28,9 +56,7 @@ const LEGAL_LINKS = [
 ];
 
 export function Footer() {
-  const socialEntries = (
-    Object.entries(siteConfig.social) as Array<[SocialKey, string | null]>
-  ).filter(([, url]) => Boolean(url));
+  const socials = FOOTER_SOCIALS.filter((s) => Boolean(SOCIAL_MEDIA[s.key]));
 
   return (
     <footer className="w-full bg-surface-container-low border-t border-outline-variant">
@@ -130,20 +156,25 @@ export function Footer() {
             </a>
           </div>
 
-          {socialEntries.length > 0 && (
+          {socials.length > 0 && (
             <div className="flex gap-2">
-              {socialEntries.map(([key, url]) => (
-                <a
-                  key={key}
-                  href={url!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={key}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-white text-on-surface-variant hover:border-secondary hover:text-secondary hover:-translate-y-0.5 transition-all"
-                >
-                  <SocialIcon platform={key} size={16} />
-                </a>
-              ))}
+              {socials.map((s) => {
+                const url = SOCIAL_MEDIA[s.key];
+                if (!url) return null;
+                return (
+                  <a
+                    key={s.key}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    title={s.label}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-outline-variant bg-white text-on-surface-variant hover:-translate-y-0.5 hover:shadow-sm transition-all ${s.hoverCls}`}
+                  >
+                    <SocialIcon platform={s.key} size={16} />
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>

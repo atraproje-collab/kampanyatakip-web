@@ -2,7 +2,7 @@
 // Yeni hesap eklendiğinde buradan değiştirilir.
 
 export const SOCIAL_MEDIA = {
-  facebook: "https://www.facebook.com/profile.php?id=61589243289036",
+  facebook: "https://www.facebook.com/profile.php?id=61589585073059",
   instagram: "https://www.instagram.com/sma.dmd.kampanyatakip/",
   youtube: "https://www.youtube.com/@Kampanya-Takip",
   tiktok: "https://www.tiktok.com/@kampanya.takip",
