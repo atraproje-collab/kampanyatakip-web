@@ -126,6 +126,17 @@ export default function AdminLoginPage() {
             <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting}>
               {submitting ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
+
+            {/* Demo giriş bilgileri */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-center">
+              <p className="text-gray-600">Demo giriş bilgileri:</p>
+              <p className="font-medium">
+                Kullanıcı adı: <span className="text-blue-600">defne</span>
+              </p>
+              <p className="font-medium">
+                Şifre: <span className="text-blue-600">demo2026</span>
+              </p>
+            </div>
           </form>
         </div>
 
